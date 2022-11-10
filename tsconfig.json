@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "outDir": "dist",
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "declaration": true,
+    "declarationDir": "dist",
+    "stripInternal": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "baseUrl": ".",
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests", "output"],
+  "typedocOptions": {
+    "entryPoints": [
+      "src/index.ts"
+    ],
+    "out": "docs",
+    "theme": "github-wiki"
+  }
+}

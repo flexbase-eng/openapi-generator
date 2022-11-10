@@ -1,0 +1,202 @@
+{
+  "name": "@flexbase/template-typescript-package",
+  "version": "0.0.2",
+  "description": "template repo for npmjs packages utilizing typescript",
+  "author": {
+    "name": "Flexbase Technologies",
+    "email": "hello@flexbase.app",
+    "url": "https://flexbase.app"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/flexbase-eng/template-typescript-package/issues"
+  },
+  "homepage": "https://github.com/flexbase-eng/template-typescript-package#readme",
+  "keywords": [
+    "flexbase"
+  ],
+  "contributors": [
+    "Chris Fowlkes <chris.fowlkes@flexbase.app>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flexbase-eng/template-typescript-package.git"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint 'src/**/*.{ts,tsx,json}'",
+    "lint-fix": "eslint --fix 'src/**/*.{ts,tsx,json}'",
+    "build": "rollup -c",
+    "docs": "typedoc",
+    "format": "prettier --write 'src/**/*.{ts,tsx,css,md,json}'",
+    "test": "jest --no-cache",
+    "prepare": "husky install",
+    "packr": "packr",
+    "preversion": "npm t",
+    "patch": "npm version patch",
+    "minor": "npm version minor",
+    "major": "npm version major"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx,json}": [
+      "eslint --max-warnings=0"
+    ]
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@flexbase/packr": "^1.2.0",
+    "@types/jest": "^28.1.4",
+    "@types/node": "^18.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "@typescript-eslint/parser": "^5.29.0",
+    "esbuild": "^0.14.47",
+    "eslint": "^8.19.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-check-file": "^1.2.2",
+    "husky": "^8.0.1",
+    "jest": "^28.1.2",
+    "lint-staged": "^13.0.3",
+    "prettier": "^2.7.0",
+    "rollup": "^2.75.7",
+    "rollup-plugin-typescript2": "^0.32.1",
+    "ts-jest": "^28.0.5",
+    "ts-node": "^10.8.1",
+    "tsconfig.json": "^1.0.11",
+    "typedoc": "^0.23.6",
+    "typedoc-github-wiki-theme": "^1.0.1",
+    "typedoc-plugin-markdown": "^3.12.1",
+    "typescript": "^4.7.4"
+  },
+  "eslintIgnore": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "docs",
+    "tests",
+    "output"
+  ],
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "module"
+    },
+    "plugins": [
+      "@typescript-eslint",
+      "check-file"
+    ],
+    "extends": [
+      "prettier",
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "rules": {
+      "no-unused-vars": [
+        "warn",
+        {
+          "vars": "all",
+          "args": "none"
+        }
+      ],
+      "prefer-const": ["error", {
+        "destructuring": "any",
+        "ignoreReadBeforeAssign": false
+      }],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          "vars": "all",
+          "args": "none"
+        }
+      ],
+      "check-file/filename-naming-convention": [
+        "error", { 
+          "src/**/*.ts": "KEBAB_CASE"
+        }, { "ignoreMiddleExtensions": true}
+      ],
+      "check-file/folder-naming-convention":[
+        "error",
+        {
+           "src/**/":"KEBAB_CASE"
+        }
+     ],
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-non-null-assertion": "warn",
+      "@typescript-eslint/no-inferrable-types": "off"
+    },
+    "env": {
+      "browser": true,
+      "es2021": true
+    }
+  },
+  "jest": {
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "tests/tsconfig.tests.json"
+      }
+    },
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.ts"
+    ],
+    "transform": {
+      "^.+\\.(t|j)sx?$": "ts-jest"
+    },
+    "transformIgnorePatterns": [
+      "<rootDir>/node_modules/(?!@flexbase/)"
+    ],
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**/*.{js,ts}"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ]
+  },
+  "prettier": {
+    "semi": true,
+    "singleQuote": true,
+    "arrowParens": "avoid",
+    "tabWidth": 2,
+    "useTabs": false,
+    "printWidth": 150
+  },
+  "packr": {
+    "output": "output",
+    "properties": [
+      "name",
+      "version",
+      "description",
+      "main",
+      "module",
+      "types",
+      "homepage",
+      "repository",
+      "bugs",
+      "author",
+      "license",
+      "dependencies",
+      "type",
+      "bin",
+      "keywords"
+    ],
+    "include": [
+      "dist",
+      "README.md",
+      "LICENSE",
+      "yarn.lock"
+    ]
+  }
+}
