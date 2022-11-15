@@ -1,6 +1,6 @@
 {
   "name": "@flexbase/openapi-generator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Open API v3 code generator",
   "author": {
     "name": "Flexbase Technologies",
@@ -26,6 +26,9 @@
   "files": [
     "dist"
   ],
+  "bin": {
+    "openapi-generator": "dist/index.js"
+  },
   "type": "module",
   "private": true,
   "scripts": {
