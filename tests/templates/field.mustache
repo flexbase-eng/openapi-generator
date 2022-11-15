@@ -1,0 +1,4 @@
+{{#modifiers}}{{> comments}}{{/modifiers}}
+{{#functions.isDeclarationNode}}
+{{#identifier}}{{> literal}}{{/identifier}}{{^type.modifiers.required}}?{{/type.modifiers.required}}: {{#type}}{{> type}}{{/type}}
+{{/functions.isDeclarationNode}}

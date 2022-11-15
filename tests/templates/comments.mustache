@@ -1,0 +1,5 @@
+{{#functions.commentSection}}{{#self.title}}* @summary {{& .}}{{/self.title}}
+{{#self.description}}* @description {{& .}}{{/self.description}}
+{{#self.deprecated}}* @deprecated{{/self.deprecated}}
+{{#self.returns}}* @returns {{&. }}
+{{/self.returns}}{{/functions.commentSection}}

@@ -1,0 +1,33 @@
+/* eslint-disable */
+/* ------------------------------------------------------------
+ File auto-generated
+
+ @summary {{ast.title}}
+ @description {{ast.description}}
+ @version {{ast.version}}
+------------------------------------------------------------ */
+
+{{#ast}}
+export type {{name}}ControllerResponse<T> = {
+    $status?: number,
+    $headers?: Record<string, any>,
+    $body: T,
+};
+
+{{#declarations}}
+{{#functions.isDeclarationNode}}
+{{#modifiers}}{{> comments}}{{/modifiers}}
+export type {{#identifier}}{{> literal}}{{/identifier}} = {{#type}}{{> type}}{{/type}}
+{{/functions.isDeclarationNode}}
+{{/declarations}}
+
+export abstract class {{name}}ControllerGenerated {
+{{#operations}}
+{{#functions.isOperationNode}}
+{{> operation}}
+{{/functions.isOperationNode}}
+
+{{/operations}}
+}
+
+{{/ast}}

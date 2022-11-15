@@ -1,0 +1,12 @@
+{
+	"name": "typescript-transformer-append-js-extension",
+	"description": "A TypeScript transformer for use with ttypescript that will append the JS extension to all relative imports that have no extension.",
+	"main": "./index.js",
+	"devDependencies": {
+		"@types/node": "12.6.8",
+		"ts-node": "8.3.0",
+		"ttypescript": "1.5.7",
+		"typescript": "3.5.3"
+	},
+	"files": []
+}

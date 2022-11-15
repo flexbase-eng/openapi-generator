@@ -1,5 +1,5 @@
-const world = 'world';
+#!/usr/bin/env node
 
-export function hello(who: string = world): string {
-  return `Hello ${who}!`;
-}
+import { main } from './main';
+
+await main();

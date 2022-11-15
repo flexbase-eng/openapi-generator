@@ -15,6 +15,15 @@
     "sourceMap": true,
     "inlineSources": true,
     "baseUrl": ".",
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "plugins": [
+			{ "transform": "typescript-transform-paths" },
+			{
+				"transform": "./typescript-transformer-append-js-extension/index.ts",
+				"after": true,
+			}
+		]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests", "output"],
@@ -24,5 +33,9 @@
     ],
     "out": "docs",
     "theme": "github-wiki"
-  }
+  },
+  "ts-node": {
+    "transpileOnly": true,
+    "require": [ "typescript-transform-paths/register" ],
+  },
 }
