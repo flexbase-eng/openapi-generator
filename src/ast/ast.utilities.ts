@@ -6,6 +6,7 @@ import { AstNodeTypeBody } from './ast.node.type.body';
 import { AstNodeTypeComposite } from './ast.node.type.composite';
 import { AstNodeTypeContent } from './ast.node.type.content';
 import { AstNodeTypeObject } from './ast.node.type.object';
+import { AstNodeTypeOmit } from './ast.node.type.omit';
 import { AstNodeTypePrimative } from './ast.node.type.primative';
 import { AstNodeTypeReference } from './ast.node.type.reference';
 import { AstNodeTypeRequest } from './ast.node.type.request';
@@ -33,7 +34,7 @@ export function IsReferenceNode(test: any): test is AstNodeTypeReference {
 }
 
 export function IsPrimativeNode(test: any): test is AstNodeTypePrimative {
-  return test?.kind === 'type' && 'type' in test;
+  return test?.kind === 'type' && 'primativeType' in test;
 }
 
 export function IsDeclarationNode(test: any): test is AstNodeDeclaration {
@@ -62,4 +63,8 @@ export function IsContentNode(test: any): test is AstNodeTypeContent {
 
 export function IsBodyNode(test: any): test is AstNodeTypeBody {
   return test?.kind === 'type' && 'contents' in test;
+}
+
+export function IsOmitNode(test: any): test is AstNodeTypeOmit {
+  return test?.kind === 'type' && 'originalType' in test && 'omitFields' in test;
 }

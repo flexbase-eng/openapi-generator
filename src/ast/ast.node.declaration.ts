@@ -5,9 +5,11 @@ import { AstNodeType } from './ast.node.type';
 
 export class AstNodeDeclaration extends AstNode {
   private readonly _identifier: AstNodeLiteral;
+  private readonly _generatedIdentifier: AstNodeLiteral;
 
   constructor(
     identifier: AstNodeLiteral | string,
+    generatedIdentifier: AstNodeLiteral | string,
     private readonly _type: AstNodeType,
     modifiers: AstNodeModifiers,
     private readonly _referenceName?: string
@@ -18,10 +20,19 @@ export class AstNodeDeclaration extends AstNode {
     } else {
       this._identifier = identifier;
     }
+    if (typeof generatedIdentifier === 'string') {
+      this._generatedIdentifier = new AstNodeLiteral(generatedIdentifier, {});
+    } else {
+      this._generatedIdentifier = generatedIdentifier;
+    }
   }
 
   get identifier(): AstNodeLiteral {
     return this._identifier;
+  }
+
+  get generatedIdentifier(): AstNodeLiteral {
+    return this._generatedIdentifier;
   }
 
   get type(): AstNodeType {

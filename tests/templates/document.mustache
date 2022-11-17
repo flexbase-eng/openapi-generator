@@ -17,7 +17,7 @@ export type {{name}}ControllerResponse<T> = {
 {{#declarations}}
 {{#functions.isDeclarationNode}}
 {{#modifiers}}{{> comments}}{{/modifiers}}
-export type {{#identifier}}{{> literal}}{{/identifier}} = {{#type}}{{> type}}{{/type}}
+export type {{#generatedIdentifier}}{{> literal}}{{/generatedIdentifier}} = {{#type}}{{> type}}{{/type}}
 {{/functions.isDeclarationNode}}
 {{/declarations}}
 

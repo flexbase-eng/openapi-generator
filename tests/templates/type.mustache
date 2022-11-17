@@ -2,9 +2,10 @@
 {{#functions.isArrayNode}}[{{#arrayType}}{{> type}}{{/arrayType}}]{{/functions.isArrayNode}}
 {{#functions.isCompositeNode}}{{#functions.joinTypes(&)}}{{#compositeTypes}}{{> type}} &{{/compositeTypes}}{{/functions.joinTypes(&)}}{{/functions.isCompositeNode}}
 {{#functions.isObjectNode}}{ {{#fields}}{{> field}},{{/fields}} }{{/functions.isObjectNode}}
-{{#functions.isPrimativeNode}}{{& type}}{{/functions.isPrimativeNode}}
+{{#functions.isPrimativeNode}}{{& primativeType}}{{/functions.isPrimativeNode}}
 {{#functions.isReferenceNode}}{{#identifier}}{{> literal}}{{/identifier}}{{/functions.isReferenceNode}}
 {{#functions.isUnionNode}}{{#functions.joinTypes(|)}}{{#unionTypes}}{{> type}} |{{/unionTypes}}{{/functions.joinTypes(|)}}{{/functions.isUnionNode}}
 {{#functions.isContentNode}} {{#contentType}}{{> type}}{{/contentType}}{{/functions.isContentNode}}
 {{#functions.isBodyNode}} {{#contents}}{{> type}}{{/contents}}{{/functions.isBodyNode}}
 {{#functions.isResponseNode}} {{#content}}{{> type}}{{/content}}{{/functions.isResponseNode}}
+{{#functions.isOmitNode}} Omit<{{#originalType}}{{> type}}{{/originalType}}, {{#functions.joinTypes(|)}}{{#omitFields}}'{{& .}}' | {{/omitFields}}{{/functions.joinTypes(|)}}>{{/functions.isOmitNode}}

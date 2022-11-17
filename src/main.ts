@@ -8,7 +8,7 @@ import { AstContext } from './ast.context';
 import Path from 'path';
 import fs from 'fs-extra';
 import prettier from 'prettier';
-import { convertAstToPoco, generateAst } from './ast/ast.builder';
+import { convertAstToPoco, createDeclarationMappings, generateAst } from './ast/ast.builder';
 import { AstNodeDeclaration } from './ast/ast.node.declaration';
 import { IsObjectNode, IsRequestNode } from './ast/ast.utilities';
 import { AstNodeTypeReference } from './ast/ast.node.type.reference';
@@ -52,21 +52,12 @@ export async function main(): Promise<void> {
         const name = `${operationId}PathParameter`;
         const refName = `#/components/generated/${name}`;
         const objectNode = operation.request.pathParameters;
-        ast.declarations.push(new AstNodeDeclaration(name, objectNode, {}, refName));
+        ast.declarations.push(new AstNodeDeclaration(name, name, objectNode, {}, refName));
         operation.request.pathParameters = new AstNodeTypeReference(refName, {});
       }
     }
 
-    const declarationLookups = new Map<string, AstNodeDeclaration>();
-
-    ast.declarations.forEach(x => {
-      if (x.referenceName) {
-        if (declarationLookups.has(x.referenceName)) {
-          console.log(chalk.yellow(`Warning multiple declarations with the same name ${x.referenceName} defined! Last definition wins`));
-        }
-        declarationLookups.set(x.referenceName, x);
-      }
-    });
+    const declarationLookups = createDeclarationMappings(ast.declarations);
 
     const functions = {
       declarationLookup: function () {
@@ -74,7 +65,7 @@ export async function main(): Promise<void> {
           const rendered = render(text);
           const model = declarationLookups.get(rendered);
           if (model) {
-            return model.identifier.value;
+            return model.generatedIdentifier.value;
           }
           return rendered;
         };

@@ -7,6 +7,7 @@ import {
   IsDeclarationNode,
   IsLiteralNode,
   IsObjectNode,
+  IsOmitNode,
   IsOperationNode,
   IsPrimativeNode,
   IsReferenceNode,
@@ -37,6 +38,7 @@ export class AstContext extends Mustache.Context {
           isRequestNode: IsRequestNode(view),
           isContentNode: IsContentNode(view),
           isBodyNode: IsBodyNode(view),
+          isOmitNode: IsOmitNode(view),
           self: view,
         },
       };

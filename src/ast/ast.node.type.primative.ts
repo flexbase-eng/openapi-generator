@@ -4,11 +4,11 @@ import { AstNodeType } from './ast.node.type';
 export type AstNodeTypePrimativeTypes = 'boolean' | 'integer' | 'number' | 'string' | 'void';
 
 export class AstNodeTypePrimative extends AstNodeType {
-  constructor(private readonly _type: AstNodeTypePrimativeTypes, modifiers: AstNodeModifiers) {
+  constructor(private readonly _primativeType: AstNodeTypePrimativeTypes, modifiers: AstNodeModifiers) {
     super(modifiers);
   }
 
-  get type(): AstNodeTypePrimativeTypes {
-    return this._type;
+  get primativeType(): AstNodeTypePrimativeTypes {
+    return this._primativeType;
   }
 }

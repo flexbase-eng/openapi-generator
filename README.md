@@ -43,136 +43,27 @@ Below are some example [mustache](https://mustache.github.io/) templates to gene
 
 ### `document.mustache` template
 
-```
-/* eslint-disable */
-/* ------------------------------------------------------------
- File auto-generated
-
- @summary {{ast.title}}
- @description {{ast.description}}
- @version {{ast.version}}
------------------------------------------------------------- */
-
-{{#ast}}
-export type {{name}}ControllerResponse<T> = {
-    $status?: number,
-    $headers?: Record<string, any>,
-    $body: T,
-};
-
-{{#declarations}}
-{{#functions.isDeclarationNode}}
-{{#modifiers}}{{> comments}}{{/modifiers}}
-export type {{#identifier}}{{> literal}}{{/identifier}} = {{#type}}{{> type}}{{/type}}
-{{/functions.isDeclarationNode}}
-{{/declarations}}
-
-export abstract class {{name}}ControllerGenerated {
-{{#operations}}
-{{#functions.isOperationNode}}
-{{> operation}}
-{{/functions.isOperationNode}}
-
-{{/operations}}
-}
-
-{{/ast}}
-```
+https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/document.mustache
 
 ### `type.mustache` partial template
 
-```
-{{#modifiers}}{{> comments}}{{/modifiers}}
-{{#functions.isArrayNode}}[{{#arrayType}}{{> type}}{{/arrayType}}]{{/functions.isArrayNode}}
-{{#functions.isCompositeNode}}{{#functions.joinTypes(&)}}{{#compositeTypes}}{{> type}} &{{/compositeTypes}}{{/functions.joinTypes(&)}}{{/functions.isCompositeNode}}
-{{#functions.isObjectNode}}{ {{#fields}}{{> field}},{{/fields}} }{{/functions.isObjectNode}}
-{{#functions.isPrimativeNode}}{{& type}}{{/functions.isPrimativeNode}}
-{{#functions.isReferenceNode}}{{#identifier}}{{> literal}}{{/identifier}}{{/functions.isReferenceNode}}
-{{#functions.isUnionNode}}{{#functions.joinTypes(|)}}{{#unionTypes}}{{> type}} |{{/unionTypes}}{{/functions.joinTypes(|)}}{{/functions.isUnionNode}}
-{{#functions.isContentNode}} {{#contentType}}{{> type}}{{/contentType}}{{/functions.isContentNode}}
-{{#functions.isBodyNode}} {{#contents}}{{> type}}{{/contents}}{{/functions.isBodyNode}}
-{{#functions.isResponseNode}} {{#content}}{{> type}}{{/content}}{{/functions.isResponseNode}}
-```
+https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/type.mustache
 
 ### `comments.mustache` partial template
 
-```
-{{#functions.commentSection}}{{#self.title}}* @summary {{& .}}{{/self.title}}
-{{#self.description}}* @description {{& .}}{{/self.description}}
-{{#self.deprecated}}* @deprecated{{/self.deprecated}}
-{{#self.returns}}* @returns {{&. }}
-{{/self.returns}}{{/functions.commentSection}}
-```
+https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/comments.mustache
 
 ### `field.mustache` partial template
 
-```
-{{#modifiers}}{{> comments}}{{/modifiers}}
-{{#functions.isDeclarationNode}}
-{{#identifier}}{{> literal}}{{/identifier}}{{^type.modifiers.required}}?{{/type.modifiers.required}}: {{#type}}{{> type}}{{/type}}
-{{/functions.isDeclarationNode}}
-```
+https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/field.mustache
 
 ### `literal.mustache` partial template
 
-```
-{{#functions.isLiteralNode}}{{#functions.declarationLookup}}{{& value}}{{/functions.declarationLookup}}{{/functions.isLiteralNode}}
-```
+https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/literal.mustache
 
 ### `operation.mustache` partial template
 
-```
-{{#modifiers}}{{> comments}}{{/modifiers}}
-{{#functions.removeNewLines}}
-protected abstract _{{#identifier}}{{> literal}}{{/identifier}}(
-    {{#request.pathParameters}}
-    params: {{> type}},
-    {{/request.pathParameters}}
-    {{#request.queryParameters}}
-    query: {{> type}},
-    {{/request.queryParameters}}
-    {{#request.headerParameters}}
-    headers: {{> type}},
-    {{/request.headerParameters}}
-    {{#request.body}}
-    body: {{> type}},
-    {{/request.body}}
-): Promise<{{name}}ControllerResponse<{{#responses}}{{> type}}{{/responses}}>>;
-{{/functions.removeNewLines}}
-{{#hasScopes}}@Scopes({{#scopes}}'{{.}}',{{/scopes}}){{/hasScopes}}
-@{{httpMethod}}('{{#functions.formatPath}}{{& path}}{{/functions.formatPath}}')
-{{#functions.removeNewLines}}
-{{#identifier}}{{> literal}}{{/identifier}}(
-    {{#request.pathParameters}}
-    @Param() params: {{> type}},
-    {{/request.pathParameters}}
-    {{#request.queryParameters}}
-    @Query() query: {{> type}},
-    {{/request.queryParameters}}
-    {{#request.headerParameters}}
-    @Headers() headers: {{> type}},
-    {{/request.headerParameters}}
-    {{#request.body}}
-    @Body() body: {{> type}},
-    {{/request.body}}
-): Promise<{{name}}ControllerResponse<{{#responses}}{{> type}}{{/responses}}>> {
-    return this._{{#identifier}}{{> literal}}{{/identifier}}(
-        {{#request.pathParameters}}
-        params,
-        {{/request.pathParameters}}
-        {{#request.queryParameters}}
-        query,
-        {{/request.queryParameters}}
-        {{#request.headerParameters}}
-        headers,
-        {{/request.headerParameters}}
-        {{#request.body}}
-        body,
-        {{/request.body}}
-    );
-}
-{{/functions.removeNewLines}}
-```
+https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/operation.mustache
 
 ## Example
 
