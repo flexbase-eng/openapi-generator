@@ -3,7 +3,7 @@ import { AstNodeType } from './ast.node.type';
 
 export class AstNodeTypeRequest extends AstNodeType {
   constructor(
-    private readonly _body: AstNodeType | undefined,
+    private _body: AstNodeType | undefined,
     private _pathParameters: AstNodeType | undefined,
     private _cookieParameters: AstNodeType | undefined,
     private _headerParameters: AstNodeType | undefined,
@@ -15,6 +15,11 @@ export class AstNodeTypeRequest extends AstNodeType {
 
   get body(): AstNodeType | undefined {
     return this._body;
+  }
+
+  /** @internal */
+  set body(value: AstNodeType | undefined) {
+    this._body = value;
   }
 
   get pathParameters(): AstNodeType | undefined {

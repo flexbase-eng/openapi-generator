@@ -241,7 +241,7 @@ function generateOperationFromPathItem(
           console.warn(`${generateOperationFromPathItem.name}: Reference missing parameter location ${type.identifier.value}`, type);
         } else {
           const location = refNode.parameterLocation;
-          const node = refNode.type;
+          const node = type;
           switch (location) {
             case 'cookie':
               cookieNodes.push(node);
@@ -326,7 +326,7 @@ function generateParameter(parameter: OpenAPIV3.ReferenceObject | OpenAPIV3.Para
   nodeType.modifiers.required = parameter.required;
   nodeType.modifiers.deprecated = parameter.deprecated;
 
-  const declaration = new AstNodeDeclaration(name, name, nodeType, {});
+  const declaration = new AstNodeDeclaration(name, name, nodeType, { required: parameter.required, deprecated: parameter.deprecated });
 
   return { location, type: new AstNodeTypeObject([declaration], {}) };
 }

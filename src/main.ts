@@ -10,7 +10,7 @@ import fs from 'fs-extra';
 import prettier from 'prettier';
 import { convertAstToPoco, createDeclarationMappings, generateAst } from './ast/ast.builder';
 import { AstNodeDeclaration } from './ast/ast.node.declaration';
-import { IsObjectNode, IsRequestNode } from './ast/ast.utilities';
+import { IsReferenceNode, IsRequestNode } from './ast/ast.utilities';
 import { AstNodeTypeReference } from './ast/ast.node.type.reference';
 import { IsDocument } from './utilities/openapi.utilities';
 
@@ -48,12 +48,36 @@ export async function main(): Promise<void> {
 
       const operationId = operation.identifier.value;
 
-      if (IsObjectNode(operation.request.pathParameters)) {
+      if (operation.request.pathParameters && !IsReferenceNode(operation.request.pathParameters)) {
         const name = `${operationId}PathParameter`;
         const refName = `#/components/generated/${name}`;
         const objectNode = operation.request.pathParameters;
         ast.declarations.push(new AstNodeDeclaration(name, name, objectNode, {}, refName));
         operation.request.pathParameters = new AstNodeTypeReference(refName, {});
+      }
+
+      if (operation.request.cookieParameters && !IsReferenceNode(operation.request.cookieParameters)) {
+        const name = `${operationId}CookieParameter`;
+        const refName = `#/components/generated/${name}`;
+        const objectNode = operation.request.cookieParameters;
+        ast.declarations.push(new AstNodeDeclaration(name, name, objectNode, {}, refName));
+        operation.request.cookieParameters = new AstNodeTypeReference(refName, {});
+      }
+
+      if (operation.request.headerParameters && !IsReferenceNode(operation.request.headerParameters)) {
+        const name = `${operationId}HeaderParameter`;
+        const refName = `#/components/generated/${name}`;
+        const objectNode = operation.request.headerParameters;
+        ast.declarations.push(new AstNodeDeclaration(name, name, objectNode, {}, refName));
+        operation.request.headerParameters = new AstNodeTypeReference(refName, {});
+      }
+
+      if (operation.request.body && !IsReferenceNode(operation.request.body)) {
+        const name = `${operationId}Body`;
+        const refName = `#/components/generated/${name}`;
+        const objectNode = operation.request.body;
+        ast.declarations.push(new AstNodeDeclaration(name, name, objectNode, {}, refName));
+        operation.request.body = new AstNodeTypeReference(refName, {});
       }
     }
 
