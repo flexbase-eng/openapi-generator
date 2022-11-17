@@ -43,27 +43,27 @@ Below are some example [mustache](https://mustache.github.io/) templates to gene
 
 ### `document.mustache` template
 
-https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/document.mustache
+https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/document.mustache
 
 ### `type.mustache` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/type.mustache
+https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/type.mustache
 
 ### `comments.mustache` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/comments.mustache
+https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/comments.mustache
 
 ### `field.mustache` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/field.mustache
+https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/field.mustache
 
 ### `literal.mustache` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/literal.mustache
+https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/literal.mustache
 
 ### `operation.mustache` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/e3a9e8e50dd7e64e92ac419ac7e043edfc7f7301/tests/templates/operation.mustache
+https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/operation.mustache
 
 ## Example
 
