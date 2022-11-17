@@ -3,6 +3,8 @@ import { AstNodeLiteral } from './ast.node.literal';
 import { AstNodeModifiers } from './ast.node.modifiers';
 import { AstNodeType } from './ast.node.type';
 
+export type ParameterLocations = 'query' | 'header' | 'path' | 'cookie' | 'reference' | 'unknown';
+
 export class AstNodeDeclaration extends AstNode {
   private readonly _identifier: AstNodeLiteral;
   private readonly _generatedIdentifier: AstNodeLiteral;
@@ -12,7 +14,8 @@ export class AstNodeDeclaration extends AstNode {
     generatedIdentifier: AstNodeLiteral | string,
     private readonly _type: AstNodeType,
     modifiers: AstNodeModifiers,
-    private readonly _referenceName?: string
+    private readonly _referenceName?: string,
+    private readonly _parameterLocation?: ParameterLocations
   ) {
     super('declaration', modifiers);
     if (typeof identifier === 'string') {
@@ -41,5 +44,9 @@ export class AstNodeDeclaration extends AstNode {
 
   get referenceName(): string | undefined {
     return this._referenceName;
+  }
+
+  get parameterLocation(): ParameterLocations | undefined {
+    return this._parameterLocation;
   }
 }

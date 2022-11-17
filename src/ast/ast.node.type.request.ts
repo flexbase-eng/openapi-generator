@@ -8,7 +8,6 @@ export class AstNodeTypeRequest extends AstNodeType {
     private _cookieParameters: AstNodeType | undefined,
     private _headerParameters: AstNodeType | undefined,
     private _queryParameters: AstNodeType | undefined,
-    private _refParameters: AstNodeType | undefined,
     modifiers: AstNodeModifiers
   ) {
     super(modifiers);
@@ -52,14 +51,5 @@ export class AstNodeTypeRequest extends AstNodeType {
   /** @internal */
   set queryParameters(value: AstNodeType | undefined) {
     this._queryParameters = value;
-  }
-
-  get refParameters(): AstNodeType | undefined {
-    return this._refParameters;
-  }
-
-  /** @internal */
-  set refParameters(value: AstNodeType | undefined) {
-    this._refParameters = value;
   }
 }

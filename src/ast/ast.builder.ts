@@ -2,7 +2,7 @@ import { OpenAPIV3 } from 'openapi-types';
 import { IsArraySchemaObject, IsReferenceObject } from '../utilities/openapi.utilities';
 import { AbstractSyntaxTree } from './ast';
 import { AstNode } from './ast.node';
-import { AstNodeDeclaration } from './ast.node.declaration';
+import { AstNodeDeclaration, ParameterLocations } from './ast.node.declaration';
 import { AstNodeTypeReference } from './ast.node.type.reference';
 import { AstNodeTypeObject } from './ast.node.type.object';
 import { AstNodeType } from './ast.node.type';
@@ -77,11 +77,6 @@ function generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDe
       const modifiers = nodeType.modifiers;
       nodeType.modifiers = {};
 
-      // Requests should remove readonly fields
-      // if (IsReferenceNode(nodeType)) {
-      //   nodeType = createOmitNode(nodeType, 'readOnly', modelMappings);
-      // }
-
       declarations.push(new AstNodeDeclaration(name, generatedName, nodeType, modifiers, refName));
     }
   }
@@ -99,11 +94,6 @@ function generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDe
         continue;
       }
 
-      // Responses should remove writeonly fields
-      // if (IsReferenceNode(nodeType)) {
-      //   nodeType = createOmitNode(nodeType, 'writeOnly', modelMappings);
-      // }
-
       const modifiers = nodeType.modifiers;
       nodeType.modifiers = {};
       declarations.push(new AstNodeDeclaration(name, generatedName, nodeType, modifiers, refName));
@@ -118,10 +108,10 @@ function generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDe
       const refName = `#/components/parameters/${name}`;
       const generatedName = `${name}Parameter`;
 
-      const { type } = generateParameter(schema);
+      const { location, type } = generateParameter(schema);
       const modifiers = type.modifiers;
       type.modifiers = {};
-      declarations.push(new AstNodeDeclaration(name, generatedName, type, modifiers, refName));
+      declarations.push(new AstNodeDeclaration(name, generatedName, type, modifiers, refName, location));
     }
   }
 
@@ -204,27 +194,6 @@ function generateTypeFromSchema(schema: OpenAPIV3.SchemaObject | OpenAPIV3.Refer
   return new AstNodeTypePrimative('void', {});
 }
 
-function createCompositeNode(nodes: AstNodeType[], modifiers: AstNodeModifiers): AstNodeTypeComposite {
-  const mergeNodes: AstNodeTypeObject[] = [];
-  const modelTypes: AstNodeType[] = [];
-
-  for (const node of nodes) {
-    if (IsObjectNode(node)) {
-      mergeNodes.push(node);
-    } else {
-      modelTypes.push(node);
-    }
-  }
-
-  const merged: AstNodeDeclaration[] = [];
-  mergeNodes.forEach(x => merged.push(...x.fields));
-  if (merged.length > 0) {
-    modelTypes.push(new AstNodeTypeObject(merged, {}));
-  }
-
-  return new AstNodeTypeComposite(modelTypes, modifiers);
-}
-
 function generateOperations(pathObject: OpenAPIV3.PathsObject, modelMappings: Map<string, AstNodeDeclaration>): AstNodeOperation[] {
   const nodeOperations: AstNodeOperation[] = [];
   const paths = Object.entries(pathObject);
@@ -248,30 +217,62 @@ function generateOperationFromPathItem(
 ): AstNodeOperation[] {
   const nodeOperations: AstNodeOperation[] = [];
 
-  let queryNode: AstNodeType | undefined;
-  let headerNode: AstNodeType | undefined;
-  let pathNode: AstNodeType | undefined;
-  let cookieNode: AstNodeType | undefined;
-  let referenceNode: AstNodeType | undefined;
+  const queryNodes: AstNodeType[] = [];
+  const headerNodes: AstNodeType[] = [];
+  const pathNodes: AstNodeType[] = [];
+  const cookieNodes: AstNodeType[] = [];
 
   if (pathItem.parameters) {
     for (const param of pathItem.parameters) {
       const { location, type } = generateParameter(param);
       if (location === 'cookie') {
-        cookieNode = type;
+        cookieNodes.push(type);
       } else if (location === 'header') {
-        headerNode = type;
+        headerNodes.push(type);
       } else if (location === 'path') {
-        pathNode = type;
+        pathNodes.push(type);
       } else if (location == 'query') {
-        queryNode = type;
-      } else if (location == 'reference') {
-        referenceNode = type;
+        queryNodes.push(type);
+      } else if (location == 'reference' && IsReferenceNode(type)) {
+        const refNode = modelMappings.get(type.identifier.value);
+        if (!refNode) {
+          console.warn(`${generateOperationFromPathItem.name}: Unable to find reference ${type.identifier.value}`, type);
+        } else if (!refNode.parameterLocation) {
+          console.warn(`${generateOperationFromPathItem.name}: Reference missing parameter location ${type.identifier.value}`, type);
+        } else {
+          const location = refNode.parameterLocation;
+          const node = refNode.type;
+          switch (location) {
+            case 'cookie':
+              cookieNodes.push(node);
+              break;
+
+            case 'header':
+              headerNodes.push(node);
+              break;
+
+            case 'path':
+              pathNodes.push(node);
+              break;
+
+            case 'query':
+              queryNodes.push(node);
+              break;
+
+            default:
+              console.warn('unknown parameter location encountered', refNode);
+          }
+        }
       } else {
         console.warn('unknown parameter location encountered', param);
       }
     }
   }
+
+  const cookie = cookieNodes.length > 0 ? createCompositeNode(cookieNodes, {}) : undefined;
+  const header = headerNodes.length > 0 ? createCompositeNode(headerNodes, {}) : undefined;
+  const path = pathNodes.length > 0 ? createCompositeNode(pathNodes, {}) : undefined;
+  const query = queryNodes.length > 0 ? createCompositeNode(queryNodes, {}) : undefined;
 
   for (const method in OpenAPIV3.HttpMethods) {
     const operationObject = pathItem[method.toLowerCase() as OpenAPIV3.HttpMethods];
@@ -294,7 +295,7 @@ function generateOperationFromPathItem(
 
     const requestBody = operationObject.requestBody ? generateRequestBody(operationObject.requestBody, modelMappings) : undefined;
 
-    const request = new AstNodeTypeRequest(requestBody, pathNode, cookieNode, headerNode, queryNode, referenceNode, { description, title });
+    const request = new AstNodeTypeRequest(requestBody, path, cookie, header, query, { description, title });
 
     const nodeOperation = new AstNodeOperation(
       (operationObject.operationId ?? 'OperationId_NOTDEFINED').replace(/-./g, x => x[1].toUpperCase()),
@@ -309,8 +310,6 @@ function generateOperationFromPathItem(
 
   return nodeOperations;
 }
-
-type ParameterLocations = 'query' | 'header' | 'path' | 'cookie' | 'reference' | 'unknown';
 
 function generateParameter(parameter: OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject): {
   location: ParameterLocations;
@@ -465,6 +464,31 @@ function generateRequestBody(
   return new AstNodeTypeBody(contentNodes, { description, required });
 }
 
+function createCompositeNode(nodes: AstNodeType[], modifiers: AstNodeModifiers): AstNodeType {
+  if (nodes.length === 0) {
+    throw new Error('Nodes must not be an empty array');
+  }
+
+  const mergeNodes: AstNodeTypeObject[] = [];
+  const modelTypes: AstNodeType[] = [];
+
+  for (const node of nodes) {
+    if (IsObjectNode(node)) {
+      mergeNodes.push(node);
+    } else {
+      modelTypes.push(node);
+    }
+  }
+
+  const merged: AstNodeDeclaration[] = [];
+  mergeNodes.forEach(x => merged.push(...x.fields));
+  if (merged.length > 0) {
+    modelTypes.push(new AstNodeTypeObject(merged, {}));
+  }
+
+  return modelTypes.length > 1 ? new AstNodeTypeComposite(modelTypes, modifiers) : modelTypes[0];
+}
+
 function createOmitNode(model: AstNodeType, omitType: 'readOnly' | 'writeOnly', modelMappings: Map<string, AstNodeDeclaration>): AstNodeType {
   const omitDeclarations: string[] = [];
 
@@ -552,6 +576,7 @@ function convertDeclaration(node: AstNodeDeclaration) {
   return {
     kind: node.kind,
     referenceName: node.referenceName,
+    parameterLocation: node.parameterLocation,
     identifier: convertNode(node.identifier),
     generatedIdentifier: convertNode(node.generatedIdentifier),
     modifiers: node.modifiers,
@@ -609,7 +634,6 @@ function convertType(node: AstNodeType) {
       cookieParameters: node.cookieParameters ? convertNode(node.cookieParameters) : undefined,
       headerParameters: node.headerParameters ? convertNode(node.headerParameters) : undefined,
       queryParameters: node.queryParameters ? convertNode(node.queryParameters) : undefined,
-      refParameters: node.refParameters ? convertNode(node.refParameters) : undefined,
     };
   } else if (IsContentNode(node)) {
     return { ...json, mediaType: node.mediaType, contentType: convertNode(node.contentType) };
