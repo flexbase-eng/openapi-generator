@@ -6,7 +6,7 @@ import { AstNodeDeclaration, ParameterLocations } from './ast.node.declaration';
 import { AstNodeTypeReference } from './ast.node.type.reference';
 import { AstNodeTypeObject } from './ast.node.type.object';
 import { AstNodeType } from './ast.node.type';
-import { AstNodeTypePrimative } from './ast.node.type.primative';
+import { AstNodeTypePrimative, AstNodeTypePrimativeTypes } from './ast.node.type.primative';
 import { AstNodeTypeComposite } from './ast.node.type.composite';
 import { AstNodeTypeArray } from './ast.node.type.array';
 import { AstNodeOperation, AstNodeOperationHttpMethod } from './ast.node.operation';
@@ -178,19 +178,25 @@ function generateTypeFromSchema(schema: OpenAPIV3.SchemaObject | OpenAPIV3.Refer
     }
 
     return new AstNodeTypeObject(fields, modifiers);
-  } else if (schema.type === 'boolean' || schema.type === 'integer' || schema.type === 'number' || schema.type === 'string') {
-    let schemaType = schema.type;
-
-    if (schema.type === 'integer') {
-      schemaType = 'number';
-      if (!modifiers.format) {
-        modifiers.format = 'int32';
-      }
+  } else if (
+    schema.type === 'boolean' ||
+    schema.type === 'integer' ||
+    schema.type === 'number' ||
+    schema.type === 'string' ||
+    schema.type == 'null'
+  ) {
+    return createPrimativeNode(schema.type, modifiers);
+  } else if (Array.isArray(schema.type)) {
+    const schemaTypeArray: string[] = schema.type;
+    const types: AstNodeType[] = [];
+    for (const schemaType of schemaTypeArray) {
+      types.push(createPrimativeNode(schemaType, {}));
     }
 
-    return new AstNodeTypePrimative(schemaType, modifiers);
+    return createUnionNode(types, modifiers);
   }
 
+  console.warn('Unknown schema type', schema);
   return new AstNodeTypePrimative('void', {});
 }
 
@@ -374,7 +380,7 @@ function generateResponse(response: OpenAPIV3.ReferenceObject | OpenAPIV3.Respon
     console.warn('ast generation for response object links is not implemented yet');
   }
 
-  return contentNodes.length === 0 ? undefined : contentNodes.length === 1 ? contentNodes[0] : new AstNodeTypeUnion(contentNodes, {});
+  return contentNodes.length === 0 ? undefined : createUnionNode(contentNodes, {});
 }
 
 function generateResponses(responses: OpenAPIV3.ResponsesObject): AstNodeType | undefined {
@@ -422,7 +428,7 @@ function generateResponses(responses: OpenAPIV3.ResponsesObject): AstNodeType | 
       console.warn('ast generation for response object links is not implemented yet');
     }
 
-    const content = contentNodes.length === 0 ? undefined : contentNodes.length === 1 ? contentNodes[0] : new AstNodeTypeUnion(contentNodes, {});
+    const content = contentNodes.length === 0 ? undefined : createUnionNode(contentNodes, {});
 
     responseNodes.push(new AstNodeTypeResponse(code, content, headersNodes, {}));
   }
@@ -433,7 +439,7 @@ function generateResponses(responses: OpenAPIV3.ResponsesObject): AstNodeType | 
     return response;
   }
 
-  return new AstNodeTypeUnion(responseNodes, { returns: returnComments });
+  return createUnionNode(responseNodes, { returns: returnComments });
 }
 
 function generateRequestBody(
@@ -464,6 +470,17 @@ function generateRequestBody(
   return new AstNodeTypeBody(contentNodes, { description, required });
 }
 
+function createPrimativeNode(primativeType: string, modifiers: AstNodeModifiers): AstNodeType {
+  if (primativeType === 'integer') {
+    primativeType = 'number';
+    if (!modifiers.format) {
+      modifiers.format = 'int32';
+    }
+  }
+
+  return new AstNodeTypePrimative(primativeType as AstNodeTypePrimativeTypes, modifiers);
+}
+
 function createCompositeNode(nodes: AstNodeType[], modifiers: AstNodeModifiers): AstNodeType {
   if (nodes.length === 0) {
     throw new Error('Nodes must not be an empty array');
@@ -487,6 +504,14 @@ function createCompositeNode(nodes: AstNodeType[], modifiers: AstNodeModifiers):
   }
 
   return modelTypes.length > 1 ? new AstNodeTypeComposite(modelTypes, modifiers) : modelTypes[0];
+}
+
+function createUnionNode(nodes: AstNodeType[], modifiers: AstNodeModifiers): AstNodeType {
+  if (nodes.length === 0) {
+    throw new Error('Nodes must not be an empty array');
+  }
+
+  return nodes.length === 1 ? nodes[0] : new AstNodeTypeUnion(nodes, modifiers);
 }
 
 function createOmitNode(model: AstNodeType, omitType: 'readOnly' | 'writeOnly', modelMappings: Map<string, AstNodeDeclaration>): AstNodeType {
