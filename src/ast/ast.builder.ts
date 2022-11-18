@@ -6,7 +6,7 @@ import { AstNodeDeclaration, ParameterLocations } from './ast.node.declaration';
 import { AstNodeTypeReference } from './ast.node.type.reference';
 import { AstNodeTypeObject } from './ast.node.type.object';
 import { AstNodeType } from './ast.node.type';
-import { AstNodeTypePrimative, AstNodeTypePrimativeTypes } from './ast.node.type.primative';
+import { AstNodeTypePrimative } from './ast.node.type.primative';
 import { AstNodeTypeComposite } from './ast.node.type.composite';
 import { AstNodeTypeArray } from './ast.node.type.array';
 import { AstNodeOperation, AstNodeOperationHttpMethod } from './ast.node.operation';
@@ -478,7 +478,11 @@ function createPrimativeNode(primativeType: string, modifiers: AstNodeModifiers)
     }
   }
 
-  return new AstNodeTypePrimative(primativeType as AstNodeTypePrimativeTypes, modifiers);
+  if (primativeType === 'string' && modifiers.enum) {
+    primativeType = modifiers.enum.map(x => `'${x}'`).join(' | ');
+  }
+
+  return new AstNodeTypePrimative(primativeType, modifiers);
 }
 
 function createCompositeNode(nodes: AstNodeType[], modifiers: AstNodeModifiers): AstNodeType {
