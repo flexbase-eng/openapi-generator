@@ -23,4 +23,5 @@ export interface AstNodeModifiers {
   writeOnly?: boolean;
   deprecated?: boolean;
   returns?: string[];
+  extensions?: Record<string, string>;
 }

@@ -147,6 +147,7 @@ function generateTypeFromSchema(schema: OpenAPIV3.SchemaObject | OpenAPIV3.Refer
     readOnly: schema.readOnly,
     writeOnly: schema.writeOnly,
     deprecated: schema.deprecated,
+    extensions: getExtensions(schema),
   };
 
   if (IsArraySchemaObject(schema)) {
@@ -290,6 +291,7 @@ function generateOperationFromPathItem(
     const description = operationObject.description ?? pathItem.description;
     const deprecated = operationObject.deprecated;
     let returns: string[] | undefined;
+    const extensions = getExtensions(operationObject);
 
     const responses = generateResponses(operationObject.responses);
 
@@ -309,7 +311,7 @@ function generateOperationFromPathItem(
       pathPattern,
       responses,
       request,
-      { title, description, deprecated, returns }
+      { title, description, deprecated, returns, extensions }
     );
     nodeOperations.push(nodeOperation);
   }
@@ -572,6 +574,20 @@ export function createDeclarationMappings(declarations: AstNodeDeclaration[]): M
   });
 
   return mapping;
+}
+
+function getExtensions(obj: any): Record<string, string> | undefined {
+  const extensions: Record<string, string> = {};
+
+  const keys = Object.keys(obj).filter(key => key.startsWith('x-'));
+
+  if (keys.length === 0) {
+    return undefined;
+  }
+
+  keys.forEach(key => (extensions[key] = obj[key]));
+
+  return extensions;
 }
 
 export function convertAstToPoco(ast: AbstractSyntaxTree): any {
