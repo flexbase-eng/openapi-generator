@@ -49,6 +49,8 @@ export async function main(): Promise<void> {
           const model = declarationLookups.get(rendered);
           if (model) {
             return model.generatedIdentifier.value;
+          } else {
+            console.warn(`declaration lookup unable to find ${rendered}`);
           }
           return rendered;
         };

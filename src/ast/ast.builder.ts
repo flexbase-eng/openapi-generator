@@ -44,6 +44,10 @@ export function generateAst(document: OpenAPIV3.Document): AbstractSyntaxTree {
   return { declarations, operations, title, description, version, name };
 }
 
+function cleanName(name: string): string {
+  return name.replace('.', '_');
+}
+
 function generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDeclaration[] {
   const declarations: AstNodeDeclaration[] = [];
   const modelMappings = new Map<string, AstNodeDeclaration>();
@@ -59,7 +63,7 @@ function generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDe
       const nodeType = generateTypeFromSchema(schema);
       const modifiers = nodeType.modifiers;
       nodeType.modifiers = {};
-      const declaration = new AstNodeDeclaration(name, generatedName, nodeType, modifiers, refName);
+      const declaration = new AstNodeDeclaration(cleanName(name), cleanName(generatedName), nodeType, modifiers, refName);
       declarations.push(declaration);
       modelMappings.set(refName, declaration);
     }
@@ -77,7 +81,7 @@ function generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDe
       const modifiers = nodeType.modifiers;
       nodeType.modifiers = {};
 
-      declarations.push(new AstNodeDeclaration(name, generatedName, nodeType, modifiers, refName));
+      declarations.push(new AstNodeDeclaration(cleanName(name), cleanName(generatedName), nodeType, modifiers, refName));
     }
   }
 
@@ -96,7 +100,7 @@ function generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDe
 
       const modifiers = nodeType.modifiers;
       nodeType.modifiers = {};
-      declarations.push(new AstNodeDeclaration(name, generatedName, nodeType, modifiers, refName));
+      declarations.push(new AstNodeDeclaration(cleanName(name), cleanName(generatedName), nodeType, modifiers, refName));
     }
   }
 
@@ -118,7 +122,7 @@ function generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDe
 
       const modifiers = type.modifiers;
       type.modifiers = {};
-      declarations.push(new AstNodeDeclaration(name, generatedName, type, modifiers, refName, location));
+      declarations.push(new AstNodeDeclaration(cleanName(name), cleanName(generatedName), type, modifiers, refName, location));
     }
   }
 
@@ -165,6 +169,9 @@ function generateTypeFromSchema(schema: OpenAPIV3.SchemaObject | OpenAPIV3.Refer
   if (schema.allOf) {
     const compositeTypes = schema.allOf.map(x => generateTypeFromSchema(x));
     return createCompositeNode(compositeTypes, modifiers);
+  } else if (schema.anyOf) {
+    const unionTypes = schema.anyOf.map(x => generateTypeFromSchema(x));
+    return createUnionNode(unionTypes, modifiers);
   } else if (schema.type === 'object') {
     const fields: AstNodeDeclaration[] = [];
 
@@ -544,24 +551,7 @@ function createUnionNode(nodes: AstNodeType[], modifiers: AstNodeModifiers): Ast
     throw new Error('Nodes must not be an empty array');
   }
 
-  const mergeNodes: AstNodeTypeObject[] = [];
-  const modelTypes: AstNodeType[] = [];
-
-  for (const node of nodes) {
-    if (IsObjectNode(node)) {
-      mergeNodes.push(node);
-    } else {
-      modelTypes.push(node);
-    }
-  }
-
-  const merged: AstNodeDeclaration[] = [];
-  mergeNodes.forEach(x => merged.push(...x.fields));
-  if (merged.length > 0) {
-    modelTypes.push(new AstNodeTypeObject(merged, {}));
-  }
-
-  return modelTypes.length > 1 ? new AstNodeTypeUnion(modelTypes, modifiers) : modelTypes[0];
+  return nodes.length === 1 ? nodes[0] : new AstNodeTypeUnion(nodes, modifiers);
 }
 
 function createOmitNode(model: AstNodeType, omitType: 'readOnly' | 'writeOnly', modelMappings: Map<string, AstNodeDeclaration>): AstNodeType {
