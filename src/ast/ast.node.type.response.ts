@@ -5,10 +5,10 @@ export class AstNodeTypeResponse extends AstNodeType {
   constructor(
     private readonly _statusCode: string,
     private readonly _content: AstNodeType | undefined,
-    private readonly _headers: AstNodeType[],
+    private _headers: AstNodeType[],
     modifiers: AstNodeModifiers
   ) {
-    super(modifiers);
+    super('response', modifiers);
   }
 
   get statusCode(): string {
@@ -19,7 +19,11 @@ export class AstNodeTypeResponse extends AstNodeType {
     return this._content;
   }
 
-  get headers(): Readonly<AstNodeType[]> {
+  get headers(): AstNodeType[] {
     return this._headers;
+  }
+
+  set headers(value: AstNodeType[]) {
+    this._headers = value;
   }
 }

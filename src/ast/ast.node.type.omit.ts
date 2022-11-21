@@ -3,7 +3,7 @@ import { AstNodeType } from './ast.node.type';
 
 export class AstNodeTypeOmit extends AstNodeType {
   constructor(private readonly _originalType: AstNodeType, private readonly _omitFields: string[], modifiers: AstNodeModifiers) {
-    super(modifiers);
+    super('omit', modifiers);
   }
 
   get originalType(): AstNodeType {

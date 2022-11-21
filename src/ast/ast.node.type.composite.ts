@@ -3,7 +3,7 @@ import { AstNodeType } from './ast.node.type';
 
 export class AstNodeTypeComposite extends AstNodeType {
   constructor(private readonly _compositeTypes: AstNodeType[], modifiers: AstNodeModifiers) {
-    super(modifiers);
+    super('composite', modifiers);
   }
 
   get compositeTypes(): Readonly<AstNodeType[]> {

@@ -3,7 +3,7 @@ import { AstNodeType } from './ast.node.type';
 
 export class AstNodeTypeUnion extends AstNodeType {
   constructor(private readonly _unionTypes: AstNodeType[], modifiers: AstNodeModifiers) {
-    super(modifiers);
+    super('union', modifiers);
   }
 
   get unionTypes(): Readonly<AstNodeType[]> {

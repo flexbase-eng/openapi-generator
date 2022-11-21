@@ -89,7 +89,7 @@ function generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDe
       const refName = `#/components/responses/${name}`;
       const generatedName = `${name}Response`;
 
-      const nodeType = generateResponse(schema);
+      const nodeType = generateResponse('', schema);
       if (!nodeType) {
         continue;
       }
@@ -108,7 +108,14 @@ function generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDe
       const refName = `#/components/parameters/${name}`;
       const generatedName = `${name}Parameter`;
 
-      const { location, type } = generateParameter(schema);
+      const parameterAndLocation = generateParameter(schema);
+      if (!parameterAndLocation) {
+        continue;
+      }
+
+      const type = parameterAndLocation.type;
+      const location = parameterAndLocation.location;
+
       const modifiers = type.modifiers;
       type.modifiers = {};
       declarations.push(new AstNodeDeclaration(name, generatedName, type, modifiers, refName, location));
@@ -224,14 +231,83 @@ function generateOperationFromPathItem(
 ): AstNodeOperation[] {
   const nodeOperations: AstNodeOperation[] = [];
 
+  const { queryNodes, headerNodes, pathNodes, cookieNodes } = generateParameters(pathItem.parameters, modelMappings);
+
+  for (const method in OpenAPIV3.HttpMethods) {
+    const operationObject = pathItem[method.toLowerCase() as OpenAPIV3.HttpMethods];
+    if (!operationObject) {
+      continue;
+    }
+
+    const title = operationObject.summary ?? pathItem.summary;
+    const description = operationObject.description ?? pathItem.description;
+    const deprecated = operationObject.deprecated;
+    let returns: string[] | undefined;
+    const extensions = getExtensions(operationObject);
+
+    const responses = generateResponses(operationObject.responses);
+
+    // pull response returns to populate the operation comments
+    if (responses && responses.modifiers.returns) {
+      returns = responses.modifiers.returns;
+      responses.modifiers.returns = undefined;
+    }
+
+    const parameters = generateParameters(operationObject.parameters, modelMappings);
+    parameters.cookieNodes.push(...cookieNodes);
+    parameters.headerNodes.push(...headerNodes);
+    parameters.pathNodes.push(...pathNodes);
+    parameters.queryNodes.push(...queryNodes);
+
+    const cookie = parameters.cookieNodes.length > 0 ? createCompositeNode(parameters.cookieNodes, {}) : undefined;
+    const header = parameters.headerNodes.length > 0 ? createCompositeNode(parameters.headerNodes, {}) : undefined;
+    const path = parameters.pathNodes.length > 0 ? createCompositeNode(parameters.pathNodes, {}) : undefined;
+    const query = parameters.queryNodes.length > 0 ? createCompositeNode(parameters.queryNodes, {}) : undefined;
+
+    const requestBody = operationObject.requestBody ? generateRequestBody(operationObject.requestBody, modelMappings) : undefined;
+
+    const request = new AstNodeTypeRequest(requestBody, path, cookie, header, query, { description, title });
+
+    const nodeOperation = new AstNodeOperation(
+      (operationObject.operationId ?? 'OperationId_NOTDEFINED').replace(/-./g, x => x[1].toUpperCase()),
+      capitalize(method) as AstNodeOperationHttpMethod,
+      pathPattern,
+      responses,
+      request,
+      { title, description, deprecated, returns, extensions }
+    );
+    nodeOperations.push(nodeOperation);
+  }
+
+  return nodeOperations;
+}
+
+interface ParameterNodes {
+  queryNodes: AstNodeType[];
+  headerNodes: AstNodeType[];
+  pathNodes: AstNodeType[];
+  cookieNodes: AstNodeType[];
+}
+
+function generateParameters(
+  parameters: (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[] | undefined,
+  modelMappings: Map<string, AstNodeDeclaration>
+): ParameterNodes {
   const queryNodes: AstNodeType[] = [];
   const headerNodes: AstNodeType[] = [];
   const pathNodes: AstNodeType[] = [];
   const cookieNodes: AstNodeType[] = [];
 
-  if (pathItem.parameters) {
-    for (const param of pathItem.parameters) {
-      const { location, type } = generateParameter(param);
+  if (parameters) {
+    for (const param of parameters) {
+      const parameterAndLocation = generateParameter(param);
+      if (!parameterAndLocation) {
+        continue;
+      }
+
+      const location = parameterAndLocation.location;
+      const type = parameterAndLocation.type;
+
       if (location === 'cookie') {
         cookieNodes.push(type);
       } else if (location === 'header') {
@@ -243,9 +319,9 @@ function generateOperationFromPathItem(
       } else if (location == 'reference' && IsReferenceNode(type)) {
         const refNode = modelMappings.get(type.identifier.value);
         if (!refNode) {
-          console.warn(`${generateOperationFromPathItem.name}: Unable to find reference ${type.identifier.value}`, type);
+          console.warn(`${generateParameters.name}: Unable to find reference ${type.identifier.value}`, type);
         } else if (!refNode.parameterLocation) {
-          console.warn(`${generateOperationFromPathItem.name}: Reference missing parameter location ${type.identifier.value}`, type);
+          console.warn(`${generateParameters.name}: Reference missing parameter location ${type.identifier.value}`, type);
         } else {
           const location = refNode.parameterLocation;
           const node = type;
@@ -276,53 +352,15 @@ function generateOperationFromPathItem(
     }
   }
 
-  const cookie = cookieNodes.length > 0 ? createCompositeNode(cookieNodes, {}) : undefined;
-  const header = headerNodes.length > 0 ? createCompositeNode(headerNodes, {}) : undefined;
-  const path = pathNodes.length > 0 ? createCompositeNode(pathNodes, {}) : undefined;
-  const query = queryNodes.length > 0 ? createCompositeNode(queryNodes, {}) : undefined;
-
-  for (const method in OpenAPIV3.HttpMethods) {
-    const operationObject = pathItem[method.toLowerCase() as OpenAPIV3.HttpMethods];
-    if (!operationObject) {
-      continue;
-    }
-
-    const title = operationObject.summary ?? pathItem.summary;
-    const description = operationObject.description ?? pathItem.description;
-    const deprecated = operationObject.deprecated;
-    let returns: string[] | undefined;
-    const extensions = getExtensions(operationObject);
-
-    const responses = generateResponses(operationObject.responses);
-
-    // pull response returns to populate the operation comments
-    if (responses && responses.modifiers.returns) {
-      returns = responses.modifiers.returns;
-      responses.modifiers.returns = undefined;
-    }
-
-    const requestBody = operationObject.requestBody ? generateRequestBody(operationObject.requestBody, modelMappings) : undefined;
-
-    const request = new AstNodeTypeRequest(requestBody, path, cookie, header, query, { description, title });
-
-    const nodeOperation = new AstNodeOperation(
-      (operationObject.operationId ?? 'OperationId_NOTDEFINED').replace(/-./g, x => x[1].toUpperCase()),
-      capitalize(method) as AstNodeOperationHttpMethod,
-      pathPattern,
-      responses,
-      request,
-      { title, description, deprecated, returns, extensions }
-    );
-    nodeOperations.push(nodeOperation);
-  }
-
-  return nodeOperations;
+  return { queryNodes, headerNodes, pathNodes, cookieNodes };
 }
 
-function generateParameter(parameter: OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject): {
+interface ParameterLocationAndNode {
   location: ParameterLocations;
   type: AstNodeType;
-} {
+}
+
+function generateParameter(parameter: OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject): ParameterLocationAndNode | undefined {
   if (IsReferenceObject(parameter)) {
     return { location: 'reference', type: generateTypeFromSchema(parameter) };
   }
@@ -330,11 +368,20 @@ function generateParameter(parameter: OpenAPIV3.ReferenceObject | OpenAPIV3.Para
   const name = parameter.name;
   const location = parameter.in as ParameterLocations;
 
+  if (!name) {
+    console.warn(`Missing ${location} parameter name`);
+    return undefined;
+  }
+
   const nodeType = parameter.schema ? generateTypeFromSchema(parameter.schema) : new AstNodeTypePrimative('void', {});
   nodeType.modifiers.required = parameter.required;
   nodeType.modifiers.deprecated = parameter.deprecated;
 
-  const declaration = new AstNodeDeclaration(name, name, nodeType, { required: parameter.required, deprecated: parameter.deprecated });
+  const required = parameter.required;
+  const deprecated = parameter.deprecated;
+  const description = parameter.description;
+
+  const declaration = new AstNodeDeclaration(name, name, nodeType, { description, required, deprecated });
 
   return { location, type: new AstNodeTypeObject([declaration], {}) };
 }
@@ -351,12 +398,12 @@ function generateHeader(header: OpenAPIV3.ReferenceObject | OpenAPIV3.HeaderObje
   return nodeType;
 }
 
-function generateResponse(response: OpenAPIV3.ReferenceObject | OpenAPIV3.ResponseObject): AstNodeType | undefined {
+function generateResponse(code: string, response: OpenAPIV3.ReferenceObject | OpenAPIV3.ResponseObject): AstNodeTypeResponse | undefined {
   if (IsReferenceObject(response)) {
-    return new AstNodeTypeReference(response.$ref, {});
+    return new AstNodeTypeResponse(code, new AstNodeTypeReference(response.$ref, {}), [], {});
   }
 
-  //const description = response.description;
+  const description = response.description;
   const contentNodes: AstNodeTypeContent[] = [];
   const headersNodes: AstNodeType[] = [];
 
@@ -382,7 +429,13 @@ function generateResponse(response: OpenAPIV3.ReferenceObject | OpenAPIV3.Respon
     console.warn('ast generation for response object links is not implemented yet');
   }
 
-  return contentNodes.length === 0 ? undefined : createUnionNode(contentNodes, {});
+  const content = contentNodes.length === 0 ? undefined : createUnionNode(contentNodes, { description });
+
+  if (content || headersNodes.length > 0) {
+    return new AstNodeTypeResponse(code, content, headersNodes, {});
+  }
+
+  return undefined;
 }
 
 function generateResponses(responses: OpenAPIV3.ResponsesObject): AstNodeType | undefined {
@@ -398,41 +451,15 @@ function generateResponses(responses: OpenAPIV3.ResponsesObject): AstNodeType | 
     const code = responseEntry[0];
     const responseObject = responseEntry[1];
 
-    if (IsReferenceObject(responseObject)) {
-      responseNodes.push(new AstNodeTypeResponse(code, new AstNodeTypeReference(responseObject.$ref, {}), [], {}));
+    const responseNode = generateResponse(code, responseObject);
+
+    if (!responseNode) {
       continue;
     }
 
-    const description = responseObject.description;
-    const contentNodes: AstNodeTypeContent[] = [];
-    const headersNodes: AstNodeType[] = [];
-    returnComments.push(`${code} - ${description}`);
+    returnComments.push(`${code} - ${responseNode.modifiers.description}`);
 
-    if (responseObject.content) {
-      const contentMediaTypes = Object.keys(responseObject.content);
-      for (const mediaType of contentMediaTypes) {
-        const schema = responseObject.content[mediaType].schema;
-        if (schema) {
-          const nodeType = generateTypeFromSchema(schema);
-          contentNodes.push(new AstNodeTypeContent(mediaType, nodeType, {}));
-        }
-      }
-    }
-
-    if (responseObject.headers) {
-      const responseHeaders = Object.keys(responseObject.headers);
-      for (const header of responseHeaders) {
-        headersNodes.push(generateHeader(responseObject.headers[header]));
-      }
-    }
-
-    if (responseObject.links) {
-      console.warn('ast generation for response object links is not implemented yet');
-    }
-
-    const content = contentNodes.length === 0 ? undefined : createUnionNode(contentNodes, {});
-
-    responseNodes.push(new AstNodeTypeResponse(code, content, headersNodes, {}));
+    responseNodes.push(responseNode);
   }
 
   if (responseNodes.length === 1) {
@@ -517,7 +544,24 @@ function createUnionNode(nodes: AstNodeType[], modifiers: AstNodeModifiers): Ast
     throw new Error('Nodes must not be an empty array');
   }
 
-  return nodes.length === 1 ? nodes[0] : new AstNodeTypeUnion(nodes, modifiers);
+  const mergeNodes: AstNodeTypeObject[] = [];
+  const modelTypes: AstNodeType[] = [];
+
+  for (const node of nodes) {
+    if (IsObjectNode(node)) {
+      mergeNodes.push(node);
+    } else {
+      modelTypes.push(node);
+    }
+  }
+
+  const merged: AstNodeDeclaration[] = [];
+  mergeNodes.forEach(x => merged.push(...x.fields));
+  if (merged.length > 0) {
+    modelTypes.push(new AstNodeTypeObject(merged, {}));
+  }
+
+  return modelTypes.length > 1 ? new AstNodeTypeUnion(modelTypes, modifiers) : modelTypes[0];
 }
 
 function createOmitNode(model: AstNodeType, omitType: 'readOnly' | 'writeOnly', modelMappings: Map<string, AstNodeDeclaration>): AstNodeType {
@@ -537,7 +581,7 @@ function createOmitNode(model: AstNodeType, omitType: 'readOnly' | 'writeOnly', 
   return omitDeclarations.length > 0 ? new AstNodeTypeOmit(model, omitDeclarations, {}) : model;
 }
 
-function getOmitDeclarations(model: AstNodeType, omitType: 'readOnly' | 'writeOnly'): string[] {
+function getOmitDeclarations(model: AstNode, omitType: 'readOnly' | 'writeOnly'): string[] {
   const omitDeclarations: string[] = [];
 
   if (IsObjectNode(model)) {
@@ -549,13 +593,13 @@ function getOmitDeclarations(model: AstNodeType, omitType: 'readOnly' | 'writeOn
   } else if (IsDeclarationNode(model)) {
     return getOmitDeclarations(model.type, omitType);
   } else if (IsArrayNode(model)) {
-    console.warn(`${getOmitDeclarations.name}: need to handle array node`);
+    console.error(`${getOmitDeclarations.name}: need to handle array node`);
   } else if (IsUnionNode(model)) {
-    console.warn(`${getOmitDeclarations.name}: need to handle union node`);
+    console.error(`${getOmitDeclarations.name}: need to handle union node`);
   } else if (IsCompositeNode(model)) {
-    console.warn(`${getOmitDeclarations.name}: need to handle composite node`);
+    console.error(`${getOmitDeclarations.name}: need to handle composite node`);
   } else {
-    console.warn(`${getOmitDeclarations.name}: need to handle node`, model);
+    console.error(`${getOmitDeclarations.name}: need to handle node`, model);
   }
 
   return omitDeclarations;
@@ -590,6 +634,103 @@ function getExtensions(obj: any): Record<string, string> | undefined {
   return extensions;
 }
 
+function makeDeclarationGlobal(name: string, node: AstNodeType): { declaration: AstNodeDeclaration; refNode: AstNodeTypeReference } {
+  const refName = `#/components/generated/${name}`;
+  const modifiers = node.modifiers;
+  node.modifiers = {};
+  const declaration = new AstNodeDeclaration(name, name, node, modifiers, refName);
+  const refNode = new AstNodeTypeReference(refName, {});
+  return { declaration, refNode };
+}
+
+function makeResponseGlobal(operationId: string, response: AstNodeTypeResponse): AstNodeDeclaration[] {
+  const declarations: AstNodeDeclaration[] = [];
+
+  if (response.content && IsContentNode(response.content) && !IsReferenceNode(response.content.contentType)) {
+    const { declaration, refNode } = makeDeclarationGlobal(`${operationId}Response`, response.content.contentType);
+
+    declarations.push(declaration);
+    response.content.contentType = refNode;
+  }
+
+  if (response.headers) {
+    const updatedHeaders: AstNodeType[] = [];
+    for (const header of response.headers) {
+      if (IsReferenceNode(header)) {
+        updatedHeaders.push(header);
+        continue;
+      }
+
+      const { declaration, refNode } = makeDeclarationGlobal(`${operationId}Response`, header);
+
+      declarations.push(declaration);
+      updatedHeaders.push(refNode);
+    }
+
+    response.headers = updatedHeaders;
+  }
+
+  return declarations;
+}
+
+export function makeOperationDeclarationsGlobal(ast: AbstractSyntaxTree): AbstractSyntaxTree {
+  for (const operation of ast.operations) {
+    const operationId = operation.identifier.value;
+
+    if (operation.responses) {
+      const responses = operation.responses;
+      if (IsResponseNode(responses)) {
+        ast.declarations.push(...makeResponseGlobal(operationId, responses));
+      } else if (IsUnionNode(responses)) {
+        const { declaration, refNode } = makeDeclarationGlobal(`${operationId}Response`, responses);
+        ast.declarations.push(declaration);
+        operation.responses = refNode;
+      }
+    }
+
+    if (!IsRequestNode(operation.request)) {
+      continue;
+    }
+
+    if (operation.request.pathParameters && !IsReferenceNode(operation.request.pathParameters)) {
+      const { declaration, refNode } = makeDeclarationGlobal(`${operationId}PathParameter`, operation.request.pathParameters);
+
+      ast.declarations.push(declaration);
+      operation.request.pathParameters = refNode;
+    }
+
+    if (operation.request.cookieParameters && !IsReferenceNode(operation.request.cookieParameters)) {
+      const { declaration, refNode } = makeDeclarationGlobal(`${operationId}CookieParameter`, operation.request.cookieParameters);
+
+      ast.declarations.push(declaration);
+      operation.request.cookieParameters = refNode;
+    }
+
+    if (operation.request.headerParameters && !IsReferenceNode(operation.request.headerParameters)) {
+      const { declaration, refNode } = makeDeclarationGlobal(`${operationId}HeaderParameter`, operation.request.headerParameters);
+
+      ast.declarations.push(declaration);
+      operation.request.headerParameters = refNode;
+    }
+
+    if (operation.request.queryParameters && !IsReferenceNode(operation.request.queryParameters)) {
+      const { declaration, refNode } = makeDeclarationGlobal(`${operationId}QueryParameter`, operation.request.queryParameters);
+
+      ast.declarations.push(declaration);
+      operation.request.queryParameters = refNode;
+    }
+
+    if (operation.request.body && !IsReferenceNode(operation.request.body)) {
+      const { declaration, refNode } = makeDeclarationGlobal(`${operationId}Body`, operation.request.body);
+
+      ast.declarations.push(declaration);
+      operation.request.body = refNode;
+    }
+  }
+
+  return ast;
+}
+
 export function convertAstToPoco(ast: AbstractSyntaxTree): any {
   return {
     title: ast.title,
@@ -602,6 +743,10 @@ export function convertAstToPoco(ast: AbstractSyntaxTree): any {
 }
 
 function convertNode(node: AstNode): any {
+  if (!node) {
+    throw Error();
+  }
+
   switch (node.kind) {
     case 'declaration':
       return convertDeclaration(node as AstNodeDeclaration);
@@ -654,6 +799,7 @@ function convertOperation(node: AstNodeOperation): any {
 function convertType(node: AstNodeType) {
   const json = {
     kind: node.kind,
+    kindType: node.kindType,
     modifiers: node.modifiers,
   };
 
@@ -670,7 +816,12 @@ function convertType(node: AstNodeType) {
   } else if (IsPrimativeNode(node)) {
     return { ...json, primativeType: node.primativeType };
   } else if (IsResponseNode(node)) {
-    return { ...json, statusCode: node.statusCode, content: node.content ? convertNode(node.content) : undefined, headers: node.headers };
+    return {
+      ...json,
+      statusCode: node.statusCode,
+      content: node.content ? convertNode(node.content) : undefined,
+      headers: node.headers.length > 0 ? node.headers.map(x => convertNode(x)) : undefined,
+    };
   } else if (IsRequestNode(node)) {
     return {
       ...json,
@@ -690,3 +841,13 @@ function convertType(node: AstNodeType) {
     throw Error('Unknown object node in ast', { cause: node });
   }
 }
+
+// export function flattenDeclaration(node: AstNodeDeclaration) {
+//   const newType = flattenType(node.type);
+
+//   //node.type = newType;
+
+//   return node;
+// }
+
+// function flattenType(node: AstNodeType): AstNodeType {}

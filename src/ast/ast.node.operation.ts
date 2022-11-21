@@ -12,7 +12,7 @@ export class AstNodeOperation extends AstNode {
     identifier: AstNodeLiteral | string,
     private readonly _httpMethod: AstNodeOperationHttpMethod,
     private readonly _path: string,
-    private readonly _responses: AstNodeType | undefined,
+    private _responses: AstNodeType | undefined,
     private readonly _request: AstNodeType | undefined,
     modifiers: AstNodeModifiers
   ) {
@@ -38,6 +38,11 @@ export class AstNodeOperation extends AstNode {
 
   get responses(): AstNodeType | undefined {
     return this._responses;
+  }
+
+  /** @internal */
+  set responses(value: AstNodeType | undefined) {
+    this._responses = value;
   }
 
   get request(): AstNodeType | undefined {

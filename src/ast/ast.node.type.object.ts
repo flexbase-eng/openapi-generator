@@ -4,7 +4,7 @@ import { AstNodeType } from './ast.node.type';
 
 export class AstNodeTypeObject extends AstNodeType {
   constructor(private readonly _fields: AstNodeDeclaration[], modifiers: AstNodeModifiers) {
-    super(modifiers);
+    super('object', modifiers);
   }
 
   get fields(): Readonly<AstNodeDeclaration[]> {

@@ -6,7 +6,7 @@ export class AstNodeTypeReference extends AstNodeType {
   private readonly _identifier: AstNodeLiteral;
 
   constructor(identifier: AstNodeLiteral | string, modifiers: AstNodeModifiers) {
-    super(modifiers);
+    super('reference', modifiers);
     if (typeof identifier === 'string') {
       this._identifier = new AstNodeLiteral(identifier, {});
     } else {

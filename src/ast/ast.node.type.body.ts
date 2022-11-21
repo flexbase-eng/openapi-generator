@@ -4,7 +4,7 @@ import { AstNodeTypeContent } from './ast.node.type.content';
 
 export class AstNodeTypeBody extends AstNodeType {
   constructor(private readonly _contents: AstNodeTypeContent[], modifiers: AstNodeModifiers) {
-    super(modifiers);
+    super('body', modifiers);
   }
 
   get contents(): AstNodeTypeContent[] {

@@ -15,7 +15,6 @@ protected abstract _{{#identifier}}{{> literal}}{{/identifier}}(
     {{/request.body}}
 ): Promise<{{name}}ControllerResponse<{{#responses}}{{> type}}{{/responses}}>>;
 {{/functions.removeNewLines}}
-{{#hasScopes}}@Scopes({{#scopes}}'{{.}}',{{/scopes}}){{/hasScopes}}
 @{{httpMethod}}('{{#functions.formatPath}}{{& path}}{{/functions.formatPath}}')
 {{#functions.removeNewLines}}
 {{#identifier}}{{> literal}}{{/identifier}}(

@@ -3,7 +3,7 @@ import { AstNodeType } from './ast.node.type';
 
 export class AstNodeTypeArray extends AstNodeType {
   constructor(private readonly _arrayType: AstNodeType, modifiers: AstNodeModifiers) {
-    super(modifiers);
+    super('array', modifiers);
   }
 
   get arrayType(): AstNodeType {

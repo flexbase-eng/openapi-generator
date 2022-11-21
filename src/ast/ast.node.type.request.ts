@@ -10,7 +10,7 @@ export class AstNodeTypeRequest extends AstNodeType {
     private _queryParameters: AstNodeType | undefined,
     modifiers: AstNodeModifiers
   ) {
-    super(modifiers);
+    super('request', modifiers);
   }
 
   get body(): AstNodeType | undefined {
