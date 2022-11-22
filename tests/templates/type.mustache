@@ -1,5 +1,5 @@
 {{#modifiers}}{{> comments}}{{/modifiers}}
-{{#functions.isArrayNode}}[{{#arrayType}}{{> type}}{{/arrayType}}]{{/functions.isArrayNode}}
+{{#functions.isArrayNode}}Array<{{#arrayType}}{{> type}}{{/arrayType}}>{{/functions.isArrayNode}}
 {{#functions.isCompositeNode}}{{#functions.joinTypes(&)}}{{#compositeTypes}}{{> type}} &{{/compositeTypes}}{{/functions.joinTypes(&)}}{{/functions.isCompositeNode}}
 {{#functions.isObjectNode}}{ {{#fields}}{{> field}},{{/fields}} }{{/functions.isObjectNode}}
 {{#functions.isPrimativeNode}}{{& primativeType}}{{/functions.isPrimativeNode}}
@@ -7,5 +7,5 @@
 {{#functions.isUnionNode}}{{#functions.joinTypes(|)}}{{#unionTypes}}{{> type}} |{{/unionTypes}}{{/functions.joinTypes(|)}}{{/functions.isUnionNode}}
 {{#functions.isContentNode}} {{#contentType}}{{> type}}{{/contentType}}{{/functions.isContentNode}}
 {{#functions.isBodyNode}} {{#contents}}{{> type}}{{/contents}}{{/functions.isBodyNode}}
-{{#functions.isResponseNode}} {{#content}}{{> type}}{{/content}}{{/functions.isResponseNode}}
+{{#functions.isResponseNode}} {{#content}}{{> type}}{{/content}}{{#headers}}, {{> type}}{{/headers}}{{/functions.isResponseNode}}
 {{#functions.isOmitNode}} Omit<{{#originalType}}{{> type}}{{/originalType}}, {{#functions.joinTypes(|)}}{{#omitFields}}'{{& .}}' | {{/omitFields}}{{/functions.joinTypes(|)}}>{{/functions.isOmitNode}}

@@ -8,10 +8,10 @@
 ------------------------------------------------------------ */
 
 {{#ast}}
-export type {{name}}ControllerResponse<T> = {
+export type {{name}}ControllerResponse<BODY, HEADER = Record<string, any>> = {
     $status?: number,
-    $headers?: Record<string, any>,
-    $body: T,
+    $headers?: HEADER,
+    $body: BODY,
 };
 
 {{#declarations}}

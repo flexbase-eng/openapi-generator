@@ -5,7 +5,7 @@ export class AstNodeTypeResponse extends AstNodeType {
   constructor(
     private readonly _statusCode: string,
     private readonly _content: AstNodeType | undefined,
-    private _headers: AstNodeType[],
+    private _headers: AstNodeType | undefined,
     modifiers: AstNodeModifiers
   ) {
     super('response', modifiers);
@@ -19,11 +19,11 @@ export class AstNodeTypeResponse extends AstNodeType {
     return this._content;
   }
 
-  get headers(): AstNodeType[] {
+  get headers(): AstNodeType | undefined {
     return this._headers;
   }
 
-  set headers(value: AstNodeType[]) {
+  set headers(value: AstNodeType | undefined) {
     this._headers = value;
   }
 }

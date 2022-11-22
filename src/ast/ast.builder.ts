@@ -172,6 +172,9 @@ function generateTypeFromSchema(schema: OpenAPIV3.SchemaObject | OpenAPIV3.Refer
   } else if (schema.anyOf) {
     const unionTypes = schema.anyOf.map(x => generateTypeFromSchema(x));
     return createUnionNode(unionTypes, modifiers);
+  } else if (schema.oneOf) {
+    const unionTypes = schema.oneOf.map(x => generateTypeFromSchema(x));
+    return createUnionNode(unionTypes, modifiers);
   } else if (schema.type === 'object') {
     const fields: AstNodeDeclaration[] = [];
 
@@ -393,7 +396,7 @@ function generateParameter(parameter: OpenAPIV3.ReferenceObject | OpenAPIV3.Para
   return { location, type: new AstNodeTypeObject([declaration], {}) };
 }
 
-function generateHeader(header: OpenAPIV3.ReferenceObject | OpenAPIV3.HeaderObject): AstNodeType {
+function generateHeader(name: string, header: OpenAPIV3.ReferenceObject | OpenAPIV3.HeaderObject): AstNodeType {
   if (IsReferenceObject(header)) {
     return generateTypeFromSchema(header);
   }
@@ -402,17 +405,24 @@ function generateHeader(header: OpenAPIV3.ReferenceObject | OpenAPIV3.HeaderObje
   nodeType.modifiers.required = header.required;
   nodeType.modifiers.deprecated = header.deprecated;
 
-  return nodeType;
+  const required = header.required;
+  const deprecated = header.deprecated;
+  const description = header.description;
+
+  const declaration = new AstNodeDeclaration(name, name, nodeType, { description, required, deprecated });
+
+  return new AstNodeTypeObject([declaration], {});
 }
 
 function generateResponse(code: string, response: OpenAPIV3.ReferenceObject | OpenAPIV3.ResponseObject): AstNodeTypeResponse | undefined {
   if (IsReferenceObject(response)) {
-    return new AstNodeTypeResponse(code, new AstNodeTypeReference(response.$ref, {}), [], {});
+    return new AstNodeTypeResponse(code, new AstNodeTypeReference(response.$ref, {}), undefined, {});
   }
 
   const description = response.description;
   const contentNodes: AstNodeTypeContent[] = [];
-  const headersNodes: AstNodeType[] = [];
+
+  let headerNode: AstNodeType | undefined;
 
   if (response.content) {
     const contentMediaTypes = Object.keys(response.content);
@@ -426,10 +436,12 @@ function generateResponse(code: string, response: OpenAPIV3.ReferenceObject | Op
   }
 
   if (response.headers) {
+    const headersNodes: AstNodeType[] = [];
     const responseHeaders = Object.keys(response.headers);
     for (const header of responseHeaders) {
-      headersNodes.push(generateHeader(response.headers[header]));
+      headersNodes.push(generateHeader(header, response.headers[header]));
     }
+    headerNode = responseHeaders.length > 0 ? createCompositeNode(headersNodes, {}) : undefined;
   }
 
   if (response.links) {
@@ -438,8 +450,8 @@ function generateResponse(code: string, response: OpenAPIV3.ReferenceObject | Op
 
   const content = contentNodes.length === 0 ? undefined : createUnionNode(contentNodes, { description });
 
-  if (content || headersNodes.length > 0) {
-    return new AstNodeTypeResponse(code, content, headersNodes, {});
+  if (content || headerNode) {
+    return new AstNodeTypeResponse(code, content, headerNode, {});
   }
 
   return undefined;
@@ -464,7 +476,7 @@ function generateResponses(responses: OpenAPIV3.ResponsesObject): AstNodeType | 
       continue;
     }
 
-    returnComments.push(`${code} - ${responseNode.modifiers.description}`);
+    returnComments.push(`${code} - ${responseNode.modifiers.description ?? ''}`);
 
     responseNodes.push(responseNode);
   }
@@ -643,21 +655,24 @@ function makeResponseGlobal(operationId: string, response: AstNodeTypeResponse):
     response.content.contentType = refNode;
   }
 
-  if (response.headers) {
-    const updatedHeaders: AstNodeType[] = [];
-    for (const header of response.headers) {
-      if (IsReferenceNode(header)) {
-        updatedHeaders.push(header);
-        continue;
-      }
+  if (response.headers && !IsReferenceNode(response.headers)) {
+    // const updatedHeaders: AstNodeType[] = [];
+    // for (const header of response.headers) {
+    //   if (IsReferenceNode(header)) {
+    //     updatedHeaders.push(header);
+    //     continue;
+    //   }
 
-      const { declaration, refNode } = makeDeclarationGlobal(`${operationId}Response`, header);
+    //   const { declaration, refNode } = makeDeclarationGlobal(`${operationId}HeaderResponse`, header);
 
-      declarations.push(declaration);
-      updatedHeaders.push(refNode);
-    }
+    //   declarations.push(declaration);
+    //   updatedHeaders.push(refNode);
+    // }
 
-    response.headers = updatedHeaders;
+    const { declaration, refNode } = makeDeclarationGlobal(`${operationId}HeaderResponse`, response.headers);
+
+    declarations.push(declaration);
+    response.headers = refNode;
   }
 
   return declarations;
@@ -810,7 +825,7 @@ function convertType(node: AstNodeType) {
       ...json,
       statusCode: node.statusCode,
       content: node.content ? convertNode(node.content) : undefined,
-      headers: node.headers.length > 0 ? node.headers.map(x => convertNode(x)) : undefined,
+      headers: node.headers ? convertNode(node.headers) : undefined,
     };
   } else if (IsRequestNode(node)) {
     return {
