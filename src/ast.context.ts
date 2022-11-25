@@ -14,7 +14,7 @@ import {
   IsRequestNode,
   IsResponseNode,
   IsUnionNode,
-} from './ast/ast.utilities';
+} from './ast/ast.node.utilities';
 
 export class AstContext extends Mustache.Context {
   constructor(view: any, parentContext?: Mustache.Context) {

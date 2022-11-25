@@ -1,17 +1,17 @@
-import { AstNodeDeclaration } from './ast.node.declaration';
-import { AstNodeLiteral } from './ast.node.literal';
-import { AstNodeOperation } from './ast.node.operation';
-import { AstNodeTypeArray } from './ast.node.type.array';
-import { AstNodeTypeBody } from './ast.node.type.body';
-import { AstNodeTypeComposite } from './ast.node.type.composite';
-import { AstNodeTypeContent } from './ast.node.type.content';
-import { AstNodeTypeObject } from './ast.node.type.object';
-import { AstNodeTypeOmit } from './ast.node.type.omit';
-import { AstNodeTypePrimative } from './ast.node.type.primative';
-import { AstNodeTypeReference } from './ast.node.type.reference';
-import { AstNodeTypeRequest } from './ast.node.type.request';
-import { AstNodeTypeResponse } from './ast.node.type.response';
-import { AstNodeTypeUnion } from './ast.node.type.union';
+import { AstNodeDeclaration } from './nodes/ast.node.declaration';
+import { AstNodeLiteral } from './nodes/ast.node.literal';
+import { AstNodeOperation } from './nodes/ast.node.operation';
+import { AstNodeTypeArray } from './nodes/ast.node.type.array';
+import { AstNodeTypeBody } from './nodes/ast.node.type.body';
+import { AstNodeTypeComposite } from './nodes/ast.node.type.composite';
+import { AstNodeTypeContent } from './nodes/ast.node.type.content';
+import { AstNodeTypeObject } from './nodes/ast.node.type.object';
+import { AstNodeTypeOmit } from './nodes/ast.node.type.omit';
+import { AstNodeTypePrimative } from './nodes/ast.node.type.primative';
+import { AstNodeTypeReference } from './nodes/ast.node.type.reference';
+import { AstNodeTypeRequest } from './nodes/ast.node.type.request';
+import { AstNodeTypeResponse } from './nodes/ast.node.type.response';
+import { AstNodeTypeUnion } from './nodes/ast.node.type.union';
 
 export function IsObjectNode(test: any): test is AstNodeTypeObject {
   return test?.kind === 'type' && test?.kindType === 'object';

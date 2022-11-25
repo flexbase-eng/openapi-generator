@@ -1,16 +1,16 @@
 import { OpenAPIV3 } from 'openapi-types';
 import { IsArraySchemaObject, IsReferenceObject } from '../utilities/openapi.utilities';
 import { AbstractSyntaxTree } from './ast';
-import { AstNode } from './ast.node';
-import { AstNodeDeclaration, ParameterLocations } from './ast.node.declaration';
-import { AstNodeTypeReference } from './ast.node.type.reference';
-import { AstNodeTypeObject } from './ast.node.type.object';
-import { AstNodeType } from './ast.node.type';
-import { AstNodeTypePrimative } from './ast.node.type.primative';
-import { AstNodeTypeComposite } from './ast.node.type.composite';
-import { AstNodeTypeArray } from './ast.node.type.array';
-import { AstNodeOperation, AstNodeOperationHttpMethod } from './ast.node.operation';
-import { AstNodeLiteral } from './ast.node.literal';
+import { AstNode } from './nodes/ast.node';
+import { AstNodeDeclaration, ParameterLocations } from './nodes/ast.node.declaration';
+import { AstNodeTypeReference } from './nodes/ast.node.type.reference';
+import { AstNodeTypeObject } from './nodes/ast.node.type.object';
+import { AstNodeType } from './nodes/ast.node.type';
+import { AstNodeTypePrimative } from './nodes/ast.node.type.primative';
+import { AstNodeTypeComposite } from './nodes/ast.node.type.composite';
+import { AstNodeTypeArray } from './nodes/ast.node.type.array';
+import { AstNodeOperation, AstNodeOperationHttpMethod } from './nodes/ast.node.operation';
+import { AstNodeLiteral } from './nodes/ast.node.literal';
 import {
   IsArrayNode,
   IsBodyNode,
@@ -24,14 +24,14 @@ import {
   IsRequestNode,
   IsResponseNode,
   IsUnionNode,
-} from './ast.utilities';
-import { AstNodeTypeResponse } from './ast.node.type.response';
-import { AstNodeTypeContent } from './ast.node.type.content';
-import { AstNodeTypeRequest } from './ast.node.type.request';
-import { AstNodeTypeBody } from './ast.node.type.body';
-import { AstNodeTypeUnion } from './ast.node.type.union';
-import { AstNodeModifiers } from './ast.node.modifiers';
-import { AstNodeTypeOmit } from './ast.node.type.omit';
+} from './ast.node.utilities';
+import { AstNodeTypeResponse } from './nodes/ast.node.type.response';
+import { AstNodeTypeContent } from './nodes/ast.node.type.content';
+import { AstNodeTypeRequest } from './nodes/ast.node.type.request';
+import { AstNodeTypeBody } from './nodes/ast.node.type.body';
+import { AstNodeTypeUnion } from './nodes/ast.node.type.union';
+import { AstNodeModifiers } from './nodes/ast.node.modifiers';
+import { AstNodeTypeOmit } from './nodes/ast.node.type.omit';
 import { capitalize } from '../utilities/string.utilities';
 
 export function generateAst(document: OpenAPIV3.Document): AbstractSyntaxTree {
