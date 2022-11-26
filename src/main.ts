@@ -8,12 +8,13 @@ import { AstContext } from './ast.context';
 import Path from 'path';
 import fs from 'fs-extra';
 import prettier from 'prettier';
-import { convertAstToPoco, createDeclarationMappings, generateAst, makeOperationDeclarationsGlobal } from './ast/ast.builder';
 import { IsDocument } from './utilities/openapi.utilities';
+import { IAbstractSyntaxTreeBuilder } from './ast/ast.builder.interface';
+import { IAbstractSyntaxTreeConverter } from './ast/ast.converter.interface';
 
 type renderFunction = (text: string) => string;
 
-export async function main(): Promise<void> {
+export async function main(astBuilder: IAbstractSyntaxTreeBuilder, astConverter: IAbstractSyntaxTreeConverter): Promise<void> {
   program
     .requiredOption('-i, --input <path>', 'OpenAPI spec to parse (*.json, *.yaml)')
     .requiredOption('-t, --template <path>', 'The template to use')
@@ -35,12 +36,12 @@ export async function main(): Promise<void> {
       process.exit();
     }
 
-    const ast = generateAst(apiDoc);
+    const ast = astBuilder.generateAst(apiDoc);
 
     // move operation declarations to lookups and replace with references
-    makeOperationDeclarationsGlobal(ast);
+    astBuilder.makeOperationDeclarationsGlobal(ast);
 
-    const declarationLookups = createDeclarationMappings(ast.declarations);
+    const declarationLookups = astBuilder.createDeclarationMappings(ast.declarations);
 
     const functions = {
       declarationLookup: function () {
@@ -103,7 +104,7 @@ export async function main(): Promise<void> {
       });
     }
 
-    const jsonAst = convertAstToPoco(ast);
+    const jsonAst = astConverter.convertAstToPoco(ast);
 
     const context = new AstContext({ ast: jsonAst, functions });
 
@@ -146,7 +147,7 @@ export async function main(): Promise<void> {
       await fs.writeFile(output, rendered, 'utf8');
     }
   } catch (e) {
-    console.log(chalk.red(`An error occurred ${cliOptions.input}`), e);
+    console.error(chalk.red(`An error occurred ${cliOptions.input}`), e);
     process.exit();
   }
 }
