@@ -27,14 +27,16 @@ const typescript = __importStar(require("typescript"));
 const path = __importStar(require("path"));
 const transformer = (_) => (transformationContext) => (sourceFile) => {
     function visitNode(node) {
+        console.log("here")
         if (shouldMutateModuleSpecifier(node)) {
+            
             if (typescript.isImportDeclaration(node)) {
-                const newModuleSpecifier = typescript.createLiteral(`${node.moduleSpecifier.text}.js`);
-                return typescript.updateImportDeclaration(node, node.decorators, node.modifiers, node.importClause, newModuleSpecifier, undefined);
+                const newModuleSpecifier = typescript.factory.createStringLiteral(`${node.moduleSpecifier.text}.js`);
+                return typescript.factory.updateImportDeclaration(node, node.modifiers, node.importClause, newModuleSpecifier, node.assertClause);
             }
             else if (typescript.isExportDeclaration(node)) {
-                const newModuleSpecifier = typescript.createLiteral(`${node.moduleSpecifier.text}.js`);
-                return typescript.updateExportDeclaration(node, node.decorators, node.modifiers, node.exportClause, newModuleSpecifier, false);
+                const newModuleSpecifier = typescript.factory.createStringLiteral(`${node.moduleSpecifier.text}.js`);
+                return typescript.factory.updateExportDeclaration(node, node.modifiers, node.isTypeOnly, node.exportClause, newModuleSpecifier, node.assertClause);
             }
         }
         return typescript.visitEachChild(node, visitNode, transformationContext);

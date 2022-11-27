@@ -11,8 +11,117 @@ import prettier from 'prettier';
 import { IsDocument } from './utilities/openapi.utilities';
 import { IAbstractSyntaxTreeBuilder } from './ast/ast.builder.interface';
 import { IAbstractSyntaxTreeConverter } from './ast/ast.converter.interface';
+import { AbstractSyntaxTree } from './ast/ast';
+import { AstNode } from './ast/nodes/ast.node';
+import { IsDeclarationNode, IsObjectNode, IsPrimativeNode } from './ast/ast.node.utilities';
 
 type renderFunction = (text: string) => string;
+
+interface Node {
+  type: string;
+}
+
+type Expression = TODO | Literal;
+type Statement = Node;
+
+interface TODO extends Node {
+  type: 'TODO';
+}
+
+interface Document extends Node {
+  type: 'Document';
+  body: Array<Declaration>;
+}
+
+type ModelDeclaration = ObjectDeclaration;
+
+interface OperationDeclaration extends Node {
+  type: 'OperationDeclaration';
+  id: Identifier;
+}
+
+interface Identifier extends Node {
+  type: 'Identifier';
+  name: string;
+}
+
+export interface Literal extends Node {
+  type: 'Literal';
+  value: string | boolean | null | number;
+}
+
+interface ObjectDeclaration extends Node {
+  type: 'ObjectDeclaration';
+  id: Identifier;
+  properties: Array<PropertyDeclaration>;
+}
+
+interface PropertyDeclaration extends Node {
+  type: 'PropertyDeclaration';
+  key: Identifier;
+  value: Expression;
+}
+
+type Declaration = ModelDeclaration | OperationDeclaration | TODO;
+
+function makeExpression(astNode: AstNode): Expression {
+  if (IsPrimativeNode(astNode)) {
+    return <Literal>{
+      type: 'Literal',
+      value: astNode.primativeType,
+    };
+  }
+
+  return <TODO>{ type: 'TODO' };
+}
+
+function makeDeclaration(astNode: AstNode, id?: Identifier): Declaration {
+  if (IsDeclarationNode(astNode)) {
+    const id = <Identifier>{ name: astNode.identifier.value };
+
+    return makeDeclaration(astNode.type, id);
+  } else if (IsObjectNode(astNode)) {
+    if (!id) {
+      throw Error('id required');
+    }
+
+    const properties: Array<PropertyDeclaration> = [];
+    for (const prop of astNode.fields) {
+      const key = <Identifier>{ name: prop.identifier.value };
+      const value = makeExpression(prop.type);
+      properties.push({
+        type: 'PropertyDeclaration',
+        key,
+        value,
+      });
+    }
+
+    let node: ObjectDeclaration = {
+      type: 'ObjectDeclaration',
+      id,
+      properties,
+    };
+
+    return node;
+  } else {
+    return <TODO>{ type: 'TODO' };
+  }
+}
+
+function makeDocument(ast: AbstractSyntaxTree): Node {
+  const body: Array<Declaration> = [];
+
+  for (const decl of ast.declarations) {
+    body.push(makeDeclaration(decl));
+  }
+
+  const document: Document = {
+    type: 'Document',
+    body,
+  };
+
+  return document;
+}
 
 export async function main(astBuilder: IAbstractSyntaxTreeBuilder, astConverter: IAbstractSyntaxTreeConverter): Promise<void> {
   program
@@ -107,6 +216,28 @@ export async function main(astBuilder: IAbstractSyntaxTreeBuilder, astConverter:
     const jsonAst = astConverter.convertAstToPoco(ast);
 
     const context = new AstContext({ ast: jsonAst, functions });
+
+    try {
+      const node = makeDocument(ast);
+      const name = Path.join(cliOptions.output, `${fileName}.new.ast.json`);
+      let json = JSON.stringify(node);
+      try {
+        json = prettier.format(json, {
+          semi: true,
+          singleQuote: true,
+          arrowParens: 'avoid',
+          tabWidth: 2,
+          useTabs: false,
+          printWidth: 100,
+          parser: 'json',
+        });
+        await fs.writeFile(name, json);
+      } catch {
+        await fs.writeFile(name, json);
+      }
+    } catch (e) {
+      console.log(e);
+    }
 
     if (cliOptions.debug) {
       const name = Path.join(cliOptions.output, `${fileName}.ast.json`);
