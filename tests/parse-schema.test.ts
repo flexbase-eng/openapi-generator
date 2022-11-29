@@ -2,8 +2,8 @@ import { assert, expect, test } from 'vitest';
 import OpenAPIParser from '@readme/openapi-parser';
 import { OpenAPI } from 'openapi-types';
 import { IsDocument } from '../src/utilities/openapi.utilities';
-import { AbstractSyntaxTreeBuilder } from '../src/ast/ast.builder';
-import { AbstractSyntaxTreeConverter } from '../src/ast/ast.converter';
+import { OpenApiSpecBuilder } from '../src/oas-tree/oas.builder';
+import { OpenApiSpecConverter } from '../src/oas-tree/oas.converter';
 import { NoopLogger } from '@flexbase/logger';
 
 test('petstore schemas', async () => {
@@ -13,15 +13,15 @@ test('petstore schemas', async () => {
     assert.fail();
   }
 
-  const astBuilder = new AbstractSyntaxTreeBuilder(new NoopLogger());
-  const astConverter = new AbstractSyntaxTreeConverter();
+  const oasBuilder = new OpenApiSpecBuilder(new NoopLogger());
+  const oasConverter = new OpenApiSpecConverter();
 
-  const ast = astBuilder.generateAst(apiDoc);
+  const oasTree = oasBuilder.generateOasTree(apiDoc);
 
-  expect(ast.declarations).toHaveLength(3);
-  expect(ast.operations).toHaveLength(3);
+  expect(oasTree.declarations).toHaveLength(3);
+  expect(oasTree.operations).toHaveLength(3);
 
-  const poco = astConverter.convertAstToPoco(ast);
+  const poco = oasConverter.convertOasToPoco(oasTree);
 
   expect(poco.declarations).toHaveLength(3);
   expect(poco.operations).toHaveLength(3);

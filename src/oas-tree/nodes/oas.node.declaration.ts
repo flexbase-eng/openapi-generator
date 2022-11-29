@@ -1,47 +1,47 @@
-import { AstNode } from './ast.node';
-import { AstNodeLiteral } from './ast.node.literal';
-import { AstNodeModifiers } from './ast.node.modifiers';
-import { AstNodeType } from './ast.node.type';
+import { OasNode } from './oas.node';
+import { OasNodeLiteral } from './oas.node.literal';
+import { OasNodeModifiers } from './oas.node.modifiers';
+import { OasNodeType } from './oas.node.type';
 
 export type ParameterLocations = 'query' | 'header' | 'path' | 'cookie' | 'reference' | 'unknown';
 export type DeclarationType = 'model' | 'request' | 'response' | 'parameter' | 'inline';
 
-export class AstNodeDeclaration extends AstNode {
-  private readonly _identifier: AstNodeLiteral;
-  private readonly _generatedIdentifier: AstNodeLiteral;
+export class OasNodeDeclaration extends OasNode {
+  private readonly _identifier: OasNodeLiteral;
+  private readonly _generatedIdentifier: OasNodeLiteral;
   private _isGenerated: boolean = false;
 
   constructor(
-    identifier: AstNodeLiteral | string,
-    generatedIdentifier: AstNodeLiteral | string,
+    identifier: OasNodeLiteral | string,
+    generatedIdentifier: OasNodeLiteral | string,
     private readonly _declarationType: DeclarationType,
-    private readonly _type: AstNodeType,
-    modifiers: AstNodeModifiers,
+    private readonly _type: OasNodeType,
+    modifiers: OasNodeModifiers,
     private readonly _referenceName?: string,
     private readonly _parameterLocation?: ParameterLocations
   ) {
     super('declaration', modifiers);
     if (typeof identifier === 'string') {
-      this._identifier = new AstNodeLiteral(identifier, {});
+      this._identifier = new OasNodeLiteral(identifier, {});
     } else {
       this._identifier = identifier;
     }
     if (typeof generatedIdentifier === 'string') {
-      this._generatedIdentifier = new AstNodeLiteral(generatedIdentifier, {});
+      this._generatedIdentifier = new OasNodeLiteral(generatedIdentifier, {});
     } else {
       this._generatedIdentifier = generatedIdentifier;
     }
   }
 
-  get identifier(): AstNodeLiteral {
+  get identifier(): OasNodeLiteral {
     return this._identifier;
   }
 
-  get generatedIdentifier(): AstNodeLiteral {
+  get generatedIdentifier(): OasNodeLiteral {
     return this._generatedIdentifier;
   }
 
-  get type(): AstNodeType {
+  get type(): OasNodeType {
     return this._type;
   }
 

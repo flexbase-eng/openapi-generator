@@ -1,15 +1,15 @@
 import { OpenAPIV3 } from 'openapi-types';
 import { IsArraySchemaObject, IsReferenceObject } from '../utilities/openapi.utilities';
-import { AbstractSyntaxTree } from './ast';
-import { AstNode } from './nodes/ast.node';
-import { AstNodeDeclaration, DeclarationType, ParameterLocations } from './nodes/ast.node.declaration';
-import { AstNodeTypeReference } from './nodes/ast.node.type.reference';
-import { AstNodeTypeObject } from './nodes/ast.node.type.object';
-import { AstNodeType } from './nodes/ast.node.type';
-import { AstNodeTypePrimative } from './nodes/ast.node.type.primative';
-import { AstNodeTypeComposite } from './nodes/ast.node.type.composite';
-import { AstNodeTypeArray } from './nodes/ast.node.type.array';
-import { AstNodeOperation, AstNodeOperationHttpMethod } from './nodes/ast.node.operation';
+import { OpenApiSpecTree } from './oas.tree';
+import { OasNode } from './nodes/oas.node';
+import { OasNodeDeclaration, DeclarationType, ParameterLocations } from './nodes/oas.node.declaration';
+import { OasNodeTypeReference } from './nodes/oas.node.type.reference';
+import { OasNodeTypeObject } from './nodes/oas.node.type.object';
+import { OasNodeType } from './nodes/oas.node.type';
+import { OasNodeTypePrimative } from './nodes/oas.node.type.primative';
+import { OasNodeTypeComposite } from './nodes/oas.node.type.composite';
+import { OasNodeTypeArray } from './nodes/oas.node.type.array';
+import { OasNodeOperation, OasNodeOperationHttpMethod } from './nodes/oas.node.operation';
 import {
   IsArrayNode,
   IsCompositeNode,
@@ -20,28 +20,28 @@ import {
   IsRequestNode,
   IsResponseNode,
   IsUnionNode,
-} from './ast.node.utilities';
-import { AstNodeTypeResponse } from './nodes/ast.node.type.response';
-import { AstNodeTypeContent } from './nodes/ast.node.type.content';
-import { AstNodeTypeRequest } from './nodes/ast.node.type.request';
-import { AstNodeTypeBody } from './nodes/ast.node.type.body';
-import { AstNodeTypeUnion } from './nodes/ast.node.type.union';
-import { AstNodeModifiers } from './nodes/ast.node.modifiers';
-import { AstNodeTypeOmit } from './nodes/ast.node.type.omit';
+} from './oas.node.utilities';
+import { OasNodeTypeResponse } from './nodes/oas.node.type.response';
+import { OasNodeTypeContent } from './nodes/oas.node.type.content';
+import { OasNodeTypeRequest } from './nodes/oas.node.type.request';
+import { OasNodeTypeBody } from './nodes/oas.node.type.body';
+import { OasNodeTypeUnion } from './nodes/oas.node.type.union';
+import { OasNodeModifiers } from './nodes/oas.node.modifiers';
+import { OasNodeTypeOmit } from './nodes/oas.node.type.omit';
 import { capitalize } from '../utilities/string.utilities';
-import { IAbstractSyntaxTreeBuilder, ParameterLocationAndNode, ParameterNodes } from './ast.builder.interface';
+import { IOpenApiSpecBuilder, ParameterLocationAndNode, ParameterNodes } from './oas.builder.interface';
 import { Logger } from '@flexbase/logger';
 
 function cleanName(name: string): string {
   return name.replace('-', '_');
 }
 
-export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
+export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
   constructor(private readonly _logger: Logger) {}
 
-  generateAst(document: OpenAPIV3.Document): AbstractSyntaxTree {
-    const declarations: AstNodeDeclaration[] = document.components ? this.generateDeclarations(document.components) : [];
-    const operations: AstNodeOperation[] = document.paths
+  generateOasTree(document: OpenAPIV3.Document): OpenApiSpecTree {
+    const declarations: OasNodeDeclaration[] = document.components ? this.generateDeclarations(document.components) : [];
+    const operations: OasNodeOperation[] = document.paths
       ? this.generateOperations(document.paths, this.createDeclarationMappings(declarations))
       : [];
     const title = document.info.title;
@@ -51,9 +51,9 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     return { declarations, operations, title, description, version, name };
   }
 
-  generateDeclarations(components: OpenAPIV3.ComponentsObject): AstNodeDeclaration[] {
-    const declarations: AstNodeDeclaration[] = [];
-    const modelMappings = new Map<string, AstNodeDeclaration>();
+  generateDeclarations(components: OpenAPIV3.ComponentsObject): OasNodeDeclaration[] {
+    const declarations: OasNodeDeclaration[] = [];
+    const modelMappings = new Map<string, OasNodeDeclaration>();
 
     if (components.schemas) {
       const records = Object.entries(components.schemas);
@@ -66,7 +66,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
         const nodeType = this.generateTypeFromSchema(schema);
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
-        const declaration = new AstNodeDeclaration(name, cleanName(generatedName), 'model', nodeType, modifiers, refName);
+        const declaration = new OasNodeDeclaration(name, cleanName(generatedName), 'model', nodeType, modifiers, refName);
         declarations.push(declaration);
         modelMappings.set(refName, declaration);
       }
@@ -84,7 +84,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
 
-        declarations.push(new AstNodeDeclaration(name, cleanName(generatedName), 'request', nodeType, modifiers, refName));
+        declarations.push(new OasNodeDeclaration(name, cleanName(generatedName), 'request', nodeType, modifiers, refName));
       }
     }
 
@@ -103,7 +103,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
 
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
-        declarations.push(new AstNodeDeclaration(name, cleanName(generatedName), 'response', nodeType, modifiers, refName));
+        declarations.push(new OasNodeDeclaration(name, cleanName(generatedName), 'response', nodeType, modifiers, refName));
       }
     }
 
@@ -125,19 +125,19 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
 
         const modifiers = type.modifiers;
         type.modifiers = {};
-        declarations.push(new AstNodeDeclaration(name, cleanName(generatedName), 'parameter', type, modifiers, refName, location));
+        declarations.push(new OasNodeDeclaration(name, cleanName(generatedName), 'parameter', type, modifiers, refName, location));
       }
     }
 
     return declarations;
   }
 
-  generateTypeFromSchema(schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject): AstNodeType {
+  generateTypeFromSchema(schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject): OasNodeType {
     if (IsReferenceObject(schema)) {
-      return new AstNodeTypeReference(schema.$ref, {});
+      return new OasNodeTypeReference(schema.$ref, {});
     }
 
-    const modifiers: AstNodeModifiers = {
+    const modifiers: OasNodeModifiers = {
       title: schema.title,
       description: schema.description,
       format: schema.format,
@@ -166,7 +166,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
 
     if (IsArraySchemaObject(schema)) {
       const arrayType = this.generateTypeFromSchema(schema.items);
-      return new AstNodeTypeArray(arrayType, modifiers);
+      return new OasNodeTypeArray(arrayType, modifiers);
     }
 
     if (schema.allOf) {
@@ -179,7 +179,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
       const unionTypes = schema.oneOf.map(x => this.generateTypeFromSchema(x));
       return this.createUnionNode(unionTypes, modifiers);
     } else if (schema.type === 'object') {
-      const fields: AstNodeDeclaration[] = [];
+      const fields: OasNodeDeclaration[] = [];
 
       if (schema.properties) {
         const propEntries = Object.entries(schema.properties);
@@ -194,11 +194,11 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
 
           const modifiers = propertyType.modifiers;
           propertyType.modifiers = {};
-          fields.push(new AstNodeDeclaration(identifier, identifier, 'inline', propertyType, modifiers));
+          fields.push(new OasNodeDeclaration(identifier, identifier, 'inline', propertyType, modifiers));
         }
       }
 
-      return new AstNodeTypeObject(fields, modifiers);
+      return new OasNodeTypeObject(fields, modifiers);
     } else if (
       schema.type === 'boolean' ||
       schema.type === 'integer' ||
@@ -209,7 +209,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
       return this.createPrimativeNode(schema.type, modifiers);
     } else if (Array.isArray(schema.type)) {
       const schemaTypeArray: string[] = schema.type;
-      const types: AstNodeType[] = [];
+      const types: OasNodeType[] = [];
       for (const schemaType of schemaTypeArray) {
         types.push(this.createPrimativeNode(schemaType, {}));
       }
@@ -218,11 +218,11 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     }
 
     this._logger.warn('Unknown schema type', schema);
-    return new AstNodeTypePrimative('void', {});
+    return new OasNodeTypePrimative('void', {});
   }
 
-  generateOperations(pathObject: OpenAPIV3.PathsObject, modelMappings: Map<string, AstNodeDeclaration>): AstNodeOperation[] {
-    const nodeOperations: AstNodeOperation[] = [];
+  generateOperations(pathObject: OpenAPIV3.PathsObject, modelMappings: Map<string, OasNodeDeclaration>): OasNodeOperation[] {
+    const nodeOperations: OasNodeOperation[] = [];
     const paths = Object.entries(pathObject);
 
     for (const path of paths) {
@@ -240,9 +240,9 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
   generateOperationFromPathItem(
     pathPattern: string,
     pathItem: OpenAPIV3.PathItemObject,
-    modelMappings: Map<string, AstNodeDeclaration>
-  ): AstNodeOperation[] {
-    const nodeOperations: AstNodeOperation[] = [];
+    modelMappings: Map<string, OasNodeDeclaration>
+  ): OasNodeOperation[] {
+    const nodeOperations: OasNodeOperation[] = [];
 
     const { queryNodes, headerNodes, pathNodes, cookieNodes } = this.generateParameters(pathItem.parameters, modelMappings);
 
@@ -279,11 +279,11 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
 
       const requestBody = operationObject.requestBody ? this.generateRequestBody(operationObject.requestBody, modelMappings) : undefined;
 
-      const request = new AstNodeTypeRequest(requestBody, path, cookie, header, query, { description, title });
+      const request = new OasNodeTypeRequest(requestBody, path, cookie, header, query, { description, title });
 
-      const nodeOperation = new AstNodeOperation(
+      const nodeOperation = new OasNodeOperation(
         (operationObject.operationId ?? 'OperationId_NOTDEFINED').replace(/-./g, x => x[1].toUpperCase()),
-        capitalize(method) as AstNodeOperationHttpMethod,
+        capitalize(method) as OasNodeOperationHttpMethod,
         pathPattern,
         responses,
         request,
@@ -297,12 +297,12 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
 
   generateParameters(
     parameters: (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[] | undefined,
-    modelMappings: Map<string, AstNodeDeclaration>
+    modelMappings: Map<string, OasNodeDeclaration>
   ): ParameterNodes {
-    const queryNodes: AstNodeType[] = [];
-    const headerNodes: AstNodeType[] = [];
-    const pathNodes: AstNodeType[] = [];
-    const cookieNodes: AstNodeType[] = [];
+    const queryNodes: OasNodeType[] = [];
+    const headerNodes: OasNodeType[] = [];
+    const pathNodes: OasNodeType[] = [];
+    const cookieNodes: OasNodeType[] = [];
 
     if (parameters) {
       for (const param of parameters) {
@@ -374,7 +374,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
       return undefined;
     }
 
-    const nodeType = parameter.schema ? this.generateTypeFromSchema(parameter.schema) : new AstNodeTypePrimative('void', {});
+    const nodeType = parameter.schema ? this.generateTypeFromSchema(parameter.schema) : new OasNodeTypePrimative('void', {});
     nodeType.modifiers.required = parameter.required;
     nodeType.modifiers.deprecated = parameter.deprecated;
 
@@ -382,17 +382,17 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     const deprecated = parameter.deprecated;
     const description = parameter.description;
 
-    const declaration = new AstNodeDeclaration(name, cleanName(name), 'parameter', nodeType, { description, required, deprecated });
+    const declaration = new OasNodeDeclaration(name, cleanName(name), 'parameter', nodeType, { description, required, deprecated });
 
-    return { location, type: new AstNodeTypeObject([declaration], {}) };
+    return { location, type: new OasNodeTypeObject([declaration], {}) };
   }
 
-  generateHeader(name: string, header: OpenAPIV3.ReferenceObject | OpenAPIV3.HeaderObject): AstNodeType {
+  generateHeader(name: string, header: OpenAPIV3.ReferenceObject | OpenAPIV3.HeaderObject): OasNodeType {
     if (IsReferenceObject(header)) {
       return this.generateTypeFromSchema(header);
     }
 
-    const nodeType = header.schema ? this.generateTypeFromSchema(header.schema) : new AstNodeTypePrimative('void', {});
+    const nodeType = header.schema ? this.generateTypeFromSchema(header.schema) : new OasNodeTypePrimative('void', {});
     nodeType.modifiers.required = header.required;
     nodeType.modifiers.deprecated = header.deprecated;
 
@@ -400,20 +400,20 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     const deprecated = header.deprecated;
     const description = header.description;
 
-    const declaration = new AstNodeDeclaration(name, cleanName(name), 'parameter', nodeType, { description, required, deprecated });
+    const declaration = new OasNodeDeclaration(name, cleanName(name), 'parameter', nodeType, { description, required, deprecated });
 
-    return new AstNodeTypeObject([declaration], {});
+    return new OasNodeTypeObject([declaration], {});
   }
 
-  generateResponse(code: string, response: OpenAPIV3.ReferenceObject | OpenAPIV3.ResponseObject): AstNodeTypeResponse | undefined {
+  generateResponse(code: string, response: OpenAPIV3.ReferenceObject | OpenAPIV3.ResponseObject): OasNodeTypeResponse | undefined {
     if (IsReferenceObject(response)) {
-      return new AstNodeTypeResponse(code, new AstNodeTypeReference(response.$ref, {}), undefined, {});
+      return new OasNodeTypeResponse(code, new OasNodeTypeReference(response.$ref, {}), undefined, {});
     }
 
     const description = response.description;
-    const contentNodes: AstNodeTypeContent[] = [];
+    const contentNodes: OasNodeTypeContent[] = [];
 
-    let headerNode: AstNodeType | undefined;
+    let headerNode: OasNodeType | undefined;
 
     if (response.content) {
       const contentMediaTypes = Object.keys(response.content);
@@ -421,13 +421,13 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
         const schema = response.content[mediaType].schema;
         if (schema) {
           const nodeType = this.generateTypeFromSchema(schema);
-          contentNodes.push(new AstNodeTypeContent(mediaType, nodeType, {}));
+          contentNodes.push(new OasNodeTypeContent(mediaType, nodeType, {}));
         }
       }
     }
 
     if (response.headers) {
-      const headersNodes: AstNodeType[] = [];
+      const headersNodes: OasNodeType[] = [];
       const responseHeaders = Object.keys(response.headers);
       for (const header of responseHeaders) {
         headersNodes.push(this.generateHeader(header, response.headers[header]));
@@ -436,25 +436,25 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     }
 
     if (response.links) {
-      this._logger.warn('ast generation for response object links is not implemented yet');
+      this._logger.warn('oas generation for response object links is not implemented yet');
     }
 
     const content = contentNodes.length === 0 ? undefined : contentNodes.length > 1 ? contentNodes : contentNodes[0]; //this.createUnionNode(contentNodes, { description });
 
     if (content || headerNode) {
-      return new AstNodeTypeResponse(code, content, headerNode, { description });
+      return new OasNodeTypeResponse(code, content, headerNode, { description });
     }
 
     return undefined;
   }
 
-  generateResponses(responses: OpenAPIV3.ResponsesObject): AstNodeType | undefined {
+  generateResponses(responses: OpenAPIV3.ResponsesObject): OasNodeType | undefined {
     const responsesEntities = Object.entries(responses);
     if (responsesEntities.length === 0) {
       return undefined;
     }
 
-    const responseNodes: AstNodeTypeResponse[] = [];
+    const responseNodes: OasNodeTypeResponse[] = [];
     const returnComments: string[] = [];
 
     for (const responseEntry of responsesEntities) {
@@ -481,7 +481,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     return this.createUnionNode(responseNodes, { returns: returnComments });
   }
 
-  generateRequestBody(request: OpenAPIV3.RequestBodyObject | OpenAPIV3.ReferenceObject, modelMappings: Map<string, AstNodeDeclaration>): AstNodeType {
+  generateRequestBody(request: OpenAPIV3.RequestBodyObject | OpenAPIV3.ReferenceObject, modelMappings: Map<string, OasNodeDeclaration>): OasNodeType {
     if (IsReferenceObject(request)) {
       if (!request.$ref.startsWith('#/components/requestBodies/')) {
         this._logger.warn(`${this.generateRequestBody.name}: Need to check for readonly fields and implement omit node`);
@@ -494,19 +494,19 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     const required = request.required;
 
     const contentMediaTypes = Object.keys(request.content);
-    const contentNodes: AstNodeTypeContent[] = [];
+    const contentNodes: OasNodeTypeContent[] = [];
     for (const mediaType of contentMediaTypes) {
       const schema = request.content[mediaType].schema;
       if (schema) {
         const nodeType = this.createOmitNode(this.generateTypeFromSchema(schema), 'readOnly', modelMappings);
-        contentNodes.push(new AstNodeTypeContent(mediaType, nodeType, {}));
+        contentNodes.push(new OasNodeTypeContent(mediaType, nodeType, {}));
       }
     }
 
-    return new AstNodeTypeBody(contentNodes, { description, required });
+    return new OasNodeTypeBody(contentNodes, { description, required });
   }
 
-  createPrimativeNode(primativeType: string, modifiers: AstNodeModifiers): AstNodeType {
+  createPrimativeNode(primativeType: string, modifiers: OasNodeModifiers): OasNodeType {
     if (primativeType === 'integer') {
       primativeType = 'number';
       if (!modifiers.format) {
@@ -518,16 +518,16 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
       primativeType = modifiers.enum.map(x => `'${x}'`).join(' | ');
     }
 
-    return new AstNodeTypePrimative(primativeType, modifiers);
+    return new OasNodeTypePrimative(primativeType, modifiers);
   }
 
-  createCompositeNode(nodes: AstNodeType[], modifiers: AstNodeModifiers): AstNodeType {
+  createCompositeNode(nodes: OasNodeType[], modifiers: OasNodeModifiers): OasNodeType {
     if (nodes.length === 0) {
       throw new Error('Nodes must not be an empty array');
     }
 
-    const mergeNodes: AstNodeTypeObject[] = [];
-    const modelTypes: AstNodeType[] = [];
+    const mergeNodes: OasNodeTypeObject[] = [];
+    const modelTypes: OasNodeType[] = [];
 
     for (const node of nodes) {
       if (IsObjectNode(node)) {
@@ -537,24 +537,24 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
       }
     }
 
-    const merged: AstNodeDeclaration[] = [];
+    const merged: OasNodeDeclaration[] = [];
     mergeNodes.forEach(x => merged.push(...x.fields));
     if (merged.length > 0) {
-      modelTypes.push(new AstNodeTypeObject(merged, {}));
+      modelTypes.push(new OasNodeTypeObject(merged, {}));
     }
 
-    return modelTypes.length > 1 ? new AstNodeTypeComposite(modelTypes, modifiers) : modelTypes[0];
+    return modelTypes.length > 1 ? new OasNodeTypeComposite(modelTypes, modifiers) : modelTypes[0];
   }
 
-  createUnionNode(nodes: AstNodeType[], modifiers: AstNodeModifiers): AstNodeType {
+  createUnionNode(nodes: OasNodeType[], modifiers: OasNodeModifiers): OasNodeType {
     if (nodes.length === 0) {
       throw new Error('Nodes must not be an empty array');
     }
 
-    return nodes.length === 1 ? nodes[0] : new AstNodeTypeUnion(nodes, modifiers);
+    return nodes.length === 1 ? nodes[0] : new OasNodeTypeUnion(nodes, modifiers);
   }
 
-  createOmitNode(model: AstNodeType, omitType: 'readOnly' | 'writeOnly', modelMappings: Map<string, AstNodeDeclaration>): AstNodeType {
+  createOmitNode(model: OasNodeType, omitType: 'readOnly' | 'writeOnly', modelMappings: Map<string, OasNodeDeclaration>): OasNodeType {
     const omitDeclarations: string[] = [];
 
     if (IsReferenceNode(model)) {
@@ -568,10 +568,10 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
       omitDeclarations.push(...this.getOmitDeclarations(model, omitType));
     }
 
-    return omitDeclarations.length > 0 ? new AstNodeTypeOmit(model, omitDeclarations, {}) : model;
+    return omitDeclarations.length > 0 ? new OasNodeTypeOmit(model, omitDeclarations, {}) : model;
   }
 
-  getOmitDeclarations(model: AstNode, omitType: 'readOnly' | 'writeOnly'): string[] {
+  getOmitDeclarations(model: OasNode, omitType: 'readOnly' | 'writeOnly'): string[] {
     const omitDeclarations: string[] = [];
 
     if (IsObjectNode(model)) {
@@ -595,8 +595,8 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     return omitDeclarations;
   }
 
-  createDeclarationMappings(declarations: AstNodeDeclaration[]): Map<string, AstNodeDeclaration> {
-    const mapping = new Map<string, AstNodeDeclaration>();
+  createDeclarationMappings(declarations: OasNodeDeclaration[]): Map<string, OasNodeDeclaration> {
+    const mapping = new Map<string, OasNodeDeclaration>();
 
     declarations.forEach(x => {
       if (x.referenceName) {
@@ -627,19 +627,19 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
   makeDeclarationGlobal(
     name: string,
     declarationType: DeclarationType,
-    node: AstNodeType
-  ): { declaration: AstNodeDeclaration; refNode: AstNodeTypeReference } {
+    node: OasNodeType
+  ): { declaration: OasNodeDeclaration; refNode: OasNodeTypeReference } {
     const refName = `#/components/generated/${name}`;
     const modifiers = node.modifiers;
     node.modifiers = {};
-    const declaration = new AstNodeDeclaration(name, name, declarationType, node, modifiers, refName);
+    const declaration = new OasNodeDeclaration(name, name, declarationType, node, modifiers, refName);
     declaration.isGenerated = true;
-    const refNode = new AstNodeTypeReference(refName, {});
+    const refNode = new OasNodeTypeReference(refName, {});
     return { declaration, refNode };
   }
 
-  makeResponseGlobal(operationId: string, response: AstNodeTypeResponse): AstNodeDeclaration[] {
-    const declarations: AstNodeDeclaration[] = [];
+  makeResponseGlobal(operationId: string, response: OasNodeTypeResponse): OasNodeDeclaration[] {
+    const declarations: OasNodeDeclaration[] = [];
 
     if (response.content && IsContentNode(response.content) && !IsReferenceNode(response.content.contentType)) {
       const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Response`, 'response', response.content.contentType);
@@ -658,17 +658,17 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     return declarations;
   }
 
-  makeOperationDeclarationsGlobal(ast: AbstractSyntaxTree): AbstractSyntaxTree {
-    for (const operation of ast.operations) {
+  makeOperationDeclarationsGlobal(oas: OpenApiSpecTree): OpenApiSpecTree {
+    for (const operation of oas.operations) {
       const operationId = operation.identifier.value;
 
       if (operation.responses) {
         const responses = operation.responses;
         if (IsResponseNode(responses)) {
-          ast.declarations.push(...this.makeResponseGlobal(operationId, responses));
+          oas.declarations.push(...this.makeResponseGlobal(operationId, responses));
         } else if (IsUnionNode(responses)) {
           const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Response`, 'response', responses);
-          ast.declarations.push(declaration);
+          oas.declarations.push(declaration);
           operation.responses = refNode;
         }
       }
@@ -680,39 +680,39 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
       if (operation.request.pathParameters && !IsReferenceNode(operation.request.pathParameters)) {
         const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}PathParameter`, 'parameter', operation.request.pathParameters);
 
-        ast.declarations.push(declaration);
+        oas.declarations.push(declaration);
         operation.request.pathParameters = refNode;
       }
 
       if (operation.request.cookieParameters && !IsReferenceNode(operation.request.cookieParameters)) {
         const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}CookieParameter`, 'parameter', operation.request.cookieParameters);
 
-        ast.declarations.push(declaration);
+        oas.declarations.push(declaration);
         operation.request.cookieParameters = refNode;
       }
 
       if (operation.request.headerParameters && !IsReferenceNode(operation.request.headerParameters)) {
         const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}HeaderParameter`, 'parameter', operation.request.headerParameters);
 
-        ast.declarations.push(declaration);
+        oas.declarations.push(declaration);
         operation.request.headerParameters = refNode;
       }
 
       if (operation.request.queryParameters && !IsReferenceNode(operation.request.queryParameters)) {
         const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}QueryParameter`, 'parameter', operation.request.queryParameters);
 
-        ast.declarations.push(declaration);
+        oas.declarations.push(declaration);
         operation.request.queryParameters = refNode;
       }
 
       if (operation.request.body && !IsReferenceNode(operation.request.body)) {
         const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Body`, 'request', operation.request.body);
 
-        ast.declarations.push(declaration);
+        oas.declarations.push(declaration);
         operation.request.body = refNode;
       }
     }
 
-    return ast;
+    return oas;
   }
 }

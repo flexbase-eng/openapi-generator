@@ -2,12 +2,12 @@
 /* ------------------------------------------------------------
  File auto-generated
 
- @summary {{ast.title}}
- @description {{ast.description}}
- @version {{ast.version}}
+ @summary {{oas.title}}
+ @description {{oas.description}}
+ @version {{oas.version}}
 ------------------------------------------------------------ */
 
-{{#ast}}
+{{#oas}}
 export type {{name}}ControllerResponse<BODY, HEADER = Record<string, any>> = {
     $status?: number,
     $headers?: HEADER,
@@ -30,4 +30,4 @@ export abstract class {{name}}ControllerGenerated {
 {{/operations}}
 }
 
-{{/ast}}
+{{/oas}}

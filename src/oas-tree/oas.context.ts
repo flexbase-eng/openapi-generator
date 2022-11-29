@@ -14,9 +14,9 @@ import {
   IsRequestNode,
   IsResponseNode,
   IsUnionNode,
-} from './ast/ast.node.utilities';
+} from './oas.node.utilities';
 
-export class AstContext extends Mustache.Context {
+export class OasContext extends Mustache.Context {
   constructor(view: any, parentContext?: Mustache.Context) {
     super(view, parentContext);
   }
@@ -42,9 +42,9 @@ export class AstContext extends Mustache.Context {
           self: view,
         },
       };
-      return new AstContext(viewWrapper, this);
+      return new OasContext(viewWrapper, this);
     } else {
-      return new AstContext(view, this);
+      return new OasContext(view, this);
     }
   }
 

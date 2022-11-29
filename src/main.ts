@@ -4,15 +4,15 @@ import { program } from 'commander';
 import glob from 'glob';
 import Mustache from 'mustache';
 import { OpenAPI } from 'openapi-types';
-import { AstContext } from './ast.context';
+import { OasContext } from './oas-tree/oas.context';
 import Path from 'path';
 import fs from 'fs-extra';
 import prettier from 'prettier';
 import { IsDocument } from './utilities/openapi.utilities';
-import { IAbstractSyntaxTreeBuilder } from './ast/ast.builder.interface';
-import { IAbstractSyntaxTreeConverter } from './ast/ast.converter.interface';
-import { AbstractSyntaxTree } from './ast/ast';
-import { AstNode } from './ast/nodes/ast.node';
+import { IOpenApiSpecBuilder } from './oas-tree/oas.builder.interface';
+import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
+import { OpenApiSpecTree } from './oas-tree/oas.tree';
+import { OasNode } from './oas-tree/nodes/oas.node';
 import {
   IsArrayNode,
   IsBodyNode,
@@ -25,8 +25,8 @@ import {
   IsRequestNode,
   IsResponseNode,
   IsUnionNode,
-} from './ast/ast.node.utilities';
-import { AstNodeTypeObject } from './ast/nodes/ast.node.type.object';
+} from './oas-tree/oas.node.utilities';
+import { OasNodeTypeObject } from './oas-tree/nodes/oas.node.type.object';
 
 type renderFunction = (text: string) => string;
 
@@ -180,8 +180,8 @@ interface ResponseDeclaration extends DeclarationNode {
   responses?: Expression[];
 }
 
-function makeProperties(astNode: AstNodeTypeObject): Array<Property> {
-  return astNode.fields.map(
+function makeProperties(oasNode: OasNodeTypeObject): Array<Property> {
+  return oasNode.fields.map(
     field =>
       <Property>{
         node: 'Property',
@@ -191,118 +191,118 @@ function makeProperties(astNode: AstNodeTypeObject): Array<Property> {
   );
 }
 
-function makeExpression(astNode: AstNode): Expression {
-  if (IsPrimativeNode(astNode)) {
+function makeExpression(oasNode: OasNode): Expression {
+  if (IsPrimativeNode(oasNode)) {
     return <Literal>{
       node: 'Literal',
-      value: astNode.primativeType,
+      value: oasNode.primativeType,
     };
-  } else if (IsObjectNode(astNode)) {
+  } else if (IsObjectNode(oasNode)) {
     return <ObjectExpression>{
       node: 'ObjectExpression',
-      properties: makeProperties(astNode),
+      properties: makeProperties(oasNode),
     };
-  } else if (IsArrayNode(astNode)) {
+  } else if (IsArrayNode(oasNode)) {
     return <ArrayExpression>{
       node: 'ArrayExpression',
-      elements: makeExpression(astNode.arrayType),
+      elements: makeExpression(oasNode.arrayType),
     };
-  } else if (IsUnionNode(astNode)) {
+  } else if (IsUnionNode(oasNode)) {
     return <UnionExpression>{
       node: 'UnionExpression',
       elements: <TODO>{ node: 'TODO', description: 'union types' },
     };
-  } else if (IsCompositeNode(astNode)) {
+  } else if (IsCompositeNode(oasNode)) {
     return <CompositeExpression>{
       node: 'CompositeExpression',
-      elements: astNode.compositeTypes.map(type => makeExpression(type)),
+      elements: oasNode.compositeTypes.map(type => makeExpression(type)),
     };
-  } else if (IsOmitNode(astNode)) {
+  } else if (IsOmitNode(oasNode)) {
     return <OmitExpression>{
       node: 'OmitExpression',
-      elements: makeExpression(astNode.originalType),
-      omit: astNode.omitFields,
+      elements: makeExpression(oasNode.originalType),
+      omit: oasNode.omitFields,
     };
-  } else if (IsReferenceNode(astNode)) {
-    return <Reference>{ node: 'Reference', refName: astNode.identifier.value };
-  } else if (IsContentNode(astNode)) {
+  } else if (IsReferenceNode(oasNode)) {
+    return <Reference>{ node: 'Reference', refName: oasNode.identifier.value };
+  } else if (IsContentNode(oasNode)) {
     return <MediaExpression>{
       node: 'MediaExpression',
-      mediaType: astNode.mediaType,
-      body: makeExpression(astNode.contentType),
+      mediaType: oasNode.mediaType,
+      body: makeExpression(oasNode.contentType),
     };
   }
 
-  return <TODO>{ node: 'TODO', description: astNode.kind };
+  return <TODO>{ node: 'TODO', description: oasNode.kind };
 }
 
-function makeModelDeclaration(astNode: AstNode, id: Identifier): ModelDeclaration {
-  if (IsObjectNode(astNode)) {
+function makeModelDeclaration(oasNode: OasNode, id: Identifier): ModelDeclaration {
+  if (IsObjectNode(oasNode)) {
     return <ObjectDeclaration>{
       node: 'ObjectDeclaration',
       id,
-      properties: makeProperties(astNode),
+      properties: makeProperties(oasNode),
     };
-  } else if (IsArrayNode(astNode)) {
+  } else if (IsArrayNode(oasNode)) {
     return <ArrayDeclaration>{
       node: 'ArrayDeclaration',
       id,
-      elements: makeExpression(astNode.arrayType),
+      elements: makeExpression(oasNode.arrayType),
     };
-  } else if (IsUnionNode(astNode)) {
+  } else if (IsUnionNode(oasNode)) {
     return <UnionDeclaration>{
       node: 'UnionDeclaration',
       id,
       elements: <TODO>{ node: 'TODO', description: 'union types' },
     };
-  } else if (IsCompositeNode(astNode)) {
+  } else if (IsCompositeNode(oasNode)) {
     return <CompositeDeclaration>{
       node: 'CompositeDeclaration',
       id,
-      elements: astNode.compositeTypes.map(type => makeExpression(type)),
+      elements: oasNode.compositeTypes.map(type => makeExpression(type)),
     };
-  } else if (IsOmitNode(astNode)) {
+  } else if (IsOmitNode(oasNode)) {
     return <OmitDeclaration>{
       node: 'OmitDeclaration',
       id,
-      elements: makeExpression(astNode.originalType),
-      omit: astNode.omitFields,
+      elements: makeExpression(oasNode.originalType),
+      omit: oasNode.omitFields,
     };
-  } else if (IsReferenceNode(astNode)) {
-    return <TODO>{ node: 'TODO', id, description: 'reference ' + astNode.identifier.value };
-  } else if (IsBodyNode(astNode)) {
+  } else if (IsReferenceNode(oasNode)) {
+    return <TODO>{ node: 'TODO', id, description: 'reference ' + oasNode.identifier.value };
+  } else if (IsBodyNode(oasNode)) {
     return <RequestDeclaration>{
       node: 'RequestDeclaration',
       id,
-      requests: astNode.contents.map(content => makeExpression(content)),
+      requests: oasNode.contents.map(content => makeExpression(content)),
     };
-  } else if (IsContentNode(astNode)) {
+  } else if (IsContentNode(oasNode)) {
     return <TODO>{ node: 'TODO', id, description: 'content' };
-  } else if (IsRequestNode(astNode)) {
+  } else if (IsRequestNode(oasNode)) {
     return <TODO>{ node: 'TODO', id, description: 'request' };
-  } else if (IsResponseNode(astNode)) {
+  } else if (IsResponseNode(oasNode)) {
     return <ResponseDeclaration>{
       node: 'ResponseDeclaration',
-      headers: astNode.headers ? makeExpression(astNode.headers) : undefined,
-      responses: Array.isArray(astNode.content)
-        ? astNode.content.map(content => makeExpression(content))
-        : astNode.content !== undefined
-        ? makeExpression(astNode.content)
+      headers: oasNode.headers ? makeExpression(oasNode.headers) : undefined,
+      responses: Array.isArray(oasNode.content)
+        ? oasNode.content.map(content => makeExpression(content))
+        : oasNode.content !== undefined
+        ? makeExpression(oasNode.content)
         : undefined,
     };
   } else {
-    return <TODO>{ node: 'TODO', id, description: astNode.kind };
+    return <TODO>{ node: 'TODO', id, description: oasNode.kind };
   }
 }
 
-function makeDocument(ast: AbstractSyntaxTree): Node {
+function makeDocument(oas: OpenApiSpecTree): Node {
   const models: Array<ModelDeclaration> = [];
   const responses: Array<ModelDeclaration> = [];
   const requests: Array<ModelDeclaration> = [];
   const parameters: Array<ModelDeclaration> = [];
   const operations: Array<OperationDeclaration> = [];
 
-  for (const decl of ast.declarations) {
+  for (const decl of oas.declarations) {
     const id = <Identifier>{ node: 'Identifier', name: decl.identifier.value };
     const node = makeModelDeclaration(decl.type, id);
 
@@ -323,7 +323,7 @@ function makeDocument(ast: AbstractSyntaxTree): Node {
     }
   }
 
-  for (const operation of ast.operations) {
+  for (const operation of oas.operations) {
     const id = <Identifier>{ node: 'Identifier', name: operation.identifier.value };
     operations.push(<OperationDeclaration>{ node: 'OperationDeclaration', id });
   }
@@ -340,7 +340,7 @@ function makeDocument(ast: AbstractSyntaxTree): Node {
   return document;
 }
 
-export async function main(astBuilder: IAbstractSyntaxTreeBuilder, astConverter: IAbstractSyntaxTreeConverter): Promise<void> {
+export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenApiSpecConverter): Promise<void> {
   program
     .requiredOption('-i, --input <path>', 'OpenAPI spec to parse (*.json, *.yaml)')
     .requiredOption('-t, --template <path>', 'The template to use')
@@ -348,7 +348,7 @@ export async function main(astBuilder: IAbstractSyntaxTreeBuilder, astConverter:
     .option('-e, --ext <ext>', 'The file extension to use. Defaults to .ts', '.ts')
     .option('-p, --partials <glob>', 'Optional partial templates to include')
     .option('-o, --output <path>', 'An optional output path')
-    .option('-d, --debug', 'Output the internal ast representation')
+    .option('-d, --debug', 'Output the internal representations')
     .parse(process.argv);
 
   const cliOptions = program.opts();
@@ -362,12 +362,12 @@ export async function main(astBuilder: IAbstractSyntaxTreeBuilder, astConverter:
       process.exit();
     }
 
-    const ast = astBuilder.generateAst(apiDoc);
+    const oasTree = oasBuilder.generateOasTree(apiDoc);
 
     // move operation declarations to lookups and replace with references
-    astBuilder.makeOperationDeclarationsGlobal(ast);
+    oasBuilder.makeOperationDeclarationsGlobal(oasTree);
 
-    const declarationLookups = astBuilder.createDeclarationMappings(ast.declarations);
+    const declarationLookups = oasBuilder.createDeclarationMappings(oasTree.declarations);
 
     const functions = {
       declarationLookup: function () {
@@ -412,10 +412,10 @@ export async function main(astBuilder: IAbstractSyntaxTreeBuilder, astConverter:
     };
 
     if (cliOptions.name) {
-      ast.name = cliOptions.name;
+      oasTree.name = cliOptions.name;
     }
 
-    const fileName = `${ast.name}${cliOptions.ext ?? '.ts'}`;
+    const fileName = `${oasTree.name}${cliOptions.ext ?? '.ts'}`;
 
     await fs.ensureDir(cliOptions.output);
     const output = Path.join(cliOptions.output, fileName);
@@ -430,13 +430,13 @@ export async function main(astBuilder: IAbstractSyntaxTreeBuilder, astConverter:
       });
     }
 
-    const jsonAst = astConverter.convertAstToPoco(ast);
+    const jsonOas = oasConverter.convertOasToPoco(oasTree);
 
-    const context = new AstContext({ ast: jsonAst, functions });
+    const context = new OasContext({ oas: jsonOas, functions });
 
     try {
-      const node = makeDocument(ast);
-      const name = Path.join(cliOptions.output, `${fileName}.new.ast.json`);
+      const node = makeDocument(oasTree);
+      const name = Path.join(cliOptions.output, `${fileName}.ast.json`);
       let json = JSON.stringify(node);
       try {
         json = prettier.format(json, {
@@ -457,8 +457,8 @@ export async function main(astBuilder: IAbstractSyntaxTreeBuilder, astConverter:
     }
 
     if (cliOptions.debug) {
-      const name = Path.join(cliOptions.output, `${fileName}.ast.json`);
-      let json = JSON.stringify(jsonAst);
+      const name = Path.join(cliOptions.output, `${fileName}.oasTree.json`);
+      let json = JSON.stringify(jsonOas);
       try {
         json = prettier.format(json, {
           semi: true,

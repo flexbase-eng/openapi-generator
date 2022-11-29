@@ -1,5 +1,5 @@
-import { AbstractSyntaxTree } from './ast';
-import { IAbstractSyntaxTreeConverter } from './ast.converter.interface';
+import { OpenApiSpecTree } from './oas.tree';
+import { IOpenApiSpecConverter } from './oas.converter.interface';
 import {
   IsObjectNode,
   IsArrayNode,
@@ -12,46 +12,46 @@ import {
   IsContentNode,
   IsBodyNode,
   IsOmitNode,
-} from './ast.node.utilities';
-import { AstNode } from './nodes/ast.node';
-import { AstNodeDeclaration } from './nodes/ast.node.declaration';
-import { AstNodeLiteral } from './nodes/ast.node.literal';
-import { AstNodeOperation } from './nodes/ast.node.operation';
-import { AstNodeType } from './nodes/ast.node.type';
+} from './oas.node.utilities';
+import { OasNode } from './nodes/oas.node';
+import { OasNodeDeclaration } from './nodes/oas.node.declaration';
+import { OasNodeLiteral } from './nodes/oas.node.literal';
+import { OasNodeOperation } from './nodes/oas.node.operation';
+import { OasNodeType } from './nodes/oas.node.type';
 
-export class AbstractSyntaxTreeConverter implements IAbstractSyntaxTreeConverter {
-  convertAstToPoco(ast: AbstractSyntaxTree): any {
+export class OpenApiSpecConverter implements IOpenApiSpecConverter {
+  convertOasToPoco(oas: OpenApiSpecTree): any {
     return {
-      title: ast.title,
-      description: ast.description,
-      version: ast.version,
-      name: ast.name,
-      declarations: ast.declarations.map(x => this.convertNode(x)),
-      operations: ast.operations.map(x => this.convertNode(x)),
+      title: oas.title,
+      description: oas.description,
+      version: oas.version,
+      name: oas.name,
+      declarations: oas.declarations.map(x => this.convertNode(x)),
+      operations: oas.operations.map(x => this.convertNode(x)),
     };
   }
 
-  convertNode(node: AstNode): any {
+  convertNode(node: OasNode): any {
     if (!node) {
       throw Error();
     }
 
     switch (node.kind) {
       case 'declaration':
-        return this.convertDeclaration(node as AstNodeDeclaration);
+        return this.convertDeclaration(node as OasNodeDeclaration);
 
       case 'literal':
-        return this.convertLiteral(node as AstNodeLiteral);
+        return this.convertLiteral(node as OasNodeLiteral);
 
       case 'operation':
-        return this.convertOperation(node as AstNodeOperation);
+        return this.convertOperation(node as OasNodeOperation);
 
       case 'type':
-        return this.convertType(node as AstNodeType);
+        return this.convertType(node as OasNodeType);
     }
   }
 
-  convertDeclaration(node: AstNodeDeclaration) {
+  convertDeclaration(node: OasNodeDeclaration) {
     return {
       kind: node.kind,
       referenceName: node.referenceName,
@@ -65,7 +65,7 @@ export class AbstractSyntaxTreeConverter implements IAbstractSyntaxTreeConverter
     };
   }
 
-  convertLiteral(node: AstNodeLiteral) {
+  convertLiteral(node: OasNodeLiteral) {
     return {
       kind: node.kind,
       value: node.value,
@@ -73,7 +73,7 @@ export class AbstractSyntaxTreeConverter implements IAbstractSyntaxTreeConverter
     };
   }
 
-  convertOperation(node: AstNodeOperation): any {
+  convertOperation(node: OasNodeOperation): any {
     const request = node.request ? this.convertNode(node.request) : undefined;
     const responses = node.responses ? this.convertNode(node.responses) : undefined;
     return {
@@ -87,7 +87,7 @@ export class AbstractSyntaxTreeConverter implements IAbstractSyntaxTreeConverter
     };
   }
 
-  convertType(node: AstNodeType) {
+  convertType(node: OasNodeType) {
     const json = {
       kind: node.kind,
       kindType: node.kindType,

@@ -1,4 +1,4 @@
-export interface AstNodeModifiers {
+export interface OasNodeModifiers {
   title?: string;
   description?: string;
   format?: string;
