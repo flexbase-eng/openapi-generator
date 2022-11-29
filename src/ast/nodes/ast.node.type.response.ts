@@ -4,7 +4,7 @@ import { AstNodeType } from './ast.node.type';
 export class AstNodeTypeResponse extends AstNodeType {
   constructor(
     private readonly _statusCode: string,
-    private readonly _content: AstNodeType | undefined,
+    private readonly _content: AstNodeType | AstNodeType[] | undefined,
     private _headers: AstNodeType | undefined,
     modifiers: AstNodeModifiers
   ) {
@@ -15,7 +15,7 @@ export class AstNodeTypeResponse extends AstNodeType {
     return this._statusCode;
   }
 
-  get content(): AstNodeType | undefined {
+  get content(): AstNodeType | AstNodeType[] | undefined {
     return this._content;
   }
 

@@ -55,6 +55,8 @@ export class AbstractSyntaxTreeConverter implements IAbstractSyntaxTreeConverter
     return {
       kind: node.kind,
       referenceName: node.referenceName,
+      declarationType: node.declarationType,
+      isGenerated: node.isGenerated ? 'true' : undefined,
       parameterLocation: node.parameterLocation,
       identifier: this.convertNode(node.identifier),
       generatedIdentifier: this.convertNode(node.generatedIdentifier),
@@ -108,7 +110,11 @@ export class AbstractSyntaxTreeConverter implements IAbstractSyntaxTreeConverter
       return {
         ...json,
         statusCode: node.statusCode,
-        content: node.content ? this.convertNode(node.content) : undefined,
+        content: node.content
+          ? Array.isArray(node.content)
+            ? node.content.map(x => this.convertNode(x))
+            : this.convertNode(node.content)
+          : undefined,
         headers: node.headers ? this.convertNode(node.headers) : undefined,
       };
     } else if (IsRequestNode(node)) {

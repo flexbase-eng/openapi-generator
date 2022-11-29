@@ -4,14 +4,17 @@ import { AstNodeModifiers } from './ast.node.modifiers';
 import { AstNodeType } from './ast.node.type';
 
 export type ParameterLocations = 'query' | 'header' | 'path' | 'cookie' | 'reference' | 'unknown';
+export type DeclarationType = 'model' | 'request' | 'response' | 'parameter' | 'inline';
 
 export class AstNodeDeclaration extends AstNode {
   private readonly _identifier: AstNodeLiteral;
   private readonly _generatedIdentifier: AstNodeLiteral;
+  private _isGenerated: boolean = false;
 
   constructor(
     identifier: AstNodeLiteral | string,
     generatedIdentifier: AstNodeLiteral | string,
+    private readonly _declarationType: DeclarationType,
     private readonly _type: AstNodeType,
     modifiers: AstNodeModifiers,
     private readonly _referenceName?: string,
@@ -42,11 +45,23 @@ export class AstNodeDeclaration extends AstNode {
     return this._type;
   }
 
+  get declarationType(): DeclarationType {
+    return this._declarationType;
+  }
+
   get referenceName(): string | undefined {
     return this._referenceName;
   }
 
   get parameterLocation(): ParameterLocations | undefined {
     return this._parameterLocation;
+  }
+
+  get isGenerated(): boolean {
+    return this._isGenerated;
+  }
+
+  set isGenerated(value: boolean) {
+    this._isGenerated = value;
   }
 }

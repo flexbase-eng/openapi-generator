@@ -2,7 +2,7 @@ import { OpenAPIV3 } from 'openapi-types';
 import { IsArraySchemaObject, IsReferenceObject } from '../utilities/openapi.utilities';
 import { AbstractSyntaxTree } from './ast';
 import { AstNode } from './nodes/ast.node';
-import { AstNodeDeclaration, ParameterLocations } from './nodes/ast.node.declaration';
+import { AstNodeDeclaration, DeclarationType, ParameterLocations } from './nodes/ast.node.declaration';
 import { AstNodeTypeReference } from './nodes/ast.node.type.reference';
 import { AstNodeTypeObject } from './nodes/ast.node.type.object';
 import { AstNodeType } from './nodes/ast.node.type';
@@ -33,7 +33,7 @@ import { IAbstractSyntaxTreeBuilder, ParameterLocationAndNode, ParameterNodes } 
 import { Logger } from '@flexbase/logger';
 
 function cleanName(name: string): string {
-  return name.replace('.', '_');
+  return name.replace('-', '_');
 }
 
 export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
@@ -66,7 +66,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
         const nodeType = this.generateTypeFromSchema(schema);
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
-        const declaration = new AstNodeDeclaration(cleanName(name), cleanName(generatedName), nodeType, modifiers, refName);
+        const declaration = new AstNodeDeclaration(name, cleanName(generatedName), 'model', nodeType, modifiers, refName);
         declarations.push(declaration);
         modelMappings.set(refName, declaration);
       }
@@ -84,7 +84,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
 
-        declarations.push(new AstNodeDeclaration(cleanName(name), cleanName(generatedName), nodeType, modifiers, refName));
+        declarations.push(new AstNodeDeclaration(name, cleanName(generatedName), 'request', nodeType, modifiers, refName));
       }
     }
 
@@ -103,7 +103,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
 
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
-        declarations.push(new AstNodeDeclaration(cleanName(name), cleanName(generatedName), nodeType, modifiers, refName));
+        declarations.push(new AstNodeDeclaration(name, cleanName(generatedName), 'response', nodeType, modifiers, refName));
       }
     }
 
@@ -125,7 +125,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
 
         const modifiers = type.modifiers;
         type.modifiers = {};
-        declarations.push(new AstNodeDeclaration(cleanName(name), cleanName(generatedName), type, modifiers, refName, location));
+        declarations.push(new AstNodeDeclaration(name, cleanName(generatedName), 'parameter', type, modifiers, refName, location));
       }
     }
 
@@ -194,7 +194,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
 
           const modifiers = propertyType.modifiers;
           propertyType.modifiers = {};
-          fields.push(new AstNodeDeclaration(identifier, identifier, propertyType, modifiers));
+          fields.push(new AstNodeDeclaration(identifier, identifier, 'inline', propertyType, modifiers));
         }
       }
 
@@ -382,7 +382,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     const deprecated = parameter.deprecated;
     const description = parameter.description;
 
-    const declaration = new AstNodeDeclaration(name, name, nodeType, { description, required, deprecated });
+    const declaration = new AstNodeDeclaration(name, cleanName(name), 'parameter', nodeType, { description, required, deprecated });
 
     return { location, type: new AstNodeTypeObject([declaration], {}) };
   }
@@ -400,7 +400,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     const deprecated = header.deprecated;
     const description = header.description;
 
-    const declaration = new AstNodeDeclaration(name, name, nodeType, { description, required, deprecated });
+    const declaration = new AstNodeDeclaration(name, cleanName(name), 'parameter', nodeType, { description, required, deprecated });
 
     return new AstNodeTypeObject([declaration], {});
   }
@@ -439,10 +439,10 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
       this._logger.warn('ast generation for response object links is not implemented yet');
     }
 
-    const content = contentNodes.length === 0 ? undefined : this.createUnionNode(contentNodes, { description });
+    const content = contentNodes.length === 0 ? undefined : contentNodes.length > 1 ? contentNodes : contentNodes[0]; //this.createUnionNode(contentNodes, { description });
 
     if (content || headerNode) {
-      return new AstNodeTypeResponse(code, content, headerNode, {});
+      return new AstNodeTypeResponse(code, content, headerNode, { description });
     }
 
     return undefined;
@@ -624,11 +624,16 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     return extensions;
   }
 
-  makeDeclarationGlobal(name: string, node: AstNodeType): { declaration: AstNodeDeclaration; refNode: AstNodeTypeReference } {
+  makeDeclarationGlobal(
+    name: string,
+    declarationType: DeclarationType,
+    node: AstNodeType
+  ): { declaration: AstNodeDeclaration; refNode: AstNodeTypeReference } {
     const refName = `#/components/generated/${name}`;
     const modifiers = node.modifiers;
     node.modifiers = {};
-    const declaration = new AstNodeDeclaration(name, name, node, modifiers, refName);
+    const declaration = new AstNodeDeclaration(name, name, declarationType, node, modifiers, refName);
+    declaration.isGenerated = true;
     const refNode = new AstNodeTypeReference(refName, {});
     return { declaration, refNode };
   }
@@ -637,27 +642,14 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
     const declarations: AstNodeDeclaration[] = [];
 
     if (response.content && IsContentNode(response.content) && !IsReferenceNode(response.content.contentType)) {
-      const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Response`, response.content.contentType);
+      const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Response`, 'response', response.content.contentType);
 
       declarations.push(declaration);
       response.content.contentType = refNode;
     }
 
     if (response.headers && !IsReferenceNode(response.headers)) {
-      // const updatedHeaders: AstNodeType[] = [];
-      // for (const header of response.headers) {
-      //   if (IsReferenceNode(header)) {
-      //     updatedHeaders.push(header);
-      //     continue;
-      //   }
-
-      //   const { declaration, refNode } = makeDeclarationGlobal(`${operationId}HeaderResponse`, header);
-
-      //   declarations.push(declaration);
-      //   updatedHeaders.push(refNode);
-      // }
-
-      const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}HeaderResponse`, response.headers);
+      const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}HeaderResponse`, 'parameter', response.headers);
 
       declarations.push(declaration);
       response.headers = refNode;
@@ -675,7 +667,7 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
         if (IsResponseNode(responses)) {
           ast.declarations.push(...this.makeResponseGlobal(operationId, responses));
         } else if (IsUnionNode(responses)) {
-          const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Response`, responses);
+          const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Response`, 'response', responses);
           ast.declarations.push(declaration);
           operation.responses = refNode;
         }
@@ -686,35 +678,35 @@ export class AbstractSyntaxTreeBuilder implements IAbstractSyntaxTreeBuilder {
       }
 
       if (operation.request.pathParameters && !IsReferenceNode(operation.request.pathParameters)) {
-        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}PathParameter`, operation.request.pathParameters);
+        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}PathParameter`, 'parameter', operation.request.pathParameters);
 
         ast.declarations.push(declaration);
         operation.request.pathParameters = refNode;
       }
 
       if (operation.request.cookieParameters && !IsReferenceNode(operation.request.cookieParameters)) {
-        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}CookieParameter`, operation.request.cookieParameters);
+        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}CookieParameter`, 'parameter', operation.request.cookieParameters);
 
         ast.declarations.push(declaration);
         operation.request.cookieParameters = refNode;
       }
 
       if (operation.request.headerParameters && !IsReferenceNode(operation.request.headerParameters)) {
-        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}HeaderParameter`, operation.request.headerParameters);
+        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}HeaderParameter`, 'parameter', operation.request.headerParameters);
 
         ast.declarations.push(declaration);
         operation.request.headerParameters = refNode;
       }
 
       if (operation.request.queryParameters && !IsReferenceNode(operation.request.queryParameters)) {
-        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}QueryParameter`, operation.request.queryParameters);
+        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}QueryParameter`, 'parameter', operation.request.queryParameters);
 
         ast.declarations.push(declaration);
         operation.request.queryParameters = refNode;
       }
 
       if (operation.request.body && !IsReferenceNode(operation.request.body)) {
-        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Body`, operation.request.body);
+        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Body`, 'request', operation.request.body);
 
         ast.declarations.push(declaration);
         operation.request.body = refNode;

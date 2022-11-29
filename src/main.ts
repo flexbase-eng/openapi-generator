@@ -13,111 +13,328 @@ import { IAbstractSyntaxTreeBuilder } from './ast/ast.builder.interface';
 import { IAbstractSyntaxTreeConverter } from './ast/ast.converter.interface';
 import { AbstractSyntaxTree } from './ast/ast';
 import { AstNode } from './ast/nodes/ast.node';
-import { IsDeclarationNode, IsObjectNode, IsPrimativeNode } from './ast/ast.node.utilities';
+import {
+  IsArrayNode,
+  IsBodyNode,
+  IsCompositeNode,
+  IsContentNode,
+  IsObjectNode,
+  IsOmitNode,
+  IsPrimativeNode,
+  IsReferenceNode,
+  IsRequestNode,
+  IsResponseNode,
+  IsUnionNode,
+} from './ast/ast.node.utilities';
+import { AstNodeTypeObject } from './ast/nodes/ast.node.type.object';
 
 type renderFunction = (text: string) => string;
 
 interface Node {
-  type: string;
+  node: string;
 }
 
-type Expression = TODO | Literal;
-type Statement = Node;
+type Expression =
+  | TODO
+  | Literal
+  | Reference
+  | ObjectExpression
+  | ArrayExpression
+  | UnionExpression
+  | CompositeExpression
+  | OmitExpression
+  | MediaExpression;
+type ModelDeclaration =
+  | TODO
+  | ObjectDeclaration
+  | ArrayDeclaration
+  | UnionDeclaration
+  | CompositeDeclaration
+  | OmitDeclaration
+  | RequestDeclaration
+  | ResponseDeclaration;
 
 interface TODO extends Node {
-  type: 'TODO';
+  node: 'TODO';
+  id?: Identifier;
+  description: string;
 }
 
 interface Document extends Node {
-  type: 'Document';
-  body: Array<Declaration>;
+  node: 'Document';
+  models: Array<ModelDeclaration>;
+  responses: Array<ModelDeclaration>;
+  requests: Array<ModelDeclaration>;
+  parameters: Array<ModelDeclaration>;
+  operations: Array<OperationDeclaration>;
 }
 
-type ModelDeclaration = ObjectDeclaration;
-
-interface OperationDeclaration extends Node {
-  type: 'OperationDeclaration';
+interface DeclarationNode extends Node {
   id: Identifier;
+}
+
+interface OperationDeclaration extends DeclarationNode {
+  node: 'OperationDeclaration';
 }
 
 interface Identifier extends Node {
-  type: 'Identifier';
+  node: 'Identifier';
   name: string;
 }
 
-export interface Literal extends Node {
-  type: 'Literal';
+interface Literal extends Node {
+  node: 'Literal';
   value: string | boolean | null | number;
 }
 
-interface ObjectDeclaration extends Node {
-  type: 'ObjectDeclaration';
-  id: Identifier;
-  properties: Array<PropertyDeclaration>;
+interface Reference extends Node {
+  node: 'Reference';
+  refName: string;
 }
 
-interface PropertyDeclaration extends Node {
-  type: 'PropertyDeclaration';
+interface ObjectNode extends Node {
+  properties: Array<Property>;
+}
+
+interface ObjectDeclaration extends ObjectNode, DeclarationNode {
+  node: 'ObjectDeclaration';
+}
+
+interface ObjectExpression extends ObjectNode {
+  node: 'ObjectExpression';
+}
+
+interface Property extends Node {
+  node: 'Property';
   key: Identifier;
-  value: Expression;
+  type: Expression;
+  value?: Expression;
 }
 
-type Declaration = ModelDeclaration | OperationDeclaration | TODO;
+interface ArrayNode extends Node {
+  elements: Expression;
+}
+
+interface ArrayDeclaration extends ArrayNode, DeclarationNode {
+  node: 'ArrayDeclaration';
+}
+
+interface ArrayExpression extends ArrayNode {
+  node: 'ArrayExpression';
+}
+
+interface UnionNode extends Node {
+  elements: Expression;
+}
+
+interface UnionDeclaration extends UnionNode, DeclarationNode {
+  node: 'UnionDeclaration';
+}
+
+interface UnionExpression extends UnionNode {
+  node: 'UnionExpression';
+}
+
+interface CompositeNode extends Node {
+  elements: Expression[];
+}
+
+interface CompositeDeclaration extends CompositeNode, DeclarationNode {
+  node: 'CompositeDeclaration';
+}
+
+interface CompositeExpression extends CompositeNode {
+  node: 'CompositeExpression';
+}
+
+interface OmitNode extends Node {
+  elements: Expression;
+  omit: Array<string>;
+}
+
+interface OmitDeclaration extends OmitNode, DeclarationNode {
+  node: 'OmitDeclaration';
+}
+
+interface OmitExpression extends OmitNode {
+  node: 'OmitExpression';
+}
+
+interface MediaNode extends Node {
+  mediaType: string;
+  body: Expression;
+}
+
+interface MediaExpression extends MediaNode {
+  node: 'MediaExpression';
+}
+
+interface RequestDeclaration extends DeclarationNode {
+  node: 'RequestDeclaration';
+  requests: Expression[];
+}
+
+interface ResponseDeclaration extends DeclarationNode {
+  node: 'ResponseDeclaration';
+  headers?: Expression;
+  responses?: Expression[];
+}
+
+function makeProperties(astNode: AstNodeTypeObject): Array<Property> {
+  return astNode.fields.map(
+    field =>
+      <Property>{
+        node: 'Property',
+        key: <Identifier>{ node: 'Identifier', name: field.identifier.value },
+        type: makeExpression(field.type),
+      }
+  );
+}
 
 function makeExpression(astNode: AstNode): Expression {
   if (IsPrimativeNode(astNode)) {
     return <Literal>{
-      type: 'Literal',
+      node: 'Literal',
       value: astNode.primativeType,
+    };
+  } else if (IsObjectNode(astNode)) {
+    return <ObjectExpression>{
+      node: 'ObjectExpression',
+      properties: makeProperties(astNode),
+    };
+  } else if (IsArrayNode(astNode)) {
+    return <ArrayExpression>{
+      node: 'ArrayExpression',
+      elements: makeExpression(astNode.arrayType),
+    };
+  } else if (IsUnionNode(astNode)) {
+    return <UnionExpression>{
+      node: 'UnionExpression',
+      elements: <TODO>{ node: 'TODO', description: 'union types' },
+    };
+  } else if (IsCompositeNode(astNode)) {
+    return <CompositeExpression>{
+      node: 'CompositeExpression',
+      elements: astNode.compositeTypes.map(type => makeExpression(type)),
+    };
+  } else if (IsOmitNode(astNode)) {
+    return <OmitExpression>{
+      node: 'OmitExpression',
+      elements: makeExpression(astNode.originalType),
+      omit: astNode.omitFields,
+    };
+  } else if (IsReferenceNode(astNode)) {
+    return <Reference>{ node: 'Reference', refName: astNode.identifier.value };
+  } else if (IsContentNode(astNode)) {
+    return <MediaExpression>{
+      node: 'MediaExpression',
+      mediaType: astNode.mediaType,
+      body: makeExpression(astNode.contentType),
     };
   }
 
-  return <TODO>{ type: 'TODO' };
+  return <TODO>{ node: 'TODO', description: astNode.kind };
 }
 
-function makeDeclaration(astNode: AstNode, id?: Identifier): Declaration {
-  if (IsDeclarationNode(astNode)) {
-    const id = <Identifier>{ name: astNode.identifier.value };
-
-    return makeDeclaration(astNode.type, id);
-  } else if (IsObjectNode(astNode)) {
-    if (!id) {
-      throw Error('id required');
-    }
-
-    const properties: Array<PropertyDeclaration> = [];
-    for (const prop of astNode.fields) {
-      const key = <Identifier>{ name: prop.identifier.value };
-      const value = makeExpression(prop.type);
-      properties.push({
-        type: 'PropertyDeclaration',
-        key,
-        value,
-      });
-    }
-
-    let node: ObjectDeclaration = {
-      type: 'ObjectDeclaration',
+function makeModelDeclaration(astNode: AstNode, id: Identifier): ModelDeclaration {
+  if (IsObjectNode(astNode)) {
+    return <ObjectDeclaration>{
+      node: 'ObjectDeclaration',
       id,
-      properties,
+      properties: makeProperties(astNode),
     };
-
-    return node;
+  } else if (IsArrayNode(astNode)) {
+    return <ArrayDeclaration>{
+      node: 'ArrayDeclaration',
+      id,
+      elements: makeExpression(astNode.arrayType),
+    };
+  } else if (IsUnionNode(astNode)) {
+    return <UnionDeclaration>{
+      node: 'UnionDeclaration',
+      id,
+      elements: <TODO>{ node: 'TODO', description: 'union types' },
+    };
+  } else if (IsCompositeNode(astNode)) {
+    return <CompositeDeclaration>{
+      node: 'CompositeDeclaration',
+      id,
+      elements: astNode.compositeTypes.map(type => makeExpression(type)),
+    };
+  } else if (IsOmitNode(astNode)) {
+    return <OmitDeclaration>{
+      node: 'OmitDeclaration',
+      id,
+      elements: makeExpression(astNode.originalType),
+      omit: astNode.omitFields,
+    };
+  } else if (IsReferenceNode(astNode)) {
+    return <TODO>{ node: 'TODO', id, description: 'reference ' + astNode.identifier.value };
+  } else if (IsBodyNode(astNode)) {
+    return <RequestDeclaration>{
+      node: 'RequestDeclaration',
+      id,
+      requests: astNode.contents.map(content => makeExpression(content)),
+    };
+  } else if (IsContentNode(astNode)) {
+    return <TODO>{ node: 'TODO', id, description: 'content' };
+  } else if (IsRequestNode(astNode)) {
+    return <TODO>{ node: 'TODO', id, description: 'request' };
+  } else if (IsResponseNode(astNode)) {
+    return <ResponseDeclaration>{
+      node: 'ResponseDeclaration',
+      headers: astNode.headers ? makeExpression(astNode.headers) : undefined,
+      responses: Array.isArray(astNode.content)
+        ? astNode.content.map(content => makeExpression(content))
+        : astNode.content !== undefined
+        ? makeExpression(astNode.content)
+        : undefined,
+    };
   } else {
-    return <TODO>{ type: 'TODO' };
+    return <TODO>{ node: 'TODO', id, description: astNode.kind };
   }
 }
 
 function makeDocument(ast: AbstractSyntaxTree): Node {
-  const body: Array<Declaration> = [];
+  const models: Array<ModelDeclaration> = [];
+  const responses: Array<ModelDeclaration> = [];
+  const requests: Array<ModelDeclaration> = [];
+  const parameters: Array<ModelDeclaration> = [];
+  const operations: Array<OperationDeclaration> = [];
 
   for (const decl of ast.declarations) {
-    body.push(makeDeclaration(decl));
+    const id = <Identifier>{ node: 'Identifier', name: decl.identifier.value };
+    const node = makeModelDeclaration(decl.type, id);
+
+    if (decl.declarationType === 'model') {
+      if (Array.isArray(node)) models.push(...node);
+      else models.push(node);
+    } else if (decl.declarationType === 'response') {
+      if (Array.isArray(node)) responses.push(...node);
+      else responses.push(node);
+    } else if (decl.declarationType === 'request') {
+      if (Array.isArray(node)) requests.push(...node);
+      else requests.push(node);
+    } else if (decl.declarationType === 'parameter') {
+      if (Array.isArray(node)) parameters.push(...node);
+      else parameters.push(node);
+    } else {
+      throw Error();
+    }
+  }
+
+  for (const operation of ast.operations) {
+    const id = <Identifier>{ node: 'Identifier', name: operation.identifier.value };
+    operations.push(<OperationDeclaration>{ node: 'OperationDeclaration', id });
   }
 
   const document: Document = {
-    type: 'Document',
-    body,
+    node: 'Document',
+    models,
+    responses,
+    requests,
+    parameters,
+    operations,
   };
 
   return document;
