@@ -34,7 +34,7 @@ export interface IOpenApiSpecBuilder {
   generateParameter(parameter: OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject): ParameterLocationAndNode | undefined;
   generateHeader(name: string, header: OpenAPIV3.ReferenceObject | OpenAPIV3.HeaderObject): OasNodeType;
   generateResponse(code: string, response: OpenAPIV3.ReferenceObject | OpenAPIV3.ResponseObject): OasNodeTypeResponse | undefined;
-  generateResponses(responses: OpenAPIV3.ResponsesObject): OasNodeType | undefined;
+  generateResponses(responses: OpenAPIV3.ResponsesObject): OasNodeType | OasNodeType[] | undefined;
   generateRequestBody(request: OpenAPIV3.RequestBodyObject | OpenAPIV3.ReferenceObject, modelMappings: Map<string, OasNodeDeclaration>): OasNodeType;
   createDeclarationMappings(declarations: OasNodeDeclaration[]): Map<string, OasNodeDeclaration>;
   makeOperationDeclarationsGlobal(ast: OpenApiSpecTree): OpenApiSpecTree;

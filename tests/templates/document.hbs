@@ -1,0 +1,81 @@
+/* eslint-disable */
+/* ------------------------------------------------------------
+ File auto-generated
+
+ @summary {{astDocument.title}}
+ @description {{astDocument.description}}
+ @version {{astDocument.version}}
+------------------------------------------------------------ */
+
+{{#astDocument}}
+export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BODY = void, HEADER = Record<string, any>> = {
+    $status?: number,
+    $headers?: HEADER,
+    $body: BODY,
+};
+
+{{#if models}}
+//#region Models
+{{#each models}}
+{{>declaration suffix="Model"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if responses}}
+//#region Responses
+{{#each responses}}
+{{>declaration suffix="Response"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if requests}}
+//#region Requests
+{{#each requests}}
+{{>declaration suffix="Requests"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if pathParameters}}
+//#region Path Parameters
+{{#each pathParameters}}
+{{>declaration suffix="PathParameter"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if headerParameters}}
+//#region Header Parameters
+{{#each headerParameters}}
+{{>declaration suffix="HeaderParameter"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if queryParameters}}
+//#region Query Parameters
+{{#each queryParameters}}
+{{>declaration suffix="QueryParameter"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if cookieParameters}}
+//#region Cookie Parameters
+{{#each cookieParameters}}
+{{>declaration suffix="CookieParameter"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if operations}}
+export abstract class {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerGenerated {
+{{#each operations}}
+{{>declaration prefix=(replace ../title (toRegex "(-|\.| )+" "g") "_")}}
+{{/each}}
+}
+{{/if}}
+
+{{/astDocument}}

@@ -1,18 +1,10 @@
-import { ArrayDeclaration } from './ast.array';
-import { CompositeDeclaration } from './ast.composite';
-import { ObjectDeclaration } from './ast.object';
-import { OmitDeclaration } from './ast.omit';
-import { RequestDeclaration } from './ast.request';
-import { ResponseDeclaration } from './ast.response';
-import { TODO } from './ast.todo';
-import { UnionDeclaration } from './ast.union';
+import { Declaration } from './ast.declaration';
 
-export type ModelDeclaration =
-  | TODO
-  | ObjectDeclaration
-  | ArrayDeclaration
-  | UnionDeclaration
-  | CompositeDeclaration
-  | OmitDeclaration
-  | RequestDeclaration
-  | ResponseDeclaration;
+export interface ModelDeclaration extends Declaration {
+  node: 'ModelDeclaration';
+  referenceName?: string;
+}
+
+export const IsModelDeclaration = (obj: any): obj is ModelDeclaration => {
+  return Object.hasOwn(obj, 'node') && obj.node === 'ModelDeclaration';
+};

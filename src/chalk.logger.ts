@@ -1,20 +1,20 @@
-import { Logger } from '@flexbase/logger';
+import { ConsoleLogger } from '@flexbase/logger';
 import chalk from 'chalk';
 
-export class ChalkLogger implements Logger {
+export class ChalkLogger extends ConsoleLogger {
   error(message: any, ...optionalParams: any[]): void {
-    console.error(chalk.red(message), optionalParams);
+    super.error(typeof message === 'object' ? message : chalk.redBright(message), ...optionalParams);
   }
   warn(message: any, ...optionalParams: any[]): void {
-    console.warn(chalk.red.yellow(message), optionalParams);
+    super.warn(typeof message === 'object' ? message : chalk.yellow(message), ...optionalParams);
   }
   info(message: any, ...optionalParams: any[]): void {
-    console.info(message, optionalParams);
+    super.info(typeof message === 'object' ? message : chalk.blueBright(message), ...optionalParams);
   }
   debug(message: any, ...optionalParams: any[]): void {
-    console.debug(chalk.green(message), optionalParams);
+    super.debug(typeof message === 'object' ? message : chalk.greenBright(message), ...optionalParams);
   }
   trace(message: any, ...optionalParams: any[]): void {
-    console.trace(chalk.bgGray(message), optionalParams);
+    super.trace(typeof message === 'object' ? message : chalk.magenta(message), ...optionalParams);
   }
 }

@@ -1,7 +1,13 @@
-import { DeclarationNode } from './ast.declaration';
 import { Expression } from './ast.expression';
 
-export interface RequestDeclaration extends DeclarationNode {
-  node: 'RequestDeclaration';
-  requests: Expression[];
+export interface Request extends Node {
+  bodies?: Expression[];
+}
+
+export interface RequestExpression extends Request {
+  node: 'RequestExpression';
+  pathParameters?: Expression;
+  cookieParameters?: Expression;
+  headerParameters?: Expression;
+  queryParameters?: Expression;
 }

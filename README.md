@@ -24,7 +24,7 @@ npm i @flexbase/openapi-generator -D
 ## Usage
 
 ```
-openapi-generator -i petstore.yaml -o . -t template.mustache
+openapi-generator -i petstore.yaml -o . -t template.hbs
 ```
 
 | Option               | Argument                                                   | Description                                                                   |
@@ -33,44 +33,32 @@ openapi-generator -i petstore.yaml -o . -t template.mustache
 | `-n` or `--name`     | name                                                       | The output file name to use. Defaults to the title of the OpenAPI spec        |
 | `-e` or `--ext`      | ext                                                        | The file extension to use. Defaults to .ts                                    |
 | `-o` or `--output`   | path                                                       | An optional output path                                                       |
-| `-t` or `--template` | path                                                       | The [mustache](https://mustache.github.io/) template to use                   |
-| `-p` or `--partials` | [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) | Optional partial [mustache](https://mustache.github.io/) templates to include |
+| `-t` or `--template` | path                                                       | The [handlebars](https://handlebarsjs.com/) template to use                   |
+| `-p` or `--partials` | [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) | Optional partial [handlebars](https://handlebarsjs.com/) templates to include |
 | `-d` or `--debug`    |                                                            | Output the internal ast representation                                        |
 
 ## Templates
 
-Below are some example [mustache](https://mustache.github.io/) templates to generate a typescript output file
+Below are some example [handlebars](https://handlebarsjs.com/) templates to generate a typescript output file
 
-### `document.mustache` template
+### `document.hbs` template
 
-https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/document.mustache
+https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/document.hbs
 
-### `type.mustache` partial template
+### `declaration.hbs` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/type.mustache
+https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/declaration.hbs
 
-### `comments.mustache` partial template
+### `expression.hbs` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/comments.mustache
-
-### `field.mustache` partial template
-
-https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/field.mustache
-
-### `literal.mustache` partial template
-
-https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/literal.mustache
-
-### `operation.mustache` partial template
-
-https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/operation.mustache
+https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/expression.hbs
 
 ## Example
 
 Generating the petstore openapi spec by running the following:
 
 ```
-openapi-generator -i './tests/data/petstore.yaml' -o ./output -t './tests/templates/document.mustache' -p './tests/templates/**/*.mustache' -n petstore -d
+openapi-generator -i './tests/data/petstore.yaml' -o ./output -t './tests/templates/document.hbs' -p './tests/templates/**/*.hbs' -n petstore -d
 ```
 
 or
@@ -93,283 +81,285 @@ Will output two files `petstore.ts` and `petstore.ts.ast.json`
  @version 1.0.0
 ------------------------------------------------------------ */
 
-export type petstoreControllerResponse<T> = {
+export type Swagger_PetstoreControllerResponse<BODY = void, HEADER = Record<string, any>> = {
   $status?: number;
-  $headers?: Record<string, any>;
-  $body: T;
+  $headers?: HEADER;
+  $body: BODY;
 };
 
-export type Pet = { id?: integer; name?: string; tag?: string };
+//#region Models
+export type PetModel = {
+  id: number;
+  name: string;
+  tag?: string;
+};
 
-export type Pets = [Pet];
+export type PetsModel = [PetModel];
 
-export type Error = { code?: integer; message?: string };
+export type ErrorModel = {
+  code: number;
+  message: string;
+};
 
-export abstract class petstoreControllerGenerated {
-  /**
-   * @summary List all pets
-   * @returns 200 - A paged array of pets
-   * @returns default - unexpected error
-   */
-  protected abstract _listPets(): Promise<petstoreControllerResponse<Pets | Error>>;
-  @GET('/pets')
-  listPets(): Promise<petstoreControllerResponse<Pets | Error>> {
-    return this._listPets();
+//#endregion
+
+//#region Path Parameters
+export type showPetByIdPathParameter = {
+  petId: string;
+};
+
+//#endregion
+
+//#region Query Parameters
+export type listPetsQueryParameter = {
+  limit?: number;
+};
+
+//#endregion
+
+export abstract class Swagger_PetstoreControllerGenerated {
+  protected abstract _listPets(query: listPetsQueryParameter): Promise<Swagger_PetstoreControllerResponse<PetsModel | ErrorModel>>;
+  @Get('/pets')
+  listPets(@Query() query: listPetsQueryParameter): Promise<Swagger_PetstoreControllerResponse<PetsModel | ErrorModel>> {
+    return this._listPets(query);
   }
 
-  /**
-   * @summary Create a pet
-   * @returns 201 - Null response
-   * @returns default - unexpected error
-   */
-  protected abstract _createPets(): Promise<petstoreControllerResponse<Error>>;
-  @POST('/pets')
-  createPets(): Promise<petstoreControllerResponse<Error>> {
+  protected abstract _createPets(): Promise<Swagger_PetstoreControllerResponse<null | ErrorModel>>;
+  @Post('/pets')
+  createPets(): Promise<Swagger_PetstoreControllerResponse<null | ErrorModel>> {
     return this._createPets();
   }
 
-  /**
-   * @summary Info for a specific pet
-   * @returns 200 - Expected response to a valid request
-   * @returns default - unexpected error
-   */
-  protected abstract _showPetById(): Promise<petstoreControllerResponse<Pet | Error>>;
-  @GET('/pets/:petId')
-  showPetById(): Promise<petstoreControllerResponse<Pet | Error>> {
-    return this._showPetById();
+  protected abstract _showPetById(path: showPetByIdPathParameter): Promise<Swagger_PetstoreControllerResponse<PetModel | ErrorModel>>;
+  @Get('/pets/:petId')
+  showPetById(@Path() path: showPetByIdPathParameter): Promise<Swagger_PetstoreControllerResponse<PetModel | ErrorModel>> {
+    return this._showPetById(path);
   }
 }
 ```
 
-### Debug dump `petstore.ts.dump.json`
+### Debug dump `petstore.ts.ast.json`
 
 ```json
 {
+  "node": "Document",
   "title": "Swagger Petstore",
   "version": "1.0.0",
-  "name": "petstore",
-  "declarations": [
+  "models": [
     {
-      "kind": "declaration",
-      "referenceName": "#/components/schemas/Pet",
-      "identifier": { "kind": "literal", "value": "Pet", "modifiers": {} },
-      "modifiers": {},
-      "type": {
-        "kind": "type",
-        "modifiers": {},
-        "fields": [
+      "node": "ModelDeclaration",
+      "id": { "node": "IdentifierExpression", "name": "Pet" },
+      "definition": {
+        "node": "ObjectExpression",
+        "properties": [
           {
-            "kind": "declaration",
-            "identifier": { "kind": "literal", "value": "id", "modifiers": {} },
-            "modifiers": { "format": "int64", "required": true },
-            "type": { "kind": "type", "modifiers": {}, "type": "integer" }
+            "node": "PropertyDeclaration",
+            "id": { "node": "IdentifierExpression", "name": "id" },
+            "definition": { "node": "LiteralExpression", "value": "integer" },
+            "format": "int64",
+            "required": true
           },
           {
-            "kind": "declaration",
-            "identifier": { "kind": "literal", "value": "name", "modifiers": {} },
-            "modifiers": { "required": true },
-            "type": { "kind": "type", "modifiers": {}, "type": "string" }
+            "node": "PropertyDeclaration",
+            "id": { "node": "IdentifierExpression", "name": "name" },
+            "definition": { "node": "LiteralExpression", "value": "string" },
+            "required": true
           },
           {
-            "kind": "declaration",
-            "identifier": { "kind": "literal", "value": "tag", "modifiers": {} },
-            "modifiers": {},
-            "type": { "kind": "type", "modifiers": {}, "type": "string" }
+            "node": "PropertyDeclaration",
+            "id": { "node": "IdentifierExpression", "name": "tag" },
+            "definition": { "node": "LiteralExpression", "value": "string" }
           }
         ]
-      }
+      },
+      "referenceName": "#/components/schemas/Pet"
     },
     {
-      "kind": "declaration",
-      "referenceName": "#/components/schemas/Pets",
-      "identifier": { "kind": "literal", "value": "Pets", "modifiers": {} },
-      "modifiers": {},
-      "type": {
-        "kind": "type",
-        "modifiers": {},
-        "arrayType": {
-          "kind": "type",
-          "modifiers": {},
-          "identifier": { "kind": "literal", "value": "#/components/schemas/Pet", "modifiers": {} }
+      "node": "ModelDeclaration",
+      "id": { "node": "IdentifierExpression", "name": "Pets" },
+      "definition": {
+        "node": "ArrayExpression",
+        "elements": { "node": "ReferenceExpression", "key": "#/components/schemas/Pet" }
+      },
+      "referenceName": "#/components/schemas/Pets"
+    },
+    {
+      "node": "ModelDeclaration",
+      "id": { "node": "IdentifierExpression", "name": "Error" },
+      "definition": {
+        "node": "ObjectExpression",
+        "properties": [
+          {
+            "node": "PropertyDeclaration",
+            "id": { "node": "IdentifierExpression", "name": "code" },
+            "definition": { "node": "LiteralExpression", "value": "integer" },
+            "format": "int32",
+            "required": true
+          },
+          {
+            "node": "PropertyDeclaration",
+            "id": { "node": "IdentifierExpression", "name": "message" },
+            "definition": { "node": "LiteralExpression", "value": "string" },
+            "required": true
+          }
+        ]
+      },
+      "referenceName": "#/components/schemas/Error"
+    }
+  ],
+  "responses": [],
+  "requests": [],
+  "pathParameters": [
+    {
+      "node": "ModelDeclaration",
+      "id": { "node": "IdentifierExpression", "name": "showPetById" },
+      "definition": {
+        "node": "ObjectExpression",
+        "properties": [
+          {
+            "node": "PropertyDeclaration",
+            "id": { "node": "IdentifierExpression", "name": "petId" },
+            "definition": { "node": "LiteralExpression", "value": "string" },
+            "description": "The id of the pet to retrieve",
+            "required": true
+          }
+        ]
+      },
+      "referenceName": "#/components/generated/showPetById"
+    }
+  ],
+  "headerParameters": [],
+  "queryParameters": [
+    {
+      "node": "ModelDeclaration",
+      "id": { "node": "IdentifierExpression", "name": "listPets" },
+      "definition": {
+        "node": "ObjectExpression",
+        "properties": [
+          {
+            "node": "PropertyDeclaration",
+            "id": { "node": "IdentifierExpression", "name": "limit" },
+            "definition": { "node": "LiteralExpression", "value": "integer" },
+            "description": "How many items to return at one time (max 100)",
+            "required": false
+          }
+        ]
+      },
+      "referenceName": "#/components/generated/listPets"
+    }
+  ],
+  "cookieParameters": [],
+  "referenceParameters": [],
+  "unknownParameters": [],
+  "operations": [
+    {
+      "node": "OperationDeclaration",
+      "id": { "node": "IdentifierExpression", "name": "listPets" },
+      "httpMethod": "Get",
+      "path": "/pets",
+      "responses": [
+        {
+          "node": "ResponseExpression",
+          "statusCode": "200",
+          "headers": {
+            "node": "ObjectExpression",
+            "properties": [
+              {
+                "node": "PropertyDeclaration",
+                "id": { "node": "IdentifierExpression", "name": "x-next" },
+                "definition": { "node": "LiteralExpression", "value": "string" },
+                "description": "A link to the next page of responses"
+              }
+            ]
+          },
+          "responses": [
+            {
+              "node": "MediaExpression",
+              "mediaType": "application/json",
+              "body": { "node": "ReferenceExpression", "key": "#/components/schemas/Pets" }
+            }
+          ]
+        },
+        {
+          "node": "ResponseExpression",
+          "statusCode": "default",
+          "responses": [
+            {
+              "node": "MediaExpression",
+              "mediaType": "application/json",
+              "body": { "node": "ReferenceExpression", "key": "#/components/schemas/Error" }
+            }
+          ]
+        }
+      ],
+      "requests": {
+        "node": "RequestExpression",
+        "queryParameters": {
+          "node": "ReferenceExpression",
+          "key": "#/components/generated/listPets"
         }
       }
     },
     {
-      "kind": "declaration",
-      "referenceName": "#/components/schemas/Error",
-      "identifier": { "kind": "literal", "value": "Error", "modifiers": {} },
-      "modifiers": {},
-      "type": {
-        "kind": "type",
-        "modifiers": {},
-        "fields": [
-          {
-            "kind": "declaration",
-            "identifier": { "kind": "literal", "value": "code", "modifiers": {} },
-            "modifiers": { "format": "int32", "required": true },
-            "type": { "kind": "type", "modifiers": {}, "type": "integer" }
-          },
-          {
-            "kind": "declaration",
-            "identifier": { "kind": "literal", "value": "message", "modifiers": {} },
-            "modifiers": { "required": true },
-            "type": { "kind": "type", "modifiers": {}, "type": "string" }
-          }
-        ]
-      }
-    }
-  ],
-  "operations": [
-    {
-      "kind": "operation",
-      "httpMethod": "GET",
-      "identifier": { "kind": "literal", "value": "listPets", "modifiers": {} },
+      "node": "OperationDeclaration",
+      "id": { "node": "IdentifierExpression", "name": "createPets" },
+      "httpMethod": "Post",
       "path": "/pets",
-      "responses": {
-        "kind": "type",
-        "modifiers": {},
-        "unionTypes": [
-          {
-            "kind": "type",
-            "modifiers": {},
-            "statusCode": "200",
-            "content": {
-              "kind": "type",
-              "modifiers": {},
+      "responses": [
+        {
+          "node": "ResponseExpression",
+          "statusCode": "201",
+          "responses": [{ "node": "LiteralExpression", "value": "null" }]
+        },
+        {
+          "node": "ResponseExpression",
+          "statusCode": "default",
+          "responses": [
+            {
+              "node": "MediaExpression",
               "mediaType": "application/json",
-              "contentType": {
-                "kind": "type",
-                "modifiers": {},
-                "identifier": {
-                  "kind": "literal",
-                  "value": "#/components/schemas/Pets",
-                  "modifiers": {}
-                }
-              }
-            },
-            "headers": [{ "_kind": "type", "_modifiers": {}, "_type": "string" }]
-          },
-          {
-            "kind": "type",
-            "modifiers": {},
-            "statusCode": "default",
-            "content": {
-              "kind": "type",
-              "modifiers": {},
-              "mediaType": "application/json",
-              "contentType": {
-                "kind": "type",
-                "modifiers": {},
-                "identifier": {
-                  "kind": "literal",
-                  "value": "#/components/schemas/Error",
-                  "modifiers": {}
-                }
-              }
-            },
-            "headers": []
-          }
-        ]
-      },
-      "request": { "kind": "type", "modifiers": { "title": "List all pets" } },
-      "modifiers": {
-        "title": "List all pets",
-        "returns": ["200 - A paged array of pets", "default - unexpected error"]
-      }
+              "body": { "node": "ReferenceExpression", "key": "#/components/schemas/Error" }
+            }
+          ]
+        }
+      ],
+      "requests": { "node": "RequestExpression" }
     },
     {
-      "kind": "operation",
-      "httpMethod": "POST",
-      "identifier": { "kind": "literal", "value": "createPets", "modifiers": {} },
-      "path": "/pets",
-      "responses": {
-        "kind": "type",
-        "modifiers": {},
-        "unionTypes": [
-          { "kind": "type", "modifiers": {}, "statusCode": "201", "headers": [] },
-          {
-            "kind": "type",
-            "modifiers": {},
-            "statusCode": "default",
-            "content": {
-              "kind": "type",
-              "modifiers": {},
-              "mediaType": "application/json",
-              "contentType": {
-                "kind": "type",
-                "modifiers": {},
-                "identifier": {
-                  "kind": "literal",
-                  "value": "#/components/schemas/Error",
-                  "modifiers": {}
-                }
-              }
-            },
-            "headers": []
-          }
-        ]
-      },
-      "request": { "kind": "type", "modifiers": { "title": "Create a pet" } },
-      "modifiers": {
-        "title": "Create a pet",
-        "returns": ["201 - Null response", "default - unexpected error"]
-      }
-    },
-    {
-      "kind": "operation",
-      "httpMethod": "GET",
-      "identifier": { "kind": "literal", "value": "showPetById", "modifiers": {} },
+      "node": "OperationDeclaration",
+      "id": { "node": "IdentifierExpression", "name": "showPetById" },
+      "httpMethod": "Get",
       "path": "/pets/{petId}",
-      "responses": {
-        "kind": "type",
-        "modifiers": {},
-        "unionTypes": [
-          {
-            "kind": "type",
-            "modifiers": {},
-            "statusCode": "200",
-            "content": {
-              "kind": "type",
-              "modifiers": {},
+      "responses": [
+        {
+          "node": "ResponseExpression",
+          "statusCode": "200",
+          "responses": [
+            {
+              "node": "MediaExpression",
               "mediaType": "application/json",
-              "contentType": {
-                "kind": "type",
-                "modifiers": {},
-                "identifier": {
-                  "kind": "literal",
-                  "value": "#/components/schemas/Pet",
-                  "modifiers": {}
-                }
-              }
-            },
-            "headers": []
-          },
-          {
-            "kind": "type",
-            "modifiers": {},
-            "statusCode": "default",
-            "content": {
-              "kind": "type",
-              "modifiers": {},
+              "body": { "node": "ReferenceExpression", "key": "#/components/schemas/Pet" }
+            }
+          ]
+        },
+        {
+          "node": "ResponseExpression",
+          "statusCode": "default",
+          "responses": [
+            {
+              "node": "MediaExpression",
               "mediaType": "application/json",
-              "contentType": {
-                "kind": "type",
-                "modifiers": {},
-                "identifier": {
-                  "kind": "literal",
-                  "value": "#/components/schemas/Error",
-                  "modifiers": {}
-                }
-              }
-            },
-            "headers": []
-          }
-        ]
-      },
-      "request": { "kind": "type", "modifiers": { "title": "Info for a specific pet" } },
-      "modifiers": {
-        "title": "Info for a specific pet",
-        "returns": ["200 - Expected response to a valid request", "default - unexpected error"]
+              "body": { "node": "ReferenceExpression", "key": "#/components/schemas/Error" }
+            }
+          ]
+        }
+      ],
+      "requests": {
+        "node": "RequestExpression",
+        "pathParameters": {
+          "node": "ReferenceExpression",
+          "key": "#/components/generated/showPetById"
+        }
       }
     }
   ]

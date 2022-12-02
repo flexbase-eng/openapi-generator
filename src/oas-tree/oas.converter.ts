@@ -25,7 +25,6 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
       title: oas.title,
       description: oas.description,
       version: oas.version,
-      name: oas.name,
       declarations: oas.declarations.map(x => this.convertNode(x)),
       operations: oas.operations.map(x => this.convertNode(x)),
     };
@@ -59,7 +58,6 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
       isGenerated: node.isGenerated ? 'true' : undefined,
       parameterLocation: node.parameterLocation,
       identifier: this.convertNode(node.identifier),
-      generatedIdentifier: this.convertNode(node.generatedIdentifier),
       modifiers: node.modifiers,
       type: this.convertNode(node.type),
     };
@@ -75,7 +73,11 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
 
   convertOperation(node: OasNodeOperation): any {
     const request = node.request ? this.convertNode(node.request) : undefined;
-    const responses = node.responses ? this.convertNode(node.responses) : undefined;
+    const responses = node.responses
+      ? Array.isArray(node.responses)
+        ? node.responses.map(r => this.convertNode(r))
+        : this.convertNode(node.responses)
+      : undefined;
     return {
       kind: node.kind,
       httpMethod: node.httpMethod,

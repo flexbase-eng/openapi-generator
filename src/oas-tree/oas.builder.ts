@@ -32,12 +32,15 @@ import { capitalize } from '../utilities/string.utilities';
 import { IOpenApiSpecBuilder, ParameterLocationAndNode, ParameterNodes } from './oas.builder.interface';
 import { Logger } from '@flexbase/logger';
 
-function cleanName(name: string): string {
-  return name.replace('-', '_');
-}
-
 export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
   constructor(private readonly _logger: Logger) {}
+
+  private nameChecker(name: string): void {
+    const valid = /^[a-zA-Z_$][a-zA-Z_$0-9]*$/g.test(name);
+    if (!valid) {
+      this._logger.warn(`Warning: ${name} may not be a valid variable identifier`);
+    }
+  }
 
   generateOasTree(document: OpenAPIV3.Document): OpenApiSpecTree {
     const declarations: OasNodeDeclaration[] = document.components ? this.generateDeclarations(document.components) : [];
@@ -47,8 +50,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     const title = document.info.title;
     const description = document.info.description;
     const version = document.info.version;
-    const name = title.replace(/-./g, x => x[1].toUpperCase());
-    return { declarations, operations, title, description, version, name };
+    return { declarations, operations, title, description, version };
   }
 
   generateDeclarations(components: OpenAPIV3.ComponentsObject): OasNodeDeclaration[] {
@@ -61,12 +63,12 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         const name = record[0];
         const schema = record[1];
         const refName = `#/components/schemas/${name}`;
-        const generatedName = `${name}Model`;
+        this.nameChecker(name);
 
         const nodeType = this.generateTypeFromSchema(schema);
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
-        const declaration = new OasNodeDeclaration(name, cleanName(generatedName), 'model', nodeType, modifiers, refName);
+        const declaration = new OasNodeDeclaration(name, 'model', nodeType, modifiers, refName);
         declarations.push(declaration);
         modelMappings.set(refName, declaration);
       }
@@ -78,13 +80,13 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         const name = record[0];
         const schema = record[1];
         const refName = `#/components/requestBodies/${name}`;
-        const generatedName = `${name}Request`;
+        this.nameChecker(name);
 
         const nodeType = this.generateRequestBody(schema, modelMappings);
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
 
-        declarations.push(new OasNodeDeclaration(name, cleanName(generatedName), 'request', nodeType, modifiers, refName));
+        declarations.push(new OasNodeDeclaration(name, 'request', nodeType, modifiers, refName));
       }
     }
 
@@ -94,7 +96,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         const name = record[0];
         const schema = record[1];
         const refName = `#/components/responses/${name}`;
-        const generatedName = `${name}Response`;
+        this.nameChecker(name);
 
         const nodeType = this.generateResponse('', schema);
         if (!nodeType) {
@@ -103,7 +105,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
 
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
-        declarations.push(new OasNodeDeclaration(name, cleanName(generatedName), 'response', nodeType, modifiers, refName));
+        declarations.push(new OasNodeDeclaration(name, 'response', nodeType, modifiers, refName));
       }
     }
 
@@ -113,7 +115,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         const name = record[0];
         const schema = record[1];
         const refName = `#/components/parameters/${name}`;
-        const generatedName = `${name}Parameter`;
+        this.nameChecker(name);
 
         const parameterAndLocation = this.generateParameter(schema);
         if (!parameterAndLocation) {
@@ -125,7 +127,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
 
         const modifiers = type.modifiers;
         type.modifiers = {};
-        declarations.push(new OasNodeDeclaration(name, cleanName(generatedName), 'parameter', type, modifiers, refName, location));
+        declarations.push(new OasNodeDeclaration(name, 'parameter', type, modifiers, refName, location));
       }
     }
 
@@ -162,6 +164,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
       writeOnly: schema.writeOnly,
       deprecated: schema.deprecated,
       extensions: this.getExtensions(schema),
+      examples: schema.example,
     };
 
     if (IsArraySchemaObject(schema)) {
@@ -194,7 +197,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
 
           const modifiers = propertyType.modifiers;
           propertyType.modifiers = {};
-          fields.push(new OasNodeDeclaration(identifier, identifier, 'inline', propertyType, modifiers));
+          fields.push(new OasNodeDeclaration(identifier, 'inline', propertyType, modifiers));
         }
       }
 
@@ -261,10 +264,10 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
       const responses = this.generateResponses(operationObject.responses);
 
       // pull response returns to populate the operation comments
-      if (responses && responses.modifiers.returns) {
-        returns = responses.modifiers.returns;
-        responses.modifiers.returns = undefined;
-      }
+      // if (responses && responses.modifiers.returns) {
+      //   returns = responses.modifiers.returns;
+      //   responses.modifiers.returns = undefined;
+      // }
 
       const parameters = this.generateParameters(operationObject.parameters, modelMappings);
       parameters.cookieNodes.push(...cookieNodes);
@@ -367,6 +370,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     }
 
     const name = parameter.name;
+    this.nameChecker(name);
     const location = parameter.in as ParameterLocations;
 
     if (!name) {
@@ -382,7 +386,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     const deprecated = parameter.deprecated;
     const description = parameter.description;
 
-    const declaration = new OasNodeDeclaration(name, cleanName(name), 'parameter', nodeType, { description, required, deprecated });
+    const declaration = new OasNodeDeclaration(name, 'parameter', nodeType, { description, required, deprecated });
 
     return { location, type: new OasNodeTypeObject([declaration], {}) };
   }
@@ -400,7 +404,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     const deprecated = header.deprecated;
     const description = header.description;
 
-    const declaration = new OasNodeDeclaration(name, cleanName(name), 'parameter', nodeType, { description, required, deprecated });
+    const declaration = new OasNodeDeclaration(name, 'parameter', nodeType, { description, required, deprecated });
 
     return new OasNodeTypeObject([declaration], {});
   }
@@ -441,21 +445,17 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
 
     const content = contentNodes.length === 0 ? undefined : contentNodes.length > 1 ? contentNodes : contentNodes[0]; //this.createUnionNode(contentNodes, { description });
 
-    if (content || headerNode) {
-      return new OasNodeTypeResponse(code, content, headerNode, { description });
-    }
-
-    return undefined;
+    return new OasNodeTypeResponse(code, content, headerNode, { description });
   }
 
-  generateResponses(responses: OpenAPIV3.ResponsesObject): OasNodeType | undefined {
+  generateResponses(responses: OpenAPIV3.ResponsesObject): OasNodeType | OasNodeType[] | undefined {
     const responsesEntities = Object.entries(responses);
     if (responsesEntities.length === 0) {
       return undefined;
     }
 
     const responseNodes: OasNodeTypeResponse[] = [];
-    const returnComments: string[] = [];
+    //const returnComments: string[] = [];
 
     for (const responseEntry of responsesEntities) {
       const code = responseEntry[0];
@@ -467,18 +467,18 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         continue;
       }
 
-      returnComments.push(`${code} - ${responseNode.modifiers.description ?? ''}`);
+      //returnComments.push(`${code} - ${responseNode.modifiers.description ?? ''}`);
 
       responseNodes.push(responseNode);
     }
 
-    if (responseNodes.length === 1) {
-      const response = responseNodes[0];
-      response.modifiers.returns = returnComments;
-      return response;
-    }
+    // if (responseNodes.length === 1) {
+    //   const response = responseNodes[0];
+    //   response.modifiers.returns = returnComments;
+    //   return response;
+    // }
 
-    return this.createUnionNode(responseNodes, { returns: returnComments });
+    return responseNodes.length === 1 ? responseNodes[0] : responseNodes;
   }
 
   generateRequestBody(request: OpenAPIV3.RequestBodyObject | OpenAPIV3.ReferenceObject, modelMappings: Map<string, OasNodeDeclaration>): OasNodeType {
@@ -507,17 +507,6 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
   }
 
   createPrimativeNode(primativeType: string, modifiers: OasNodeModifiers): OasNodeType {
-    if (primativeType === 'integer') {
-      primativeType = 'number';
-      if (!modifiers.format) {
-        modifiers.format = 'int32';
-      }
-    }
-
-    if (primativeType === 'string' && modifiers.enum) {
-      primativeType = modifiers.enum.map(x => `'${x}'`).join(' | ');
-    }
-
     return new OasNodeTypePrimative(primativeType, modifiers);
   }
 
@@ -577,7 +566,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     if (IsObjectNode(model)) {
       model.fields.forEach(field => {
         if (field.modifiers[omitType] === true) {
-          omitDeclarations.push(field.generatedIdentifier.value);
+          omitDeclarations.push(field.identifier.value);
         }
       });
     } else if (IsDeclarationNode(model)) {
@@ -627,12 +616,13 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
   makeDeclarationGlobal(
     name: string,
     declarationType: DeclarationType,
-    node: OasNodeType
+    node: OasNodeType,
+    parameterLocation?: ParameterLocations
   ): { declaration: OasNodeDeclaration; refNode: OasNodeTypeReference } {
     const refName = `#/components/generated/${name}`;
     const modifiers = node.modifiers;
     node.modifiers = {};
-    const declaration = new OasNodeDeclaration(name, name, declarationType, node, modifiers, refName);
+    const declaration = new OasNodeDeclaration(name, declarationType, node, modifiers, refName, parameterLocation);
     declaration.isGenerated = true;
     const refNode = new OasNodeTypeReference(refName, {});
     return { declaration, refNode };
@@ -642,14 +632,14 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     const declarations: OasNodeDeclaration[] = [];
 
     if (response.content && IsContentNode(response.content) && !IsReferenceNode(response.content.contentType)) {
-      const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Response`, 'response', response.content.contentType);
+      const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}`, 'response', response.content.contentType);
 
       declarations.push(declaration);
       response.content.contentType = refNode;
     }
 
     if (response.headers && !IsReferenceNode(response.headers)) {
-      const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}HeaderResponse`, 'parameter', response.headers);
+      const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}`, 'parameter', response.headers);
 
       declarations.push(declaration);
       response.headers = refNode;
@@ -667,7 +657,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         if (IsResponseNode(responses)) {
           oas.declarations.push(...this.makeResponseGlobal(operationId, responses));
         } else if (IsUnionNode(responses)) {
-          const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Response`, 'response', responses);
+          const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}`, 'response', responses);
           oas.declarations.push(declaration);
           operation.responses = refNode;
         }
@@ -678,35 +668,35 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
       }
 
       if (operation.request.pathParameters && !IsReferenceNode(operation.request.pathParameters)) {
-        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}PathParameter`, 'parameter', operation.request.pathParameters);
+        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}`, 'parameter', operation.request.pathParameters, 'path');
 
         oas.declarations.push(declaration);
         operation.request.pathParameters = refNode;
       }
 
       if (operation.request.cookieParameters && !IsReferenceNode(operation.request.cookieParameters)) {
-        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}CookieParameter`, 'parameter', operation.request.cookieParameters);
+        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}`, 'parameter', operation.request.cookieParameters, 'cookie');
 
         oas.declarations.push(declaration);
         operation.request.cookieParameters = refNode;
       }
 
       if (operation.request.headerParameters && !IsReferenceNode(operation.request.headerParameters)) {
-        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}HeaderParameter`, 'parameter', operation.request.headerParameters);
+        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}`, 'parameter', operation.request.headerParameters, 'header');
 
         oas.declarations.push(declaration);
         operation.request.headerParameters = refNode;
       }
 
       if (operation.request.queryParameters && !IsReferenceNode(operation.request.queryParameters)) {
-        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}QueryParameter`, 'parameter', operation.request.queryParameters);
+        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}`, 'parameter', operation.request.queryParameters, 'query');
 
         oas.declarations.push(declaration);
         operation.request.queryParameters = refNode;
       }
 
       if (operation.request.body && !IsReferenceNode(operation.request.body)) {
-        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}Body`, 'request', operation.request.body);
+        const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}`, 'request', operation.request.body);
 
         oas.declarations.push(declaration);
         operation.request.body = refNode;

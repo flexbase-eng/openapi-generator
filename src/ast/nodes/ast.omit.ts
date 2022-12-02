@@ -1,14 +1,10 @@
-import { DeclarationNode } from './ast.declaration';
 import { Expression } from './ast.expression';
+import { IdentifierExpression } from './ast.identifier';
 import { Node } from './ast.node';
 
 export interface OmitNode extends Node {
   elements: Expression;
-  omit: Array<string>;
-}
-
-export interface OmitDeclaration extends OmitNode, DeclarationNode {
-  node: 'OmitDeclaration';
+  omit: Array<IdentifierExpression>;
 }
 
 export interface OmitExpression extends OmitNode {

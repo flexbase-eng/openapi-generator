@@ -24,4 +24,5 @@ export interface OasNodeModifiers {
   deprecated?: boolean;
   returns?: string[];
   extensions?: Record<string, string>;
+  examples?: any;
 }

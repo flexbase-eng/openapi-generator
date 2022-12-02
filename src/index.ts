@@ -5,8 +5,10 @@ import { OpenApiSpecConverter } from './oas-tree/oas.converter';
 import { ChalkLogger } from './chalk.logger';
 import { main } from './main';
 
-const oasBuilder = new OpenApiSpecBuilder(new ChalkLogger());
+const logger = new ChalkLogger();
+
+const oasBuilder = new OpenApiSpecBuilder(logger);
 
 const oasConverter = new OpenApiSpecConverter();
 
-await main(oasBuilder, oasConverter);
+await main(oasBuilder, oasConverter, logger);

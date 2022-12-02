@@ -1,0 +1,64 @@
+{{#compare node "===" "ModelDeclaration"}}
+export type {{#registerReference .}}{{>expression id suffix=./suffix prefix=./prefix}}{{/registerReference}} = {{>expression definition}}
+{{/compare}}
+
+{{#compare node "===" "PropertyDeclaration"}}
+{{>expression id}}{{^required}}?{{/required}}: {{>expression definition}}
+{{/compare}}
+
+{{#compare node "===" "OperationDeclaration"}}
+protected abstract {{>expression id prefix="_"}}(
+    {{~#if requests.bodies~}}
+    body:{{#requests.bodies}}{{> expression}},{{/requests.bodies}}
+    {{~/if~}}    
+    {{~#if requests.pathParameters~}}
+    path:{{#requests.pathParameters}}{{> expression}},{{/requests.pathParameters}}
+    {{~/if~}}
+    {{~#if requests.queryParameters~}}
+    query:{{#requests.queryParameters}}{{> expression}},{{/requests.queryParameters}}
+    {{~/if~}}
+    {{~#if requests.headerParameters~}}
+    headers:{{#requests.headerParameters}}{{> expression}},{{/requests.headerParameters}}
+    {{~/if~}}
+): Promise<{{prefix}}ControllerResponse<
+    {{^isEmpty responses}}
+    {{#forEach responses}}
+    {{>expression .}} {{#unless isLast}}|{{/unless}}
+    {{/forEach}}
+    {{else}}
+    never
+    {{/isEmpty}}    
+    >>;
+@{{& httpMethod}}('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}')
+{{>expression id}}(
+    {{#if requests.bodies}}
+    @Body() body:{{#requests.bodies}}{{> expression}},{{/requests.bodies}}
+    {{/if}}
+    {{#if requests.pathParameters}}
+    @Path() path:{{#requests.pathParameters}}{{> expression}},{{/requests.pathParameters}}
+    {{/if}}    
+    {{#if requests.queryParameters}}
+    @Query() query:{{#requests.queryParameters}}{{> expression}},{{/requests.queryParameters}}
+    {{/if}}
+    {{#if requests.headerParameters}}
+    @Headers() headers:{{#requests.headerParameters}}{{> expression}},{{/requests.headerParameters}}
+    {{/if}}
+): Promise<{{prefix}}ControllerResponse<
+    {{^isEmpty responses}}
+    {{#forEach responses}}
+    {{>expression .}} {{#unless isLast}}|{{/unless}}
+    {{/forEach}}
+    {{else}}
+    never
+    {{/isEmpty}}    
+    >> {
+    return this.{{>expression id prefix="_"}}(
+        {{#if requests.bodies}}body,{{/if}}
+        {{#if requests.pathParameters}}path,{{/if}}
+        {{#if requests.queryParameters}}query,{{/if}}
+        {{#if requests.headerParameters}}headers,{{/if}}
+    );
+}
+
+{{#if requests.cookieParameters}}{{log "Cookie parameters not supported yet" level="warn"}}{{/if}}
+{{/compare}}

@@ -1,23 +1,14 @@
-import { DeclarationNode } from './ast.declaration';
-import { Expression } from './ast.expression';
-import { Identifier } from './ast.identifier';
+import { Declaration } from './ast.declaration';
 import { Node } from './ast.node';
 
 export interface ObjectNode extends Node {
-  properties: Array<Property>;
-}
-
-export interface ObjectDeclaration extends ObjectNode, DeclarationNode {
-  node: 'ObjectDeclaration';
+  properties: Array<PropertyDeclaration>;
 }
 
 export interface ObjectExpression extends ObjectNode {
   node: 'ObjectExpression';
 }
 
-export interface Property extends Node {
-  node: 'Property';
-  key: Identifier;
-  type: Expression;
-  value?: Expression;
+export interface PropertyDeclaration extends Declaration {
+  node: 'PropertyDeclaration';
 }

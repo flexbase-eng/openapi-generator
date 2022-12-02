@@ -12,7 +12,7 @@ export class OasNodeOperation extends OasNode {
     identifier: OasNodeLiteral | string,
     private readonly _httpMethod: OasNodeOperationHttpMethod,
     private readonly _path: string,
-    private _responses: OasNodeType | undefined,
+    private _responses: OasNodeType | OasNodeType[] | undefined,
     private readonly _request: OasNodeType | undefined,
     modifiers: OasNodeModifiers
   ) {
@@ -36,12 +36,12 @@ export class OasNodeOperation extends OasNode {
     return this._path;
   }
 
-  get responses(): OasNodeType | undefined {
+  get responses(): OasNodeType | OasNodeType[] | undefined {
     return this._responses;
   }
 
   /** @internal */
-  set responses(value: OasNodeType | undefined) {
+  set responses(value: OasNodeType | OasNodeType[] | undefined) {
     this._responses = value;
   }
 

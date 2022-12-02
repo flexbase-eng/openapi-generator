@@ -1,6 +1,6 @@
 import { Node } from './ast.node';
 
-export interface Identifier extends Node {
-  node: 'Identifier';
+export interface IdentifierExpression extends Node {
+  node: 'IdentifierExpression';
   name: string;
 }

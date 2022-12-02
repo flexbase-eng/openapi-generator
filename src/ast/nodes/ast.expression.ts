@@ -1,20 +1,24 @@
 import { ArrayExpression } from './ast.array';
 import { CompositeExpression } from './ast.composite';
-import { Literal } from './ast.literal';
+import { LiteralExpression } from './ast.literal';
 import { MediaExpression } from './ast.media';
 import { ObjectExpression } from './ast.object';
 import { OmitExpression } from './ast.omit';
-import { Reference } from './ast.reference';
-import { TODO } from './ast.todo';
+import { ReferenceExpression } from './ast.reference';
+import { RequestExpression } from './ast.request';
+import { ResponseExpression } from './ast.response';
+import { TodoExpression } from './ast.todo';
 import { UnionExpression } from './ast.union';
 
 export type Expression =
-  | TODO
-  | Literal
-  | Reference
+  | TodoExpression
+  | LiteralExpression
+  | ReferenceExpression
   | ObjectExpression
   | ArrayExpression
   | UnionExpression
   | CompositeExpression
   | OmitExpression
-  | MediaExpression;
+  | MediaExpression
+  | RequestExpression
+  | ResponseExpression;

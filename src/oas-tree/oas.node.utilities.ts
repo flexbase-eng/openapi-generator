@@ -1,6 +1,8 @@
+import { OasNode } from './nodes/oas.node';
 import { OasNodeDeclaration } from './nodes/oas.node.declaration';
 import { OasNodeLiteral } from './nodes/oas.node.literal';
 import { OasNodeOperation } from './nodes/oas.node.operation';
+import { OasNodeType } from './nodes/oas.node.type';
 import { OasNodeTypeArray } from './nodes/oas.node.type.array';
 import { OasNodeTypeBody } from './nodes/oas.node.type.body';
 import { OasNodeTypeComposite } from './nodes/oas.node.type.composite';
@@ -67,4 +69,8 @@ export function IsBodyNode(test: any): test is OasNodeTypeBody {
 
 export function IsOmitNode(test: any): test is OasNodeTypeOmit {
   return test?.kind === 'type' && test?.kindType === 'omit';
+}
+
+export function IsNodeType(test: OasNode): test is OasNodeType {
+  return test.kind === 'type';
 }

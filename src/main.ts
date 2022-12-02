@@ -1,10 +1,8 @@
 import OpenAPIParser from '@readme/openapi-parser';
-import chalk from 'chalk';
+import { Logger } from '@flexbase/logger';
 import { program } from 'commander';
 import glob from 'glob';
-import Mustache from 'mustache';
 import { OpenAPI } from 'openapi-types';
-import { OasContext } from './oas-tree/oas.context';
 import Path from 'path';
 import fs from 'fs-extra';
 import prettier from 'prettier';
@@ -12,10 +10,9 @@ import { IsDocument } from './utilities/openapi.utilities';
 import { IOpenApiSpecBuilder } from './oas-tree/oas.builder.interface';
 import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
 import { makeDocument } from './ast/ast.builder';
+import Handlebars from './handlerbars';
 
-type renderFunction = (text: string) => string;
-
-export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenApiSpecConverter): Promise<void> {
+export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenApiSpecConverter, logger: Logger): Promise<void> {
   program
     .requiredOption('-i, --input <path>', 'OpenAPI spec to parse (*.json, *.yaml)')
     .requiredOption('-t, --template <path>', 'The template to use')
@@ -33,7 +30,7 @@ export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenA
     const apiDoc = openApiDoc; //await OpenAPIParser.dereference(openApiDoc);
 
     if (!IsDocument(apiDoc)) {
-      console.log(chalk.red('Not an open api v3 spec, stopping'));
+      logger.error('Not an open api v3 spec, stopping');
       process.exit();
     }
 
@@ -42,77 +39,27 @@ export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenA
     // move operation declarations to lookups and replace with references
     oasBuilder.makeOperationDeclarationsGlobal(oasTree);
 
-    const declarationLookups = oasBuilder.createDeclarationMappings(oasTree.declarations);
+    const astDocument = makeDocument(oasTree);
 
-    const functions = {
-      declarationLookup: function () {
-        return function (text: string, render: any) {
-          const rendered = render(text);
-          const model = declarationLookups.get(rendered);
-          if (model) {
-            return model.generatedIdentifier.value;
-          }
-          return rendered;
-        };
-      },
-      removeNewLines: function () {
-        return function (text: string, render: any) {
-          const rendered = render(text);
-          return rendered.replace(/(\r\n|\n|\r)/gm, '');
-        };
-      },
-      commentSection: function () {
-        return function (text: string, render: renderFunction) {
-          const rendered: string = render(text).trim();
-          if (rendered.length > 0) {
-            return '\n/**\n' + rendered.replace(/(\r\n|\n|\r){2,}/gm, '\n') + '\n*/\n';
-          }
-          return rendered;
-        };
-      },
-      joinTypes: function () {
-        return function (text: string, render: renderFunction, args?: string) {
-          const rendered: string = render(text).trim();
-          if (args && rendered.endsWith(args)) {
-            return rendered.slice(0, -args.length);
-          }
-          return rendered;
-        };
-      },
-      formatPath: function () {
-        return function (text: string, render: renderFunction) {
-          return render(text).replace(/{(\w+)}/g, ':$1');
-        };
-      },
-    };
+    const name = cliOptions.name ?? oasTree.title;
+    //const name = name.replace(/-./g, x => x[1].toUpperCase());
 
-    if (cliOptions.name) {
-      oasTree.name = cliOptions.name;
-    }
-
-    const fileName = `${oasTree.name}${cliOptions.ext ?? '.ts'}`;
+    const fileName = `${name}${cliOptions.ext ?? '.ts'}`;
 
     await fs.ensureDir(cliOptions.output);
     const output = Path.join(cliOptions.output, fileName);
     const template = await fs.readFile(cliOptions.template, 'utf8');
-    const partials: Record<string, string> = {};
-
     if (cliOptions.partials) {
       glob.sync(cliOptions.partials).forEach(file => {
         const name = Path.basename(file);
         const ext = Path.extname(name);
-        partials[name.replace(ext, '')] = fs.readFileSync(file, 'utf8');
+        Handlebars.registerPartial(name.replace(ext, ''), fs.readFileSync(file, 'utf8'));
       });
     }
 
-    const jsonOas = oasConverter.convertOasToPoco(oasTree);
-
-    const context = new OasContext({ oas: jsonOas, functions });
-
-    try {
-      const node = makeDocument(oasTree);
+    if (cliOptions.debug) {
       const name = Path.join(cliOptions.output, `${fileName}.ast.json`);
-      let json = JSON.stringify(node);
+      let json = JSON.stringify(astDocument);
       try {
         json = prettier.format(json, {
           semi: true,
@@ -127,10 +74,9 @@ export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenA
       } catch {
         await fs.writeFile(name, json);
       }
-    } catch (e) {
-      console.log(e);
     }
 
+    const jsonOas = oasConverter.convertOasToPoco(oasTree);
     if (cliOptions.debug) {
       const name = Path.join(cliOptions.output, `${fileName}.oasTree.json`);
       let json = JSON.stringify(jsonOas);
@@ -150,7 +96,13 @@ export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenA
       }
     }
 
-    const rendered = Mustache.render(template, context, partials);
+    const context = { astDocument };
+
+    (Handlebars.logger as any)['actualLogger'] = logger;
+
+    const handlebarTemplate = Handlebars.compile(template);
+
+    const rendered = handlebarTemplate(context);
 
     try {
       await fs.writeFile(
@@ -159,7 +111,7 @@ export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenA
           semi: true,
           singleQuote: true,
           arrowParens: 'avoid',
-          tabWidth: 4,
+          tabWidth: 2,
           useTabs: false,
           printWidth: 150,
           parser: 'typescript',
@@ -170,7 +122,7 @@ export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenA
       await fs.writeFile(output, rendered, 'utf8');
     }
   } catch (e) {
-    console.error(chalk.red(`An error occurred ${cliOptions.input}`), e);
+    logger.error(`An error occurred ${cliOptions.input}`, e);
     process.exit();
   }
 }

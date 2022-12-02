@@ -1,8 +1,9 @@
-import { Identifier } from './ast.identifier';
 import { Node } from './ast.node';
 
-export interface TODO extends Node {
-  node: 'TODO';
-  id?: Identifier;
-  description: string;
+export interface TodoNode extends Node {
+  what: string;
+}
+
+export interface TodoExpression extends TodoNode {
+  node: 'TodoExpression';
 }
