@@ -7,9 +7,9 @@
 {{/compare}}
 
 {{#compare node "===" "ArrayExpression"}}
-    [ 
+    Array< 
     {{#elements}}{{>expression .}}{{/elements}}
-    ]
+    >
 {{/compare}}
 
 {{#compare node "===" "OmitExpression"}}

@@ -38,7 +38,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
   private nameChecker(name: string): void {
     const valid = /^[a-zA-Z_$][a-zA-Z_$0-9]*$/g.test(name);
     if (!valid) {
-      this._logger.warn(`Warning: ${name} may not be a valid variable identifier`);
+      this._logger.warn(`Warning: '${name}' may not be a valid variable identifier`);
     }
   }
 
@@ -188,6 +188,8 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         const propEntries = Object.entries(schema.properties);
         for (const propEntry of propEntries) {
           const identifier = propEntry[0];
+          this.nameChecker(identifier);
+
           const propertyType = this.generateTypeFromSchema(propEntry[1]);
 
           const isRequired = schema.required?.find(x => x === identifier) !== undefined;

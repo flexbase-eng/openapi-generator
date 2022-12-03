@@ -26,7 +26,7 @@ protected abstract {{>expression id prefix="_"}}(
     {{>expression .}} {{#unless isLast}}|{{/unless}}
     {{/forEach}}
     {{else}}
-    never
+    null
     {{/isEmpty}}    
     >>;
 @{{& httpMethod}}('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}')
@@ -35,7 +35,7 @@ protected abstract {{>expression id prefix="_"}}(
     @Body() body:{{#requests.bodies}}{{> expression}},{{/requests.bodies}}
     {{/if}}
     {{#if requests.pathParameters}}
-    @Path() path:{{#requests.pathParameters}}{{> expression}},{{/requests.pathParameters}}
+    @Param() path:{{#requests.pathParameters}}{{> expression}},{{/requests.pathParameters}}
     {{/if}}    
     {{#if requests.queryParameters}}
     @Query() query:{{#requests.queryParameters}}{{> expression}},{{/requests.queryParameters}}
@@ -49,7 +49,7 @@ protected abstract {{>expression id prefix="_"}}(
     {{>expression .}} {{#unless isLast}}|{{/unless}}
     {{/forEach}}
     {{else}}
-    never
+    null
     {{/isEmpty}}    
     >> {
     return this.{{>expression id prefix="_"}}(
