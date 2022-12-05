@@ -1,17 +1,16 @@
-{{#compare node "===" "IdentifierExpression"}}{{& prefix}}{{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}}{{/compare}}
-{{#compare node "===" "ObjectExpression"}}
+{{~#compare node "===" "IdentifierExpression"}}{{& prefix}}{{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}}{{/compare~}}
+
+{{~#compare node "===" "ObjectExpression"}}
     {
-    {{#forEach properties}} {{>declaration .}}{{#unless isLast}},{{/unless}}{{/forEach}}
+    {{#forEach properties}} {{>declaration .}}{{/forEach}}
     }
-{{/compare}}
+{{/compare~}}
 
-{{#compare node "===" "ArrayExpression"}}
-    Array< 
-    {{#elements}}{{>expression .}}{{/elements}}
-    >
-{{/compare}}
+{{~#compare node "===" "ArrayExpression"}}
+    ({{~#elements~}}{{~>expression}}{{~/elements~}})[]
+{{/compare~}}
 
-{{#compare node "===" "OmitExpression"}}
+{{~#compare node "===" "OmitExpression"}}
 {{#if omit}}
     & Omit<{{#elements}}{{> expression}}{{/elements}},
     {{#forEach omit}}
@@ -19,43 +18,43 @@
     {{/forEach}}
     >
 {{/if}}
-{{/compare}}
+{{/compare~}}
 
-{{#compare node "===" "CompositeExpression"}}
+{{~#compare node "===" "CompositeExpression"}}
     {{#forEach elements}}{{>expression .}}{{#unless isLast}}&{{/unless}}{{/forEach}}
-{{/compare}}
+{{/compare~}}
 
-{{#compare node "===" "UnionExpression"}}
+{{~#compare node "===" "UnionExpression"}}
     {{#forEach elements}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}
-{{/compare}}
+{{/compare~}}
 
 
-{{#compare node "===" "ResponseExpression"}}
+{{~#compare node "===" "ResponseExpression"}}
 {{#if responses}}
     {{#forEach responses}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}
 {{/if}}
-{{/compare}}
+{{/compare~}}
 
-{{#compare node "===" "RequestExpression"}}
+{{~#compare node "===" "RequestExpression"}}
 {{#if bodies}}
     {{#forEach bodies}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}
 {{/if}}
-{{/compare}}
+{{/compare~}}
 
-{{#compare node "===" "MediaExpression"}}
-    {{#compare mediaType "===" "application/json"}}
+{{~#compare node "===" "MediaExpression"}}
+    {{~#compare mediaType "===" "application/json"}}
     {{#body}}{{> expression}}{{/body}}
     {{else}}
-    {}
-    {{log "Unsupport response media type" mediaType level="warn"}}
-    {{/compare}} 
-{{/compare}}
+    {{log "Unsupported response media type" mediaType level="warn"}}
+    {{#body}}{{> expression}}{{/body}}
+    {{/compare~}} 
+{{/compare~}}
 
-{{#compare node "===" "ReferenceExpression"}}{{& resolveReference .}}{{/compare}}
+{{~#compare node "===" "ReferenceExpression"}}{{& resolveReference .}}{{/compare~}}
 
-{{#compare node "===" "LiteralExpression"}}{{& replace value "integer" "number"}}{{/compare}}
+{{~#compare node "===" "LiteralExpression"}}{{& replace value "integer" "number"}}{{/compare~}}
 
-{{#compare node "===" "TodoExpression"}}{{log "TODO expression" what level="warn"}}{{/compare}}
+{{~#compare node "===" "TodoExpression"}}{{log "TODO expression" what level="warn"}}{{/compare~}}
 
 
 

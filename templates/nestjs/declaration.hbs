@@ -1,9 +1,11 @@
-{{#compare node "===" "ModelDeclaration"}}
+{{#wrap . "/**" "*/"}}{{>comments}}{{/wrap}}
+
+{{~#compare node "===" "ModelDeclaration"}}
 export type {{#registerReference .}}{{>expression id suffix=./suffix prefix=./prefix}}{{/registerReference}} = {{>expression definition}}
 {{/compare}}
 
 {{#compare node "===" "PropertyDeclaration"}}
-{{>expression id}}{{^required}}?{{/required}}: {{>expression definition}}
+{{>expression id}}{{^required}}?{{/required}}: {{>expression definition}};
 {{/compare}}
 
 {{#compare node "===" "OperationDeclaration"}}

@@ -6,6 +6,7 @@
  @description {{astDocument.description}}
  @version {{astDocument.version}}
 ------------------------------------------------------------ */
+
 import { Body, Get, Param, Post, Query, Patch, Delete, Headers, Head, Options, SetMetadata } from '@nestjs/common';
 
 const Scopes = (...scopes: string[]) => SetMetadata('scopes', scopes);

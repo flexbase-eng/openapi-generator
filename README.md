@@ -24,7 +24,7 @@ npm i @flexbase/openapi-generator -D
 ## Usage
 
 ```
-openapi-generator -i petstore.yaml -o . -t template.hbs
+openapi-generator -i <openapispec>.yaml -o . -t <template>.hbs
 ```
 
 | Option               | Argument                                                   | Description                                                                   |
@@ -43,22 +43,22 @@ Below are some example [handlebars](https://handlebarsjs.com/) templates to gene
 
 ### `document.hbs` template
 
-https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/document.hbs
+https://github.com/flexbase-eng/openapi-generator/blob/main/templates/nestjs/document.hbs
 
 ### `declaration.hbs` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/declaration.hbs
+https://github.com/flexbase-eng/openapi-generator/blob/main/templates/nestjs/declaration.hbs
 
 ### `expression.hbs` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/main/tests/templates/expression.hbs
+https://github.com/flexbase-eng/openapi-generator/blob/main/templates/nestjs/expression.hbs
 
 ## Example
 
 Generating the petstore openapi spec by running the following:
 
 ```
-openapi-generator -i './tests/data/petstore.yaml' -o ./output -t './tests/templates/document.hbs' -p './tests/templates/**/*.hbs' -n petstore -d
+openapi-generator yarn start -i './tests/data/petstore.yaml' -o ./output -t './templates/nestjs/document.hbs' -p './templates/nestjs/**/*.hbs' -n petstore -d
 ```
 
 or
@@ -81,6 +81,10 @@ Will output two files `petstore.ts` and `petstore.ts.ast.json`
  @version 1.0.0
 ------------------------------------------------------------ */
 
+import { Body, Get, Param, Post, Query, Patch, Delete, Headers, Head, Options, SetMetadata } from '@nestjs/common';
+
+const Scopes = (...scopes: string[]) => SetMetadata('scopes', scopes);
+
 export type Swagger_PetstoreControllerResponse<BODY = void, HEADER = Record<string, any>> = {
   $status?: number;
   $headers?: HEADER;
@@ -90,14 +94,17 @@ export type Swagger_PetstoreControllerResponse<BODY = void, HEADER = Record<stri
 //#region Models
 export type PetModel = {
   id: number;
+
   name: string;
+
   tag?: string;
 };
 
-export type PetsModel = [PetModel];
+export type PetsModel = PetModel[];
 
 export type ErrorModel = {
   code: number;
+
   message: string;
 };
 
@@ -105,6 +112,7 @@ export type ErrorModel = {
 
 //#region Path Parameters
 export type showPetByIdPathParameter = {
+  /*** @description The id of the pet to retrieve*/
   petId: string;
 };
 
@@ -112,6 +120,7 @@ export type showPetByIdPathParameter = {
 
 //#region Query Parameters
 export type listPetsQueryParameter = {
+  /*** @description How many items to return at one time (max 100)*/
   limit?: number;
 };
 
@@ -132,7 +141,7 @@ export abstract class Swagger_PetstoreControllerGenerated {
 
   protected abstract _showPetById(path: showPetByIdPathParameter): Promise<Swagger_PetstoreControllerResponse<PetModel | ErrorModel>>;
   @Get('/pets/:petId')
-  showPetById(@Path() path: showPetByIdPathParameter): Promise<Swagger_PetstoreControllerResponse<PetModel | ErrorModel>> {
+  showPetById(@Param() path: showPetByIdPathParameter): Promise<Swagger_PetstoreControllerResponse<PetModel | ErrorModel>> {
     return this._showPetById(path);
   }
 }

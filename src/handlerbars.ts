@@ -58,6 +58,22 @@ Handlebars.registerHelper('resolveReference', function (context) {
   return ref;
 });
 
+Handlebars.registerHelper('wrap', function (context, prefix, suffix, options: Handlebars.HelperOptions) {
+  const rendered = options.fn(context);
+
+  if (!rendered) {
+    return rendered;
+  }
+
+  const trimmed = rendered.trim();
+
+  if (trimmed.length > 0) {
+    return `${prefix}${trimmed}${suffix}`;
+  }
+
+  return trimmed;
+});
+
 Handlebars.registerHelper('toRegex', function (str, a) {
   return new RegExp(str, a);
 });

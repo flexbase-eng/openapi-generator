@@ -9,10 +9,15 @@ import prettier from 'prettier';
 import { IsDocument } from './utilities/openapi.utilities';
 import { IOpenApiSpecBuilder } from './oas-tree/oas.builder.interface';
 import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
-import { makeDocument } from './ast/ast.builder';
 import Handlebars from './handlerbars';
+import { IAstBuilder } from './ast/ast.builder.interface';
 
-export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenApiSpecConverter, logger: Logger): Promise<void> {
+export async function main(
+  oasBuilder: IOpenApiSpecBuilder,
+  oasConverter: IOpenApiSpecConverter,
+  astBuilder: IAstBuilder,
+  logger: Logger
+): Promise<void> {
   program
     .requiredOption('-i, --input <path>', 'OpenAPI spec to parse (*.json, *.yaml)')
     .requiredOption('-t, --template <path>', 'The template to use')
@@ -20,6 +25,7 @@ export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenA
     .option('-e, --ext <ext>', 'The file extension to use. Defaults to .ts', '.ts')
     .option('-p, --partials <glob>', 'Optional partial templates to include')
     .option('-o, --output <path>', 'An optional output path')
+    .option('--no-prettier', 'Disable prettier for output', true)
     .option('-d, --debug', 'Output the internal representations')
     .parse(process.argv);
 
@@ -39,7 +45,7 @@ export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenA
     // move operation declarations to lookups and replace with references
     oasBuilder.makeOperationDeclarationsGlobal(oasTree);
 
-    const astDocument = makeDocument(oasTree);
+    const astDocument = astBuilder.makeDocument(oasTree);
 
     const name = cliOptions.name ?? oasTree.title;
     //const name = name.replace(/-./g, x => x[1].toUpperCase());
@@ -104,10 +110,9 @@ export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenA
 
     const rendered = handlebarTemplate(context);
 
-    try {
-      await fs.writeFile(
-        output,
-        prettier.format(rendered, {
+    const runPrettier = (str: string): string => {
+      try {
+        return prettier.format(str, {
           semi: true,
           singleQuote: true,
           arrowParens: 'avoid',
@@ -115,12 +120,14 @@ export async function main(oasBuilder: IOpenApiSpecBuilder, oasConverter: IOpenA
           useTabs: false,
           printWidth: 150,
           parser: 'typescript',
-        }),
-        'utf8'
-      );
-    } catch {
-      await fs.writeFile(output, rendered, 'utf8');
-    }
+        });
+      } catch (e) {
+        logger.info(e);
+        return str;
+      }
+    };
+
+    await fs.writeFile(output, cliOptions.prettier ? runPrettier(rendered) : rendered, 'utf8');
   } catch (e) {
     logger.error(`An error occurred ${cliOptions.input}`, e);
     process.exit();
