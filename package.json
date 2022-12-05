@@ -203,6 +203,7 @@
     ],
     "include": [
       "dist",
+      "templates",
       "README.md",
       "LICENSE",
       "yarn.lock"
