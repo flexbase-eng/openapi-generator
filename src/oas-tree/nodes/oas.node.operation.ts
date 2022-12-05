@@ -14,6 +14,7 @@ export class OasNodeOperation extends OasNode {
     private readonly _path: string,
     private _responses: OasNodeType | OasNodeType[] | undefined,
     private readonly _request: OasNodeType | undefined,
+    private readonly _tags: string[] | undefined,
     modifiers: OasNodeModifiers
   ) {
     super('operation', modifiers);
@@ -34,6 +35,10 @@ export class OasNodeOperation extends OasNode {
 
   get path(): string {
     return this._path;
+  }
+
+  get tags(): string[] | undefined {
+    return this._tags;
   }
 
   get responses(): OasNodeType | OasNodeType[] | undefined {

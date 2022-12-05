@@ -37,7 +37,7 @@ const transformer = (_: typescript.Program) => (transformationContext: typescrip
       ['.js', '.jsx', '.ts', '.tsx', '.mts', '.cts', '.json', '.css', '.less', '.htm', '.html', '.scss', '.sass'].includes(
         path.extname(node.moduleSpecifier.text)
       ) === true ||
-      (path.extname(node.moduleSpecifier.text) !== '' && path.extname(node.moduleSpecifier.text).length <= 4)
+      (path.extname(node.moduleSpecifier.text) !== '' && path.extname(node.moduleSpecifier.text).length <= 2)
     )
       return false;
     return true;

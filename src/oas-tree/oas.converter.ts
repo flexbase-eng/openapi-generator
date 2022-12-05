@@ -18,6 +18,7 @@ import { OasNodeDeclaration } from './nodes/oas.node.declaration';
 import { OasNodeLiteral } from './nodes/oas.node.literal';
 import { OasNodeOperation } from './nodes/oas.node.operation';
 import { OasNodeType } from './nodes/oas.node.type';
+import { OasNodeTag } from './nodes/oas.node.tag';
 
 export class OpenApiSpecConverter implements IOpenApiSpecConverter {
   convertOasToPoco(oas: OpenApiSpecTree): any {
@@ -27,6 +28,7 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
       version: oas.version,
       declarations: oas.declarations.map(x => this.convertNode(x)),
       operations: oas.operations.map(x => this.convertNode(x)),
+      tags: oas.tags ? oas.tags.map(x => this.convertNode(x)) : undefined,
     };
   }
 
@@ -47,6 +49,9 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
 
       case 'type':
         return this.convertType(node as OasNodeType);
+
+      case 'tag':
+        return this.convertTag(node as OasNodeTag);
     }
   }
 
@@ -85,7 +90,15 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
       path: node.path,
       responses,
       request,
+      tags: node.tags,
       modifiers: node.modifiers,
+    };
+  }
+
+  convertTag(node: OasNodeTag) {
+    return {
+      name: node.name,
+      description: node.description,
     };
   }
 

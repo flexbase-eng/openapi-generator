@@ -1,6 +1,6 @@
 import { OasNodeModifiers } from './oas.node.modifiers';
 
-export type OasNodeKind = 'operation' | 'literal' | 'declaration' | 'type';
+export type OasNodeKind = 'operation' | 'literal' | 'declaration' | 'type' | 'tag';
 
 export abstract class OasNode {
   constructor(private readonly _kind: OasNodeKind, private _modifiers: OasNodeModifiers) {}

@@ -25,4 +25,5 @@ export interface OasNodeModifiers {
   returns?: string[];
   extensions?: Record<string, string>;
   examples?: any;
+  tags?: string[];
 }
