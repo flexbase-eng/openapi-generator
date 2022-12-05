@@ -1,5 +1,4 @@
-{{#compare node "===" "IdentifierExpression"}}{{& prefix}}{{& name}}{{& suffix}}{{/compare}}
-
+{{#compare node "===" "IdentifierExpression"}}{{& prefix}}{{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}}{{/compare}}
 {{#compare node "===" "ObjectExpression"}}
     {
     {{#forEach properties}} {{>declaration .}}{{#unless isLast}},{{/unless}}{{/forEach}}
