@@ -16,6 +16,7 @@ import {
   IsContentNode,
   IsDeclarationNode,
   IsObjectNode,
+  IsPrimativeNode,
   IsReferenceNode,
   IsRequestNode,
   IsResponseNode,
@@ -295,8 +296,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         pathPattern,
         responses,
         request,
-        operationObject.tags,
-        { title, description, deprecated, returns, extensions }
+        { title, description, deprecated, returns, extensions, tags: operationObject.tags }
       );
       nodeOperations.push(nodeOperation);
     }
@@ -461,7 +461,6 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     }
 
     const responseNodes: OasNodeTypeResponse[] = [];
-    //const returnComments: string[] = [];
 
     for (const responseEntry of responsesEntities) {
       const code = responseEntry[0];
@@ -473,16 +472,8 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         continue;
       }
 
-      //returnComments.push(`${code} - ${responseNode.modifiers.description ?? ''}`);
-
       responseNodes.push(responseNode);
     }
-
-    // if (responseNodes.length === 1) {
-    //   const response = responseNodes[0];
-    //   response.modifiers.returns = returnComments;
-    //   return response;
-    // }
 
     return responseNodes.length === 1 ? responseNodes[0] : responseNodes;
   }
@@ -557,10 +548,24 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
       if (!refModel) {
         this._logger.warn(`${this.createOmitNode.name}: Unable to find reference ${model.identifier.value}`, model);
       } else {
-        omitDeclarations.push(...this.getOmitDeclarations(refModel, omitType));
+        return this.createOmitNode(refModel.type, omitType, modelMappings);
       }
-    } else {
-      omitDeclarations.push(...this.getOmitDeclarations(model, omitType));
+    } else if (IsObjectNode(model)) {
+      model.fields.forEach(field => {
+        if (field.modifiers[omitType] === true) {
+          omitDeclarations.push(field.identifier.value);
+        }
+      });
+    } else if (IsDeclarationNode(model)) {
+      return this.createOmitNode(model.type, omitType, modelMappings);
+    } else if (IsArrayNode(model)) {
+      return this.createOmitNode(model.arrayType, omitType, modelMappings);
+    } else if (IsUnionNode(model)) {
+      this._logger.error(`${this.createOmitNode.name}: need to handle union node`);
+    } else if (IsCompositeNode(model)) {
+      this._logger.error(`${this.createOmitNode.name}: need to handle composite node`);
+    } else if (!IsPrimativeNode(model)) {
+      this._logger.error(`${this.createOmitNode.name}: need to handle node`, model);
     }
 
     return omitDeclarations.length > 0 ? new OasNodeTypeOmit(model, omitDeclarations, {}) : model;
@@ -626,7 +631,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     tags: string[] | undefined,
     parameterLocation?: ParameterLocations
   ): { declaration: OasNodeDeclaration; refNode: OasNodeTypeReference } {
-    const refName = `#/components/generated/${name}`;
+    const refName = `#/components/generated/${parameterLocation ?? declarationType}/${name}`;
     const modifiers = node.modifiers;
     modifiers.tags = tags;
     node.modifiers = {};
@@ -659,7 +664,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
   makeOperationDeclarationsGlobal(oas: OpenApiSpecTree): OpenApiSpecTree {
     for (const operation of oas.operations) {
       const operationId = operation.identifier.value;
-      const tags = operation.tags;
+      const tags = operation.modifiers.tags;
 
       if (operation.responses) {
         const responses = operation.responses;

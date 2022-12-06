@@ -30,4 +30,5 @@ export interface Declaration extends Node {
   deprecated?: boolean;
   extensions?: any;
   examples?: any;
+  tags?: string[];
 }

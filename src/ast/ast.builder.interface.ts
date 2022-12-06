@@ -1,5 +1,7 @@
 import { OpenApiSpecTree } from 'src/oas-tree/oas.tree';
+import { AstDocument } from './nodes/ast.document';
 
 export interface IAstBuilder {
-  makeDocument(oas: OpenApiSpecTree): Node;
+  makeDocument(oas: OpenApiSpecTree): AstDocument;
+  organizeByTags(astDocument: AstDocument): AstDocument[];
 }

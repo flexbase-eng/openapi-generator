@@ -1,6 +1,6 @@
 {
   "name": "@flexbase/openapi-generator",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Open API v3 code generator",
   "author": {
     "name": "Flexbase Technologies",
@@ -48,7 +48,7 @@
     "minor": "npm version minor",
     "major": "npm version major",
     "generate": "yarn start -o ./output -t ./templates/nestjs/document.hbs -p ./templates/nestjs/**/*.hbs -d -i",
-    "start:petstore": "yarn start -i ./tests/data/petstore.yaml -o ./output -t ./templates/nestjs/document.hbs -p ./templates/nestjs/**/*.hbs -n petstore -d"
+    "start:petstore": "yarn generate ./tests/data/petstore.yaml -n petstore"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,json}": [

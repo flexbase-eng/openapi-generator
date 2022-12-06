@@ -34,6 +34,10 @@ import { OasNodeOperation } from '../oas-tree/nodes/oas.node.operation';
 import { ModelDeclaration } from './nodes/ast.model';
 import { Logger } from '@flexbase/logger';
 import { IAstBuilder } from './ast.builder.interface';
+import { TagNode } from './nodes/ast.tag';
+import { Declaration } from './nodes/ast.declaration';
+
+const ASTDOCUMENT_GLOBAL_TAGS = 'ASTDOCUMENT_GLOBAL_TAGS';
 
 export class AstBuilder implements IAstBuilder {
   constructor(private readonly _logger: Logger) {}
@@ -160,10 +164,11 @@ export class AstBuilder implements IAstBuilder {
           : [this.makeExpression(oasOperation.responses)]
         : [<LiteralExpression>{ node: 'LiteralExpression', value: 'null' }],
       requests: oasOperation.request ? this.makeExpression(oasOperation.request) : undefined,
+      tags: oasOperation.modifiers.tags,
     };
   }
 
-  makeDocument(oas: OpenApiSpecTree): Node {
+  makeDocument(oas: OpenApiSpecTree): AstDocument {
     const models: Array<ModelDeclaration> = [];
     const responses: Array<ModelDeclaration> = [];
     const requests: Array<ModelDeclaration> = [];
@@ -174,6 +179,7 @@ export class AstBuilder implements IAstBuilder {
     const referenceParameters: Array<ModelDeclaration> = [];
     const unknownParameters: Array<ModelDeclaration> = [];
     const operations: Array<OperationDeclaration> = [];
+    const tags: Array<TagNode> = [];
 
     for (const decl of oas.declarations) {
       const node: ModelDeclaration = {
@@ -185,6 +191,7 @@ export class AstBuilder implements IAstBuilder {
         description: decl.modifiers.description,
         extensions: decl.modifiers.extensions,
         examples: decl.modifiers.examples,
+        tags: decl.modifiers.tags,
       };
 
       if (decl.declarationType === 'model') {
@@ -218,6 +225,10 @@ export class AstBuilder implements IAstBuilder {
       operations.push(op);
     }
 
+    if (oas.tags) {
+      tags.push(...oas.tags.map(tag => <TagNode>{ node: 'TagNode', name: tag.name, description: tag.description }));
+    }
+
     const document = <AstDocument>{
       node: 'Document',
       title: oas.title,
@@ -233,8 +244,96 @@ export class AstBuilder implements IAstBuilder {
       referenceParameters,
       unknownParameters,
       operations,
+      tags,
     };
 
     return document;
+  }
+
+  private createDocumentFromTag(
+    tagMap: Map<string, AstDocument>,
+    name: string,
+    description: string | undefined,
+    version: string | undefined
+  ): AstDocument {
+    let doc = tagMap.get(name);
+    if (!doc) {
+      doc = <AstDocument>{
+        node: 'Document',
+        title: name,
+        description: description,
+        version: version,
+        models: [],
+        responses: [],
+        requests: [],
+        pathParameters: [],
+        headerParameters: [],
+        queryParameters: [],
+        cookieParameters: [],
+        referenceParameters: [],
+        unknownParameters: [],
+        operations: [],
+        tags: [],
+      };
+      tagMap.set(name, doc);
+    }
+
+    return doc;
+  }
+
+  private addDeclarationsToTagMap(tagMap: Map<string, AstDocument>, property: string, declaration: Declaration[], version: string | undefined) {
+    for (const decl of declaration) {
+      if (decl.tags) {
+        for (const tag of decl.tags) {
+          const doc = this.createDocumentFromTag(tagMap, tag, undefined, version);
+          (doc as any)[property].push(decl);
+        }
+      } else {
+        const doc = this.createDocumentFromTag(tagMap, ASTDOCUMENT_GLOBAL_TAGS, undefined, version);
+        (doc as any)[property].push(decl);
+      }
+    }
+  }
+
+  organizeByTags(astDocument: AstDocument): AstDocument[] {
+    const tagMap = new Map<string, AstDocument>();
+    const version = astDocument.version;
+
+    const globalDoc = this.createDocumentFromTag(tagMap, ASTDOCUMENT_GLOBAL_TAGS, astDocument.description, version);
+    globalDoc.title = astDocument.title;
+
+    for (const tag of astDocument.tags) {
+      this.createDocumentFromTag(tagMap, tag.name, tag.description, version);
+    }
+
+    this.addDeclarationsToTagMap(tagMap, 'models', astDocument.models, version);
+    this.addDeclarationsToTagMap(tagMap, 'responses', astDocument.responses, version);
+    this.addDeclarationsToTagMap(tagMap, 'requests', astDocument.requests, version);
+    this.addDeclarationsToTagMap(tagMap, 'pathParameters', astDocument.pathParameters, version);
+    this.addDeclarationsToTagMap(tagMap, 'headerParameters', astDocument.headerParameters, version);
+    this.addDeclarationsToTagMap(tagMap, 'queryParameters', astDocument.queryParameters, version);
+    this.addDeclarationsToTagMap(tagMap, 'cookieParameters', astDocument.cookieParameters, version);
+    this.addDeclarationsToTagMap(tagMap, 'referenceParameters', astDocument.referenceParameters, version);
+    this.addDeclarationsToTagMap(tagMap, 'operations', astDocument.operations, version);
+
+    //copy global/shared tags to other docs
+    tagMap.delete(ASTDOCUMENT_GLOBAL_TAGS);
+
+    for (const kvp of tagMap) {
+      const doc = kvp[1];
+      doc.models.push(...globalDoc.models);
+      doc.responses.push(...globalDoc.responses);
+      doc.requests.push(...globalDoc.requests);
+      doc.pathParameters.push(...globalDoc.pathParameters);
+      doc.headerParameters.push(...globalDoc.headerParameters);
+      doc.queryParameters.push(...globalDoc.queryParameters);
+      doc.cookieParameters.push(...globalDoc.cookieParameters);
+      doc.referenceParameters.push(...globalDoc.referenceParameters);
+      doc.operations.push(...globalDoc.operations);
+    }
+
+    const docs = Array.from(tagMap.values());
+
+    return docs.length > 0 ? docs : [astDocument];
   }
 }

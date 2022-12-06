@@ -28,7 +28,7 @@ import { IsReferenceExpression } from './ast/nodes/ast.reference';
   }
 );
 
-const referenceRegistrations = new Map<string, string>();
+export const referenceRegistrations = new Map<string, string>();
 
 Handlebars.registerHelper('registerReference', function (context, options: Handlebars.HelperOptions) {
   if (!IsModelDeclaration(context) || context.referenceName === undefined) {

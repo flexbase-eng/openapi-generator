@@ -90,7 +90,6 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
       path: node.path,
       responses,
       request,
-      tags: node.tags,
       modifiers: node.modifiers,
     };
   }
