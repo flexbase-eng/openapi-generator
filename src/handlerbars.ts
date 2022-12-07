@@ -68,30 +68,36 @@ Handlebars.registerHelper('wrap', function (context, prefix, suffix, options: Ha
   const trimmed = rendered.trim();
 
   if (trimmed.length > 0) {
-    return `${prefix}${trimmed}${suffix}`;
+    return `${prefix}${rendered}${suffix}`;
   }
 
   return trimmed;
+});
+
+Handlebars.registerHelper('newline', function () {
+  return '\n';
 });
 
 Handlebars.registerHelper('toRegex', function (str, a) {
   return new RegExp(str, a);
 });
 
-Handlebars.registerHelper('replace', function (str, a, b) {
+Handlebars.registerHelper('replace', function (str, a, b, options: Handlebars.HelperOptions) {
   const _isString = (val: unknown): val is string => {
     return typeof val === 'string' && val !== '';
   };
   const _isRegex = (val: unknown) => {
     const toString = Object.prototype.toString;
-    return toString.call(a) === '[object RegExp]';
+    return toString.call(val) === '[object RegExp]';
   };
 
-  if (!_isString(str)) return '';
-  if (!_isString(a) && !_isRegex(a)) return str;
+  const rendered = typeof str === 'object' && options ? options.fn(str) : str;
+
+  if (!_isString(rendered)) return '';
+  if (!_isString(a) && !_isRegex(a)) return rendered;
   if (!_isString(b)) b = '';
 
-  return str.replace(a, b);
+  return rendered.replace(a, b);
 });
 
 (Handlebars.logger as any)['actualLogger'] = new NoopLogger();

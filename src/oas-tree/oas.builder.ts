@@ -16,7 +16,6 @@ import {
   IsContentNode,
   IsDeclarationNode,
   IsObjectNode,
-  IsPrimativeNode,
   IsReferenceNode,
   IsRequestNode,
   IsResponseNode,
@@ -548,25 +547,29 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
       if (!refModel) {
         this._logger.warn(`${this.createOmitNode.name}: Unable to find reference ${model.identifier.value}`, model);
       } else {
-        return this.createOmitNode(refModel.type, omitType, modelMappings);
+        //return this.createOmitNode(refModel.type, omitType, modelMappings);
+        omitDeclarations.push(...this.getOmitDeclarations(refModel.type, omitType));
       }
-    } else if (IsObjectNode(model)) {
-      model.fields.forEach(field => {
-        if (field.modifiers[omitType] === true) {
-          omitDeclarations.push(field.identifier.value);
-        }
-      });
-    } else if (IsDeclarationNode(model)) {
-      return this.createOmitNode(model.type, omitType, modelMappings);
-    } else if (IsArrayNode(model)) {
-      return this.createOmitNode(model.arrayType, omitType, modelMappings);
-    } else if (IsUnionNode(model)) {
-      this._logger.error(`${this.createOmitNode.name}: need to handle union node`);
-    } else if (IsCompositeNode(model)) {
-      this._logger.error(`${this.createOmitNode.name}: need to handle composite node`);
-    } else if (!IsPrimativeNode(model)) {
-      this._logger.error(`${this.createOmitNode.name}: need to handle node`, model);
+    } else {
+      omitDeclarations.push(...this.getOmitDeclarations(model, omitType));
     }
+    // else if (IsObjectNode(model)) {
+    //   model.fields.forEach(field => {
+    //     if (field.modifiers[omitType] === true) {
+    //       omitDeclarations.push(field.identifier.value);
+    //     }
+    //   });
+    // } else if (IsDeclarationNode(model)) {
+    //   return this.createOmitNode(model.type, omitType, modelMappings);
+    // } else if (IsArrayNode(model)) {
+    //   return this.createOmitNode(model.arrayType, omitType, modelMappings);
+    // } else if (IsUnionNode(model)) {
+    //   this._logger.error(`${this.createOmitNode.name}: need to handle union node`);
+    // } else if (IsCompositeNode(model)) {
+    //   this._logger.error(`${this.createOmitNode.name}: need to handle composite node`);
+    // } else if (!IsPrimativeNode(model)) {
+    //   this._logger.error(`${this.createOmitNode.name}: need to handle node`, model);
+    // }
 
     return omitDeclarations.length > 0 ? new OasNodeTypeOmit(model, omitDeclarations, {}) : model;
   }

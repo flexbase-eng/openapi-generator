@@ -164,6 +164,11 @@ export class AstBuilder implements IAstBuilder {
           : [this.makeExpression(oasOperation.responses)]
         : [<LiteralExpression>{ node: 'LiteralExpression', value: 'null' }],
       requests: oasOperation.request ? this.makeExpression(oasOperation.request) : undefined,
+      title: oasOperation.modifiers.title,
+      description: oasOperation.modifiers.description,
+      extensions: oasOperation.modifiers.extensions,
+      examples: oasOperation.modifiers.examples,
+      deprecated: oasOperation.modifiers.deprecated,
       tags: oasOperation.modifiers.tags,
     };
   }
@@ -191,6 +196,7 @@ export class AstBuilder implements IAstBuilder {
         description: decl.modifiers.description,
         extensions: decl.modifiers.extensions,
         examples: decl.modifiers.examples,
+        deprecated: decl.modifiers.deprecated,
         tags: decl.modifiers.tags,
       };
 

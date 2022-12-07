@@ -1,14 +1,14 @@
-{{#wrap . "/**" "*/"}}{{>comments}}{{/wrap}}
+{{>comments}}
 
-{{~#compare node "===" "ModelDeclaration"}}
+{{#compare node "===" "ModelDeclaration"}}
 export type {{#registerReference .}}{{>expression id suffix=./suffix prefix=./prefix}}{{/registerReference}} = {{>expression definition}}
 {{/compare}}
 
-{{#compare node "===" "PropertyDeclaration"}}
-{{>expression id}}{{^required}}?{{/required}}: {{>expression definition}};
+{{~#compare node "===" "PropertyDeclaration"}}
+{{>expression id}}{{^required}}?{{/required}}: {{>expression definition enum=./enum}};
 {{/compare}}
 
-{{#compare node "===" "OperationDeclaration"}}
+{{~#compare node "===" "OperationDeclaration"}}
 protected abstract {{>expression id prefix="_"}}(
     {{~#if requests.bodies~}}
     body:{{#requests.bodies}}{{> expression}},{{/requests.bodies}}

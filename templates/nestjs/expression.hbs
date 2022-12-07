@@ -52,7 +52,7 @@
 
 {{~#compare node "===" "ReferenceExpression"}}{{& resolveReference .}}{{/compare~}}
 
-{{~#compare node "===" "LiteralExpression"}}{{& replace value "integer" "number"}}{{/compare~}}
+{{~#compare node "===" "LiteralExpression"}}{{#if enum}}"{{& join enum "\"|\""}}"{{else}}{{& replace value "integer" "number"}}{{/if}}{{/compare~}}
 
 {{~#compare node "===" "TodoExpression"}}{{log "TODO expression" what level="warn"}}{{/compare~}}
 

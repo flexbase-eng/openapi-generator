@@ -1,3 +1,6 @@
-{{#description}}* @description {{& .}}{{/description}}
-{{#deprecated}}* @deprecated{{/deprecated}}
-{{#readOnly}}* @readonly{{/readOnly}}
+{{#wrap . "/**" "*/"}}
+{{~#title}}{{newline}}* @name {{& .}}{{/title}}
+{{~#description}}{{newline}}* @description {{& .}}{{/description}}
+{{~#deprecated}}{{newline}}* @deprecated{{/deprecated}}
+{{~#readOnly}}{{newline}}* @readonly{{/readOnly}}
+{{/wrap}}
