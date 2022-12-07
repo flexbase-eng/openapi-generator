@@ -319,6 +319,13 @@ export class AstBuilder implements IAstBuilder {
     //copy global/shared tags to other docs
     tagMap.delete(ASTDOCUMENT_GLOBAL_TAGS);
 
+    if (globalDoc.operations.length > 0) {
+      this._logger.warn(
+        "Warning the following operations aren't assigned a tag and will not be used",
+        globalDoc.operations.map(op => op.id.name)
+      );
+    }
+
     for (const kvp of tagMap) {
       const doc = kvp[1];
       doc.models.push(...globalDoc.models);
@@ -329,7 +336,6 @@ export class AstBuilder implements IAstBuilder {
       doc.queryParameters.push(...globalDoc.queryParameters);
       doc.cookieParameters.push(...globalDoc.cookieParameters);
       doc.referenceParameters.push(...globalDoc.referenceParameters);
-      doc.operations.push(...globalDoc.operations);
     }
 
     const docs = Array.from(tagMap.values());
