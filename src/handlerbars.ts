@@ -46,6 +46,24 @@ Handlebars.registerHelper('registerReference', function (context, options: Handl
   return name;
 });
 
+Handlebars.registerHelper('registerValidator', function (context, options: Handlebars.HelperOptions) {
+  if (!IsModelDeclaration(context) || context.referenceName === undefined) {
+    throw Error('Expected a model declaration with a reference name');
+  }
+
+  const referenceName = context.referenceName + '/validator';
+
+  const name = options.fn(context);
+
+  if (referenceRegistrations.has(referenceName)) {
+    Handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
+  }
+
+  referenceRegistrations.set(referenceName, name);
+
+  return name;
+});
+
 Handlebars.registerHelper('resolveReference', function (context) {
   if (!IsReferenceExpression(context) || context.key === undefined) {
     throw Error('Expected a reference expression with a reference key');
@@ -54,6 +72,20 @@ Handlebars.registerHelper('resolveReference', function (context) {
   const ref = referenceRegistrations.get(context.key);
   if (!ref) {
     Handlebars.log(2, `Reference ${context.key} not registered`);
+  }
+  return ref;
+});
+
+Handlebars.registerHelper('resolveValidator', function (context) {
+  if (!IsReferenceExpression(context) || context.key === undefined) {
+    throw Error('Expected a reference expression with a reference key');
+  }
+
+  const referenceKey = context.key + '/validator';
+
+  const ref = referenceRegistrations.get(referenceKey);
+  if (!ref) {
+    Handlebars.log(2, `Reference ${referenceKey} not registered`);
   }
   return ref;
 });
@@ -98,6 +130,12 @@ Handlebars.registerHelper('replace', function (str, a, b, options: Handlebars.He
   if (!_isString(b)) b = '';
 
   return rendered.replace(a, b);
+});
+
+Handlebars.registerHelper('extendProperty', function (context, name, options: Handlebars.HelperOptions) {
+  const rendered = options.fn(context);
+
+  context[name] = rendered;
 });
 
 (Handlebars.logger as any)['actualLogger'] = new NoopLogger();

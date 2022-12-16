@@ -42,7 +42,7 @@ const ASTDOCUMENT_GLOBAL_TAGS = 'ASTDOCUMENT_GLOBAL_TAGS';
 export class AstBuilder implements IAstBuilder {
   constructor(private readonly _logger: Logger) {}
 
-  private makeProperties(oasNode: OasNodeTypeObject): Array<PropertyDeclaration> {
+  private makePropertyExpressions(oasNode: OasNodeTypeObject): Array<PropertyDeclaration> {
     return oasNode.fields.map(
       field =>
         <PropertyDeclaration>{
@@ -81,7 +81,7 @@ export class AstBuilder implements IAstBuilder {
         value: oasNode.primativeType,
       };
     } else if (IsObjectNode(oasNode)) {
-      const properties = this.makeProperties(oasNode);
+      const properties = this.makePropertyExpressions(oasNode);
 
       if (properties.length === 0) {
         this._logger.info('Empty object detected');

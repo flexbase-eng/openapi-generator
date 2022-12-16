@@ -12,3 +12,11 @@ export interface ObjectExpression extends ObjectNode {
 export interface PropertyDeclaration extends Declaration {
   node: 'PropertyDeclaration';
 }
+
+export function IsObjectExpression(node: Node): node is ObjectExpression {
+  return node.node === 'ObjectExpression';
+}
+
+export function IsPropertyDeclaration(node: Node): node is PropertyDeclaration {
+  return node.node === 'PropertyDeclaration';
+}

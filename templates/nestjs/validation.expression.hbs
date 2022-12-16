@@ -1,0 +1,65 @@
+{{~#compare node "===" "IdentifierExpression"}}{{& prefix}}{{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}}{{/compare~}}
+
+{{~#compare node "===" "LiteralExpression"}}
+    {{#extendProperty . "propertyType"}}{{replace value "integer" "number"}}{{/extendProperty}}
+    if(typeof {{propertyName}} !== '{{propertyType}}') {
+        errors.push('Expected {{propertyName}} to be a {{propertyType}}');
+    }
+    {{#compare value "===" "integer"}}
+    if(!Number.isInteger({{propertyName}})) {
+        errors.push('Expected {{propertyName}} to be an integer')
+    }
+    {{/compare}}
+{{/compare~}}
+
+{{~#compare node "===" "ObjectExpression"}}
+    {{#properties}} {{>validation.declaration . modelName=../modelName propertyName=../propertyName}}{{/properties}}
+{{/compare~}}
+
+{{~#compare node "===" "ArrayExpression"}}
+    if(!Array.isArray({{./propertyName}})) {
+        errors.push('Expected {{./propertyName}} to be an array');
+    }    
+    {{#if elements}}
+    else {
+        for(const _item of {{./propertyName}}) {
+            {{~>validation.expression elements modelName="_item" propertyName="_item"}}
+        }
+    }
+    {{/if}}
+{{/compare~}}
+
+{{~#compare node "===" "OmitExpression"}}
+    {{#extendProperty . "propertiesToOmit"}}{{#each omit}}{{>expression . prefix="'" suffix="'"}},{{/each}}{{/extendProperty}}
+    {{~>validation.expression elements modelName=./modelName propertyName=../propertyName propertiesToOmit=propertiesToOmit}}
+{{/compare~}}
+
+{{~#compare node "===" "CompositeExpression"}}
+   {{#elements}}{{>validation.expression . modelName=../modelName propertyName=../propertyName}}{{/elements}}
+{{/compare~}}
+
+{{~#compare node "===" "UnionExpression"}}
+    {{#elements}}{{>validation.expression . modelName=../modelName propertyName=../propertyName}}{{/elements}}
+{{/compare~}}
+
+{{~#compare node "===" "ReferenceExpression"}}
+    errors.push(... {{& resolveValidator .}}({{modelName}}, {{& propertiesToOmit}}));
+{{/compare~}}
+
+{{~#compare node "===" "ResponseExpression"}}
+    {{#each responses}}{{>validation.expression . modelName=../modelName propertyName=../propertyName}}{{/each}}
+{{/compare~}}
+
+{{~#compare node "===" "RequestExpression"}}
+    {{#bodies}}{{>validation.expression . modelName=../modelName propertyName=../propertyName}}{{/bodies}}
+{{/compare~}}
+
+{{~#compare node "===" "MediaExpression"}}
+    {{~#compare mediaType "===" "application/json"}}
+    {{#if body}}{{> validation.expression body modelName=modelName propertyName=propertyName}}{{/if}}
+    {{else}}
+    {{log "Unsupported response media type" mediaType level="warn"}}
+    {{/compare~}} 
+{{/compare~}}
+
+{{~#compare node "===" "TodoExpression"}}{{log "TODO expression" what level="warn"}}{{/compare~}}

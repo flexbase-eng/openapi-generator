@@ -7,7 +7,8 @@
  @version {{astDocument.version}}
 ------------------------------------------------------------ */
 
-import { Body, Get, Param, Post, Query, Patch, Delete, Headers, Head, Options, SetMetadata } from '@nestjs/common';
+import { Body, Get, Param, Post, Query, Patch, Delete, Headers, Head, Options, SetMetadata, PipeTransform, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+import { DateTime, Duration } from "luxon";
 
 const Scopes = (...scopes: string[]) => SetMetadata('scopes', scopes);
 
@@ -18,10 +19,24 @@ export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BO
     $body: BODY,
 };
 
+type ValidatorFn = (inputToValidate: any, ...omit: string[]) => string[];
+
+export class {{replace title (toRegex "(-|\.| )+" "g") "_"}}ValidationPipe implements PipeTransform {
+  constructor(private readonly _validatorFn: ValidatorFn) {}
+
+  transform(value: any, metadata: ArgumentMetadata) {
+    const errors: string[] = this._validatorFn(value);
+    if (errors.length > 0) {
+      throw new BadRequestException(); // TODO
+    }
+  }
+};
+
 {{#if models}}
 //#region Models
 {{#each models}}
 {{>declaration suffix="Model"}}
+{{>validation.declaration suffix="ModelValidator"}}
 {{/each}}
 //#endregion
 {{/if}}
@@ -30,6 +45,7 @@ export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BO
 //#region Responses
 {{#each responses}}
 {{>declaration suffix="Response"}}
+{{>validation.declaration suffix="ResponseValidator"}}
 {{/each}}
 //#endregion
 {{/if}}
@@ -38,6 +54,7 @@ export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BO
 //#region Requests
 {{#each requests}}
 {{>declaration suffix="Requests"}}
+{{>validation.declaration suffix="RequestsValidator"}}
 {{/each}}
 //#endregion
 {{/if}}
@@ -46,6 +63,7 @@ export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BO
 //#region Path Parameters
 {{#each pathParameters}}
 {{>declaration suffix="PathParameter"}}
+{{>validation.declaration suffix="PathParameterValidator"}}
 {{/each}}
 //#endregion
 {{/if}}
@@ -54,6 +72,7 @@ export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BO
 //#region Header Parameters
 {{#each headerParameters}}
 {{>declaration suffix="HeaderParameter"}}
+{{>validation.declaration suffix="HeaderParameterValidator"}}
 {{/each}}
 //#endregion
 {{/if}}
@@ -62,6 +81,7 @@ export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BO
 //#region Query Parameters
 {{#each queryParameters}}
 {{>declaration suffix="QueryParameter"}}
+{{>validation.declaration suffix="QueryParameterValidator"}}
 {{/each}}
 //#endregion
 {{/if}}
@@ -70,6 +90,7 @@ export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BO
 //#region Cookie Parameters
 {{#each cookieParameters}}
 {{>declaration suffix="CookieParameter"}}
+{{>validation.declaration suffix="CookieParameterValidator"}}
 {{/each}}
 //#endregion
 {{/if}}

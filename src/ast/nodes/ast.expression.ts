@@ -1,5 +1,6 @@
 import { ArrayExpression } from './ast.array';
 import { CompositeExpression } from './ast.composite';
+import { IdentifierExpression } from './ast.identifier';
 import { LiteralExpression } from './ast.literal';
 import { MediaExpression } from './ast.media';
 import { ObjectExpression } from './ast.object';
@@ -21,4 +22,5 @@ export type Expression =
   | OmitExpression
   | MediaExpression
   | RequestExpression
-  | ResponseExpression;
+  | ResponseExpression
+  | IdentifierExpression;

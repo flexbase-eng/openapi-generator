@@ -8,6 +8,14 @@ export type {{#registerReference .}}{{>expression id suffix=./suffix prefix=./pr
 {{>expression id}}{{^required}}?{{/required}}: {{>expression definition enum=./enum}};
 {{/compare}}
 
+{{#*inline "validator"}}
+{{~#compare node "===" "ReferenceExpression"}}
+    new {{prefix}}ValidationPipe({{& resolveValidator .}})
+{{else}}
+    {{log "Only references are support for validation currently" level="warn"}}
+{{/compare~}}
+{{/inline}}
+
 {{~#compare node "===" "OperationDeclaration"}}
 protected abstract {{>expression id prefix="_"}}(
     {{~#if requests.bodies~}}
@@ -34,16 +42,16 @@ protected abstract {{>expression id prefix="_"}}(
 @{{& httpMethod}}('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}')
 {{>expression id}}(
     {{#if requests.bodies}}
-    @Body() body:{{#requests.bodies}}{{> expression}},{{/requests.bodies}}
+    @Body({{#requests.bodies}}{{>validator . prefix=../prefix}}{{/requests.bodies}}) body:{{#requests.bodies}}{{> expression}},{{/requests.bodies}}
     {{/if}}
     {{#if requests.pathParameters}}
-    @Param() path:{{#requests.pathParameters}}{{> expression}},{{/requests.pathParameters}}
+    @Param({{>validator requests.pathParameters prefix=prefix}}) path:{{#requests.pathParameters}}{{> expression}},{{/requests.pathParameters}}
     {{/if}}    
     {{#if requests.queryParameters}}
-    @Query() query:{{#requests.queryParameters}}{{> expression}},{{/requests.queryParameters}}
+    @Query({{>validator requests.queryParameters prefix=prefix}}) query:{{#requests.queryParameters}}{{> expression}},{{/requests.queryParameters}}
     {{/if}}
     {{#if requests.headerParameters}}
-    @Headers() headers:{{#requests.headerParameters}}{{> expression}},{{/requests.headerParameters}}
+    @Headers({{>validator requests.headerParameters prefix=prefix}}) headers:{{#requests.headerParameters}}{{> expression}},{{/requests.headerParameters}}
     {{/if}}
 ): Promise<{{prefix}}ControllerResponse<
     {{^isEmpty responses}}
