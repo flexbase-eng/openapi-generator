@@ -3,11 +3,11 @@
 {{~#compare node "===" "LiteralExpression"}}
     {{#extendProperty . "propertyType"}}{{replace value "integer" "number"}}{{/extendProperty}}
     if(typeof {{propertyName}} !== '{{propertyType}}') {
-        errors.push('Expected {{propertyName}} to be a {{propertyType}}');
+        addOrSet(errors, '{{propertyName}}', 'is not a {{propertyType}}');
     }
     {{#compare value "===" "integer"}}
-    if(!Number.isInteger({{propertyName}})) {
-        errors.push('Expected {{propertyName}} to be an integer')
+    if(!Number.isInteger('{{propertyName}}')) {
+        addOrSet(errors, '{{propertyName}}', 'is not an integer')
     }
     {{/compare}}
 {{/compare~}}
@@ -18,7 +18,7 @@
 
 {{~#compare node "===" "ArrayExpression"}}
     if(!Array.isArray({{./propertyName}})) {
-        errors.push('Expected {{./propertyName}} to be an array');
+        addOrSet(errors, '{{./propertyName}}', 'is not an array');
     }    
     {{#if elements}}
     else {
@@ -43,7 +43,7 @@
 {{/compare~}}
 
 {{~#compare node "===" "ReferenceExpression"}}
-    errors.push(... {{& resolveValidator .}}({{modelName}}, {{& propertiesToOmit}}));
+    errors = new Map<string, string | string[]>([...errors, ... {{& resolveValidator .}}({{modelName}}, {{& propertiesToOmit}})]);
 {{/compare~}}
 
 {{~#compare node "===" "ResponseExpression"}}
