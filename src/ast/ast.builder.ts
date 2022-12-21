@@ -15,27 +15,28 @@ import {
   IsNodeType,
 } from '../oas-tree/oas.node.utilities';
 import { OpenApiSpecTree } from '../oas-tree/oas.tree';
-import { ArrayExpression } from './nodes/ast.array';
-import { CompositeExpression } from './nodes/ast.composite';
+import { ArrayExpression, IsArrayExpression } from './nodes/ast.array';
+import { CompositeExpression, IsCompositeExpression } from './nodes/ast.composite';
 import { Expression } from './nodes/ast.expression';
 import { IdentifierExpression } from './nodes/ast.identifier';
-import { LiteralExpression } from './nodes/ast.literal';
-import { MediaExpression } from './nodes/ast.media';
-import { ObjectExpression, PropertyDeclaration } from './nodes/ast.object';
-import { OmitExpression } from './nodes/ast.omit';
+import { IsLiteralExpression, LiteralExpression } from './nodes/ast.literal';
+import { IsMediaExpression, MediaExpression } from './nodes/ast.media';
+import { IsObjectExpression, ObjectExpression, PropertyDeclaration } from './nodes/ast.object';
+import { IsOmitExpression, OmitExpression } from './nodes/ast.omit';
 import { OperationDeclaration } from './nodes/ast.operation';
-import { ReferenceExpression } from './nodes/ast.reference';
-import { RequestExpression } from './nodes/ast.request';
-import { ResponseExpression } from './nodes/ast.response';
+import { IsReferenceExpression, ReferenceExpression } from './nodes/ast.reference';
+import { IsRequestExpression, RequestExpression } from './nodes/ast.request';
+import { IsResponseExpression, ResponseExpression } from './nodes/ast.response';
 import { TodoExpression } from './nodes/ast.todo';
-import { UnionExpression } from './nodes/ast.union';
+import { IsUnionExpression, UnionExpression } from './nodes/ast.union';
 import { AstDocument } from './nodes/ast.document';
 import { OasNodeOperation } from '../oas-tree/nodes/oas.node.operation';
-import { ModelDeclaration } from './nodes/ast.model';
+import { IsModelDeclaration, ModelDeclaration } from './nodes/ast.model';
 import { Logger } from '@flexbase/logger';
 import { IAstBuilder } from './ast.builder.interface';
 import { TagNode } from './nodes/ast.tag';
 import { Declaration } from './nodes/ast.declaration';
+import { v4 as uuidv4 } from 'uuid';
 
 const ASTDOCUMENT_GLOBAL_TAGS = 'ASTDOCUMENT_GLOBAL_TAGS';
 
@@ -47,6 +48,7 @@ export class AstBuilder implements IAstBuilder {
       field =>
         <PropertyDeclaration>{
           node: 'PropertyDeclaration',
+          astId: uuidv4(),
           id: <IdentifierExpression>{ node: 'IdentifierExpression', name: field.identifier.value },
           definition: this.makeExpression(field.type),
           description: field.modifiers.description ?? field.type.modifiers.description,
@@ -78,6 +80,7 @@ export class AstBuilder implements IAstBuilder {
     if (IsPrimativeNode(oasNode)) {
       return <LiteralExpression>{
         node: 'LiteralExpression',
+        astId: uuidv4(),
         value: oasNode.primativeType,
       };
     } else if (IsObjectNode(oasNode)) {
@@ -89,45 +92,53 @@ export class AstBuilder implements IAstBuilder {
 
       return <ObjectExpression>{
         node: 'ObjectExpression',
+        astId: uuidv4(),
         properties,
       };
     } else if (IsArrayNode(oasNode)) {
       return <ArrayExpression>{
         node: 'ArrayExpression',
+        astId: uuidv4(),
         elements: this.makeExpression(oasNode.arrayType),
       };
     } else if (IsUnionNode(oasNode)) {
       return <UnionExpression>{
         node: 'UnionExpression',
+        astId: uuidv4(),
         elements: oasNode.unionTypes.map(type => this.makeExpression(type)),
       };
     } else if (IsCompositeNode(oasNode)) {
       return <CompositeExpression>{
         node: 'CompositeExpression',
+        astId: uuidv4(),
         elements: oasNode.compositeTypes.map(type => this.makeExpression(type)),
       };
     } else if (IsOmitNode(oasNode)) {
       return <OmitExpression>{
         node: 'OmitExpression',
+        astId: uuidv4(),
         elements: this.makeExpression(oasNode.originalType),
-        omit: oasNode.omitFields.map(id => <IdentifierExpression>{ node: 'IdentifierExpression', name: id }),
+        omit: oasNode.omitFields.map(id => <IdentifierExpression>{ node: 'IdentifierExpression', astId: uuidv4(), name: id }),
       };
     } else if (IsReferenceNode(oasNode)) {
-      return <ReferenceExpression>{ node: 'ReferenceExpression', key: oasNode.identifier.value };
+      return <ReferenceExpression>{ node: 'ReferenceExpression', astId: uuidv4(), key: oasNode.identifier.value };
     } else if (IsContentNode(oasNode)) {
       return <MediaExpression>{
         node: 'MediaExpression',
+        astId: uuidv4(),
         mediaType: oasNode.mediaType,
         body: this.makeExpression(oasNode.contentType),
       };
     } else if (IsBodyNode(oasNode)) {
       return <RequestExpression>{
         node: 'RequestExpression',
+        astId: uuidv4(),
         bodies: oasNode.contents.map(content => this.makeExpression(content)),
       };
     } else if (IsRequestNode(oasNode)) {
       return <RequestExpression>{
         node: 'RequestExpression',
+        astId: uuidv4(),
         bodies: oasNode.body ? [this.makeExpression(oasNode.body)] : undefined,
         pathParameters: oasNode.pathParameters ? this.makeExpression(oasNode.pathParameters) : undefined,
         cookieParameters: oasNode.cookieParameters ? this.makeExpression(oasNode.cookieParameters) : undefined,
@@ -137,24 +148,26 @@ export class AstBuilder implements IAstBuilder {
     } else if (IsResponseNode(oasNode)) {
       return <ResponseExpression>{
         node: 'ResponseExpression',
+        astId: uuidv4(),
         statusCode: oasNode.statusCode,
         headers: oasNode.headers ? this.makeExpression(oasNode.headers) : undefined,
         responses: Array.isArray(oasNode.content)
           ? oasNode.content.map(content => this.makeExpression(content))
           : oasNode.content !== undefined
           ? [this.makeExpression(oasNode.content)]
-          : [<LiteralExpression>{ node: 'LiteralExpression', value: 'null' }],
+          : [<LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: 'null' }],
       };
     }
 
-    return <TodoExpression>{ node: 'TodoExpression', what: IsNodeType(oasNode) ? oasNode.kindType : oasNode.kind };
+    return <TodoExpression>{ node: 'TodoExpression', astId: uuidv4(), what: IsNodeType(oasNode) ? oasNode.kindType : oasNode.kind };
   }
 
   private makeOperationDeclaration(oasOperation: OasNodeOperation): OperationDeclaration {
-    const id = <IdentifierExpression>{ node: 'IdentifierExpression', name: oasOperation.identifier.value };
+    const id = <IdentifierExpression>{ node: 'IdentifierExpression', astId: uuidv4(), name: oasOperation.identifier.value };
 
     return <OperationDeclaration>{
       node: 'OperationDeclaration',
+      astId: uuidv4(),
       id,
       httpMethod: oasOperation.httpMethod,
       path: oasOperation.path,
@@ -162,7 +175,7 @@ export class AstBuilder implements IAstBuilder {
         ? Array.isArray(oasOperation.responses)
           ? oasOperation.responses.map(r => this.makeExpression(r))
           : [this.makeExpression(oasOperation.responses)]
-        : [<LiteralExpression>{ node: 'LiteralExpression', value: 'null' }],
+        : [<LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: 'null' }],
       requests: oasOperation.request ? this.makeExpression(oasOperation.request) : undefined,
       title: oasOperation.modifiers.title,
       description: oasOperation.modifiers.description,
@@ -189,7 +202,8 @@ export class AstBuilder implements IAstBuilder {
     for (const decl of oas.declarations) {
       const node: ModelDeclaration = {
         node: 'ModelDeclaration',
-        id: <IdentifierExpression>{ node: 'IdentifierExpression', name: decl.identifier.value },
+        astId: uuidv4(),
+        id: <IdentifierExpression>{ node: 'IdentifierExpression', astId: uuidv4(), name: decl.identifier.value },
         definition: this.makeExpression(decl.type),
         referenceName: decl.referenceName,
         title: decl.modifiers.title,
@@ -232,11 +246,12 @@ export class AstBuilder implements IAstBuilder {
     }
 
     if (oas.tags) {
-      tags.push(...oas.tags.map(tag => <TagNode>{ node: 'TagNode', name: tag.name, description: tag.description }));
+      tags.push(...oas.tags.map(tag => <TagNode>{ node: 'TagNode', astId: uuidv4(), name: tag.name, description: tag.description }));
     }
 
     const document = <AstDocument>{
       node: 'Document',
+      astId: uuidv4(),
       title: oas.title,
       description: oas.description,
       version: oas.version,
@@ -266,6 +281,7 @@ export class AstBuilder implements IAstBuilder {
     if (!doc) {
       doc = <AstDocument>{
         node: 'Document',
+        astId: uuidv4(),
         title: name,
         description: description,
         version: version,
@@ -347,5 +363,127 @@ export class AstBuilder implements IAstBuilder {
     const docs = Array.from(tagMap.values());
 
     return docs.length > 0 ? docs : [astDocument];
+  }
+
+  private findReferences(
+    referenceLookup: Map<string, string>,
+    references: Map<string, string[]>,
+    expression: Expression | undefined,
+    ownerList: string[]
+  ) {
+    if (expression === undefined || IsLiteralExpression(expression)) {
+      return;
+    }
+
+    const updatedOwnerList = [...ownerList];
+    updatedOwnerList.push(expression.astId);
+    if (!references.has(expression.astId)) {
+      references.set(expression.astId, ownerList);
+    }
+
+    if (IsReferenceExpression(expression)) {
+      const modelId = referenceLookup.get(expression.key);
+      if (!modelId) {
+        this._logger.warn(`Unable to find reference ${expression.key}`);
+      } else {
+        const model = references.get(modelId);
+        if (!model) {
+          model;
+          references.set(modelId, updatedOwnerList);
+        } else {
+          model.push(...updatedOwnerList);
+        }
+      }
+    } else if (IsObjectExpression(expression)) {
+      expression.properties.forEach(x => this.findReferences(referenceLookup, references, x.definition, updatedOwnerList));
+    } else if (IsArrayExpression(expression)) {
+      this.findReferences(referenceLookup, references, expression.elements, updatedOwnerList);
+    } else if (IsUnionExpression(expression)) {
+      expression.elements.forEach(x => this.findReferences(referenceLookup, references, x, updatedOwnerList));
+    } else if (IsCompositeExpression(expression)) {
+      expression.elements.forEach(x => this.findReferences(referenceLookup, references, x, updatedOwnerList));
+    } else if (IsOmitExpression(expression)) {
+      this.findReferences(referenceLookup, references, expression.elements, updatedOwnerList);
+    } else if (IsMediaExpression(expression)) {
+      this.findReferences(referenceLookup, references, expression.body, updatedOwnerList);
+    } else if (IsRequestExpression(expression)) {
+      (expression.bodies ?? []).forEach(x => this.findReferences(referenceLookup, references, x, updatedOwnerList));
+      this.findReferences(referenceLookup, references, expression.pathParameters, updatedOwnerList);
+      this.findReferences(referenceLookup, references, expression.cookieParameters, updatedOwnerList);
+      this.findReferences(referenceLookup, references, expression.headerParameters, updatedOwnerList);
+      this.findReferences(referenceLookup, references, expression.queryParameters, updatedOwnerList);
+    } else if (IsResponseExpression(expression)) {
+      this.findReferences(referenceLookup, references, expression.headers, updatedOwnerList);
+      (expression.responses ?? []).forEach(x => this.findReferences(referenceLookup, references, x, updatedOwnerList));
+    } else {
+      this._logger.error("shouldn't get here");
+    }
+  }
+
+  removeUnreferencedModels(astDocument: AstDocument): void {
+    const references = new Map<string, string[]>();
+
+    const referenceLookup = new Map<string, string>();
+
+    astDocument.models.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
+    astDocument.responses.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
+    astDocument.requests.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
+    astDocument.pathParameters.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
+    astDocument.headerParameters.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
+    astDocument.queryParameters.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
+    astDocument.cookieParameters.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
+    astDocument.referenceParameters.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
+
+    astDocument.models.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
+    astDocument.responses.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
+    astDocument.requests.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
+    astDocument.pathParameters.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
+    astDocument.headerParameters.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
+    astDocument.queryParameters.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
+    astDocument.cookieParameters.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
+    astDocument.referenceParameters.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
+
+    for (const operation of astDocument.operations) {
+      references.set(operation.astId, [operation.astId]); // reference self so it doesn't get culled
+      for (const responseExp of operation.responses ?? []) {
+        this.findReferences(referenceLookup, references, responseExp, [operation.astId]);
+      }
+      this.findReferences(referenceLookup, references, operation.requests, [operation.astId]);
+    }
+
+    // loop until we have removed all unreferenced models
+    let didRemove = true;
+    while (didRemove) {
+      didRemove = false;
+      const keepIds = new Set(references.keys());
+      for (const key of references.keys()) {
+        const refs = references.get(key) ?? [];
+        const count = refs.length;
+        if (count === 0) {
+          references.delete(key);
+          didRemove = true;
+        } else {
+          const keep = refs.filter(x => keepIds.has(x));
+          didRemove = didRemove || count !== keep.length;
+          if (didRemove) {
+            references.set(key, keep);
+            if (keep.length === 0) {
+              references.delete(key);
+            }
+          }
+        }
+      }
+    }
+
+    const toKeep = new Set(references.keys());
+
+    astDocument.models = astDocument.models.filter(x => toKeep.has(x.astId));
+    astDocument.responses = astDocument.responses.filter(x => toKeep.has(x.astId));
+    astDocument.requests = astDocument.requests.filter(x => toKeep.has(x.astId));
+    astDocument.pathParameters = astDocument.pathParameters.filter(x => toKeep.has(x.astId));
+    astDocument.headerParameters = astDocument.headerParameters.filter(x => toKeep.has(x.astId));
+    astDocument.queryParameters = astDocument.queryParameters.filter(x => toKeep.has(x.astId));
+    astDocument.cookieParameters = astDocument.cookieParameters.filter(x => toKeep.has(x.astId));
+    astDocument.referenceParameters = astDocument.referenceParameters.filter(x => toKeep.has(x.astId));
   }
 }

@@ -1,12 +1,12 @@
 {{>comments}}
 
 {{#compare node "===" "ModelDeclaration"}}
-export type {{#registerReference .}}{{>expression id suffix=./suffix prefix=./prefix}}{{/registerReference}} = {{>expression definition}}
+export type {{>expression id suffix=./suffix prefix=./prefix}} = {{>expression definition}}
 {{/compare}}
 
 {{~#compare node "===" "PropertyDeclaration"}}
 {{>expression id}}{{^required}}?{{/required}}: {{>expression definition enum=./enum}};
-{{/compare}}
+{{/compare~}}
 
 {{#*inline "validator"}}
 {{~#compare node "===" "ReferenceExpression"}}

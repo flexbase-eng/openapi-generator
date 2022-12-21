@@ -1,6 +1,6 @@
 {
   "name": "@flexbase/openapi-generator",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "description": "Open API v3 code generator",
   "author": {
     "name": "Flexbase Technologies",
@@ -67,7 +67,8 @@
     "openapi-types": "^12.0.2",
     "path": "^0.12.7",
     "prettier": "^2.8.0",
-    "useful-handlebars-helpers": "^0.12.0"
+    "useful-handlebars-helpers": "^0.12.0",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@flexbase/packr": "^1.2.0",
@@ -75,6 +76,7 @@
     "@types/glob": "^8.0.0",
     "@types/node": "^18.11.9",
     "@types/prettier": "^2.6.3",
+    "@types/uuid": "^9.0.0",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
     "@typescript-eslint/parser": "^5.44.0",
     "@vitest/coverage-istanbul": "^0.25.3",

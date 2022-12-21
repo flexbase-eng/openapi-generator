@@ -8,3 +8,7 @@ export interface CompositeNode extends Node {
 export interface CompositeExpression extends CompositeNode {
   node: 'CompositeExpression';
 }
+
+export function IsCompositeExpression(node: Node): node is CompositeExpression {
+  return node.node === 'CompositeExpression';
+}

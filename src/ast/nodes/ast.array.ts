@@ -8,3 +8,7 @@ export interface ArrayNode extends Node {
 export interface ArrayExpression extends ArrayNode {
   node: 'ArrayExpression';
 }
+
+export function IsArrayExpression(node: Node): node is ArrayExpression {
+  return node.node === 'ArrayExpression';
+}

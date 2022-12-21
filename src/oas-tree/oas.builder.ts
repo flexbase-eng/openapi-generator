@@ -655,7 +655,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     }
 
     if (response.headers && !IsReferenceNode(response.headers)) {
-      const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}`, 'parameter', response.headers, tags);
+      const { declaration, refNode } = this.makeDeclarationGlobal(`${operationId}`, 'parameter', response.headers, tags, 'header');
 
       declarations.push(declaration);
       response.headers = refNode;

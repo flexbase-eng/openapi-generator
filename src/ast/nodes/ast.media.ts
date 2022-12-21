@@ -9,3 +9,7 @@ export interface MediaNode extends Node {
 export interface MediaExpression extends MediaNode {
   node: 'MediaExpression';
 }
+
+export function IsMediaExpression(node: Node): node is MediaExpression {
+  return node.node === 'MediaExpression';
+}

@@ -10,3 +10,7 @@ export interface OmitNode extends Node {
 export interface OmitExpression extends OmitNode {
   node: 'OmitExpression';
 }
+
+export function IsOmitExpression(node: Node): node is OmitExpression {
+  return node.node === 'OmitExpression';
+}

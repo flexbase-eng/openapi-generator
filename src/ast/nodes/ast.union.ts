@@ -8,3 +8,7 @@ export interface UnionNode extends Node {
 export interface UnionExpression extends UnionNode {
   node: 'UnionExpression';
 }
+
+export function IsUnionExpression(node: Node): node is UnionExpression {
+  return node.node === 'UnionExpression';
+}

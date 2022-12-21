@@ -146,10 +146,12 @@ export async function main(
     if (cliOptions.tags) {
       const documents: AstDocument[] = astBuilder.organizeByTags(astDocument);
       for (const doc of documents) {
+        astBuilder.removeUnreferencedModels(doc);
         referenceRegistrations.clear();
         await writeOutput(doc, path, doc.title, ext, template, cliOptions.prettier, debug, logger);
       }
     } else {
+      astBuilder.removeUnreferencedModels(astDocument);
       await writeOutput(astDocument, path, name, ext, template, cliOptions.prettier, debug, logger);
     }
   } catch (e) {

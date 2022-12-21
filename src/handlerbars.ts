@@ -43,7 +43,7 @@ Handlebars.registerHelper('registerReference', function (context, options: Handl
 
   referenceRegistrations.set(context.referenceName, name);
 
-  return name;
+  return;
 });
 
 Handlebars.registerHelper('registerValidator', function (context, options: Handlebars.HelperOptions) {
@@ -61,7 +61,7 @@ Handlebars.registerHelper('registerValidator', function (context, options: Handl
 
   referenceRegistrations.set(referenceName, name);
 
-  return name;
+  return;
 });
 
 Handlebars.registerHelper('resolveReference', function (context) {
