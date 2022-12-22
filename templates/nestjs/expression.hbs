@@ -42,11 +42,11 @@
 {{/compare~}}
 
 {{~#compare node "===" "MediaExpression"}}
-    {{~#compare mediaType "===" "application/json"}}
+    {{~#inArray (toArray "application/json" "application/x-www-form-urlencoded" ) mediaType}}
     {{#body}}{{> expression}}{{/body}}
     {{else}}
     {{log "Unsupported response media type" mediaType level="warn"}}
-    {{/compare~}} 
+    {{/inArray~}} 
 {{/compare~}}
 
 {{~#compare node "===" "ReferenceExpression"}}{{& resolveReference .}}{{/compare~}}

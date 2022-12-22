@@ -388,7 +388,6 @@ export class AstBuilder implements IAstBuilder {
       } else {
         const model = references.get(modelId);
         if (!model) {
-          model;
           references.set(modelId, updatedOwnerList);
         } else {
           model.push(...updatedOwnerList);
