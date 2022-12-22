@@ -21,6 +21,13 @@ export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BO
 
 type ValidatorFn = (inputToValidate: any, ...omit: string[]) => Map<string, string | string[]>;
 
+export function handleValidatorErrors(errors: Map<string, string | string[]>) {
+  const error: Record<string, string | string[]> = Object.fromEntries(errors);
+  if (Object.keys(error).length > 0) {
+    throw new BadRequestException({ statusCode: 400, message: 'Bad Request', error });
+  }
+}
+
 function addOrSet(map: Map<string, string | string[]>, key: string, value: string | string[]): Map<string, string | string[]> {
   const existing: undefined | string | string[] = map.get(key);
 
@@ -35,12 +42,8 @@ function addOrSet(map: Map<string, string | string[]>, key: string, value: strin
 
 export class {{replace title (toRegex "(-|\.| )+" "g") "_"}}ValidationPipe implements PipeTransform {
   constructor(private readonly _validatorFn: ValidatorFn) {}
-
   transform(value: any, metadata: ArgumentMetadata) {
-    const error: Record<string, string | string[]> = Object.fromEntries(this._validatorFn(value));
-    if (Object.keys(error).length > 0) {
-      throw new BadRequestException({ statusCode: 400, message: 'Bad Request', error });
-    }
+    handleValidatorErrors(this._validatorFn(value));
     return value;
   }
 };
