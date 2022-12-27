@@ -7,24 +7,43 @@
  @version {{astDocument.version}}
 ------------------------------------------------------------ */
 
-import { Body, Get, Param, Post, Query, Patch, Delete, Headers, Head, Options, SetMetadata, PipeTransform, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+import { Body, Get, Param, Post, Put, Query, Patch, Delete, Headers, Head, Options, SetMetadata, PipeTransform, ArgumentMetadata, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { DateTime, Duration } from "luxon";
 
 const Scopes = (...scopes: string[]) => SetMetadata('scopes', scopes);
 
 {{#astDocument}}
-export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BODY = void, HEADER = Record<string, any>> = {
+export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BODY, HEADER extends Record<string, any> | never = never> = {
     $status?: number,
     $headers?: HEADER,
     $body: BODY,
 };
 
-type ValidatorFn = (inputToValidate: any, ...omit: string[]) => Map<string, string | string[]>;
+interface ValidatorResponse {
+  errors: Map<string, string | string[]>;
+  allowedProperties: string[];
+}
 
-export function handleValidatorErrors(errors: Map<string, string | string[]>) {
+type ValidatorFn = (inputToValidate: any) => ValidatorResponse;
+type HandleErrorsFn = (errors: Map<string, string | string[]>) => void;
+
+function verifyDefinition(inputToValidate: any, properties: Set<string>): Map<string, string | string[]> {
+  const errors = new Map<string, string | string[]>();
+  Object.keys(inputToValidate).filter(prop => !properties.has(prop)).forEach(prop => errors.set(prop, 'unknown property'));
+  return errors;
+}
+
+export const {{replace title (toRegex "(-|\.| )+" "g") "_"}}HandleRequestValidatorErrors: HandleErrorsFn = (errors: Map<string, string | string[]>) => {
   const error: Record<string, string | string[]> = Object.fromEntries(errors);
   if (Object.keys(error).length > 0) {
     throw new BadRequestException({ statusCode: 400, message: 'Bad Request', error });
+  }
+}
+
+export const {{replace title (toRegex "(-|\.| )+" "g") "_"}}HandleResponseValidatorErrors: HandleErrorsFn = (errors: Map<string, string | string[]>) => {
+  const error: Record<string, string | string[]> = Object.fromEntries(errors);
+  if (Object.keys(error).length > 0) {
+    throw new InternalServerErrorException({ statusCode: 400, message: 'Malformed response detected', error});
   }
 }
 
@@ -40,10 +59,16 @@ function addOrSet(map: Map<string, string | string[]>, key: string, value: strin
   return map;
 }
 
-export class {{replace title (toRegex "(-|\.| )+" "g") "_"}}ValidationPipe implements PipeTransform {
+function handleValidation(value: any, validatorFn: ValidatorFn, handleErrors: HandleErrorsFn) {
+  const validatorResponse = validatorFn(value);
+  validatorResponse.errors = new Map<string, string | string[]>([...validatorResponse.errors, ...verifyDefinition(value, new Set(validatorResponse.allowedProperties))]);
+  handleErrors(validatorResponse.errors);  
+}
+
+class {{replace title (toRegex "(-|\.| )+" "g") "_"}}ValidationPipe implements PipeTransform {
   constructor(private readonly _validatorFn: ValidatorFn) {}
-  transform(value: any, metadata: ArgumentMetadata) {
-    handleValidatorErrors(this._validatorFn(value));
+  transform(value: any, _: ArgumentMetadata) {
+    handleValidation(value, this._validatorFn, {{replace title (toRegex "(-|\.| )+" "g") "_"}}HandleRequestValidatorErrors);
     return value;
   }
 };

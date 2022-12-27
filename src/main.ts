@@ -87,6 +87,8 @@ export async function main(
     .option('-o, --output <path>', 'An optional output path')
     .option('--no-prettier', 'Disable prettier for output')
     .option('--no-tags', 'Disable organization by tags')
+    .option('--no-flatten', 'Disable flatten model optimization')
+    .option('--no-references', 'Resolve all references')
     .option('-d, --debug', 'Output the internal representations')
     .parse(process.argv);
 
@@ -113,10 +115,9 @@ export async function main(
     const ext = cliOptions.ext ?? '.ts';
     const debug = cliOptions.debug;
     const path = cliOptions.output;
-    const name = cliOptions.name ?? oasTree.title;
 
     if (debug) {
-      const fileName = Path.join(path, `${name}.oasTree.json`);
+      const fileName = Path.join(path, `${oasTree.title}.oasTree.json`);
       let json = JSON.stringify(oasConverter.convertOasToPoco(oasTree));
       try {
         json = prettier.format(json, {
@@ -143,16 +144,16 @@ export async function main(
       });
     }
 
-    if (cliOptions.tags) {
-      const documents: AstDocument[] = astBuilder.organizeByTags(astDocument);
-      for (const doc of documents) {
-        astBuilder.removeUnreferencedModels(doc);
-        referenceRegistrations.clear();
-        await writeOutput(doc, path, doc.title, ext, template, cliOptions.prettier, debug, logger);
+    const documents: AstDocument[] = cliOptions.tags ? astBuilder.organizeByTags(astDocument) : [astDocument];
+    const name: string | undefined = cliOptions.tags ? cliOptions.name : undefined;
+
+    for (const doc of documents) {
+      if (cliOptions.flatten) {
+        astBuilder.flattenReferences(doc, !cliOptions.references);
       }
-    } else {
-      astBuilder.removeUnreferencedModels(astDocument);
-      await writeOutput(astDocument, path, name, ext, template, cliOptions.prettier, debug, logger);
+      astBuilder.removeUnreferencedModels(doc);
+      referenceRegistrations.clear();
+      await writeOutput(doc, path, name ?? doc.title, ext, template, cliOptions.prettier, debug, logger);
     }
   } catch (e) {
     logger.error(`An error occurred for ${cliOptions.input}`, e);

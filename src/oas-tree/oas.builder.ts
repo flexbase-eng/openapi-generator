@@ -106,6 +106,16 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
           continue;
         }
 
+        const header = nodeType.headers;
+        if (header) {
+          if (!IsReferenceNode(header)) {
+            const headerName = `${name}Header`;
+            const headerRefName = `${refName}/header/`;
+            declarations.push(new OasNodeDeclaration(headerName, 'response', header, header.modifiers, headerRefName));
+            nodeType.headers = new OasNodeTypeReference(headerRefName, {});
+          }
+        }
+
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
         declarations.push(new OasNodeDeclaration(name, 'response', nodeType, modifiers, refName));

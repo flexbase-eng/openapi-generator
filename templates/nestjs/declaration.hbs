@@ -18,6 +18,18 @@ export type {{>expression id suffix=./suffix prefix=./prefix}} = {{>expression d
 {{/compare~}}
 {{/inline}}
 
+{{#*inline "callValidator"}}
+{{~#compare validation "!==" false}}
+{{#compare node "===" "ResponseExpression"}}
+    {{log .}}
+    if(response.status === {{toInt statusCode}}) {
+        const responseValidator = new {{prefix}}ValidationPipe({{& resolveValidator .}});
+        responseValidator.transform(response, { type: 'custom' });
+        }
+{{/compare}}
+{{/compare~}}
+{{/inline}}
+
 {{~#compare node "===" "OperationDeclaration"}}
 protected abstract {{>expression id prefix="_"}}(
     {{~#if requests.bodies~}}
@@ -36,13 +48,16 @@ protected abstract {{>expression id prefix="_"}}(
     {{^isEmpty responses}}
     {{#forEach responses}}
     {{>expression .}} {{#unless isLast}}|{{/unless}}
-    {{/forEach}}
+    {{/forEach}},
+    {{#forEach responses}}
+    {{>expression this.headers}} {{#unless isLast}}|{{/unless}}
+    {{/forEach}}    
     {{else}}
-    null
+    void
     {{/isEmpty}}    
     >>;
 @{{& httpMethod}}('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}')
-{{>expression id}}(
+async {{>expression id}}(
     {{#if requests.bodies}}    
     @Body({{#requests.bodies}}{{>validator . prefix=../prefix validation=../extensions.x-validation}}{{/requests.bodies}}) body:{{#requests.bodies}}{{> expression}},{{/requests.bodies}}
     {{/if}}
@@ -59,17 +74,28 @@ protected abstract {{>expression id prefix="_"}}(
     {{^isEmpty responses}}
     {{#forEach responses}}
     {{>expression .}} {{#unless isLast}}|{{/unless}}
+    {{/forEach}},
+    {{#forEach responses}}
+    {{>expression this.headers}} {{#unless isLast}}|{{/unless}}
     {{/forEach}}
     {{else}}
-    null
-    {{/isEmpty}}    
+    void
+    {{/isEmpty}}
     >> {
-    return this.{{>expression id prefix="_"}}(
+    const response = await this.{{>expression id prefix="_"}}(
         {{#if requests.bodies}}body,{{/if}}
         {{#if requests.pathParameters}}path,{{/if}}
         {{#if requests.queryParameters}}query,{{/if}}
         {{#if requests.headerParameters}}headers,{{/if}}
     );
+    {{!-- 
+    {{^isEmpty responses}}
+    {{#forEach responses}}
+    {{>callValidator . prefix=../prefix validation=../extensions.x-validation}}
+    {{/forEach}}
+    {{/isEmpty}}
+    --}}
+    return response;
 }
 
 {{#if requests.cookieParameters}}{{log "Cookie parameters not supported yet" level="warn"}}{{/if}}

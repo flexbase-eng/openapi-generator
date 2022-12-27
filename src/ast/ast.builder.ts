@@ -365,6 +365,118 @@ export class AstBuilder implements IAstBuilder {
     return docs.length > 0 ? docs : [astDocument];
   }
 
+  private flatten(references: Map<string, ModelDeclaration>, expression: Expression, resolveReference: boolean): Expression {
+    if (IsReferenceExpression(expression) && resolveReference) {
+      const model = references.get(expression.key);
+      if (!model) {
+        this._logger.warn(`Unable to find reference ${expression.key}`);
+      } else {
+        return model.definition;
+      }
+    } else if (IsObjectExpression(expression)) {
+      expression.properties.forEach(x => (x.definition = this.flatten(references, x.definition, resolveReference)));
+    } else if (IsArrayExpression(expression)) {
+      expression.elements = this.flatten(references, expression.elements, resolveReference);
+    } else if (IsUnionExpression(expression)) {
+      expression.elements = expression.elements.map(x => this.flatten(references, x, resolveReference));
+    } else if (IsCompositeExpression(expression)) {
+      expression.elements = expression.elements.map(x => this.flatten(references, x, resolveReference));
+
+      // get all objects and join them
+      const properties = expression.elements.filter(IsObjectExpression).flatMap(x => x.properties);
+
+      if (properties.length > 0) {
+        expression.elements = expression.elements
+          .filter(x => !IsObjectExpression(x))
+          .concat(<ObjectExpression>{ node: 'ObjectExpression', astId: uuidv4(), properties });
+      }
+    } else if (IsOmitExpression(expression)) {
+      expression.elements = this.flatten(references, expression.elements, true);
+
+      // get all objects and remove omit properties
+      if (IsObjectExpression(expression.elements)) {
+        const omitNames = new Set(expression.omit.map(x => x.name));
+        const properties = expression.elements.properties.filter(x => !omitNames.has(x.id.name));
+        expression = <ObjectExpression>{ node: 'ObjectExpression', astId: uuidv4(), properties };
+      }
+    } else if (IsMediaExpression(expression)) {
+      expression.body = this.flatten(references, expression.body, resolveReference);
+    } else if (IsRequestExpression(expression)) {
+      if (expression.bodies) {
+        expression.bodies = expression.bodies.map(x => this.flatten(references, x, resolveReference));
+      }
+      if (expression.pathParameters) {
+        expression.pathParameters = this.flatten(references, expression.pathParameters, resolveReference);
+      }
+      if (expression.cookieParameters) {
+        expression.cookieParameters = this.flatten(references, expression.cookieParameters, resolveReference);
+      }
+      if (expression.headerParameters) {
+        expression.headerParameters = this.flatten(references, expression.headerParameters, resolveReference);
+      }
+      if (expression.queryParameters) {
+        expression.queryParameters = this.flatten(references, expression.queryParameters, resolveReference);
+      }
+    } else if (IsResponseExpression(expression)) {
+      if (expression.headers) {
+        expression.headers = this.flatten(references, expression.headers, resolveReference);
+      }
+      if (expression.responses) {
+        expression.responses = expression.responses.map(x => this.flatten(references, x, resolveReference));
+      }
+    }
+    return expression;
+  }
+
+  flattenReferences(astDocument: AstDocument, resolveReferences: boolean): void {
+    const references = new Map<string, ModelDeclaration>();
+
+    astDocument.models.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
+    astDocument.responses.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
+    astDocument.requests.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
+    astDocument.pathParameters.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
+    astDocument.headerParameters.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
+    astDocument.queryParameters.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
+    astDocument.cookieParameters.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
+    astDocument.referenceParameters.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
+
+    astDocument.models.filter(IsModelDeclaration).forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
+    astDocument.responses.filter(IsModelDeclaration).forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
+    astDocument.requests.filter(IsModelDeclaration).forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
+    astDocument.pathParameters.filter(IsModelDeclaration).forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
+    astDocument.headerParameters.filter(IsModelDeclaration).forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
+    astDocument.queryParameters.filter(IsModelDeclaration).forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
+    astDocument.cookieParameters.filter(IsModelDeclaration).forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
+    astDocument.referenceParameters
+      .filter(IsModelDeclaration)
+      .forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
+
+    const flattenResponse = (expression: ResponseExpression) => {
+      const headers: Expression[] = expression.headers ? [expression.headers] : [];
+      if (expression.responses) {
+        const nonRefs = expression.responses.filter(x => !IsReferenceExpression(x));
+        const refs = expression.responses.filter(IsReferenceExpression).map(x => this.flatten(references, x, true));
+        expression.responses = refs.concat(nonRefs);
+
+        headers.push(
+          ...expression.responses
+            .filter(IsResponseExpression)
+            .filter(x => x.headers)
+            .map(x => x.headers!)
+        );
+      }
+      if (headers.length > 1) {
+        expression.headers = <UnionExpression>{ node: 'UnionExpression', astId: uuidv4(), elements: headers };
+      } else if (headers.length === 1) {
+        expression.headers = headers[0];
+      }
+    };
+
+    for (const operation of astDocument.operations) {
+      (operation.responses ?? []).forEach(flattenResponse);
+    }
+  }
+
   private findReferences(
     referenceLookup: Map<string, string>,
     references: Map<string, string[]>,
