@@ -48,7 +48,7 @@ Handlebars.registerHelper('registerReference', function (context, options: Handl
 
 Handlebars.registerHelper('registerValidator', function (context, options: Handlebars.HelperOptions) {
   if (!IsModelDeclaration(context) || context.referenceName === undefined) {
-    throw Error('Expected a model declaration with a reference name');
+    throw Error('Expected a model declaration with a reference name for validator');
   }
 
   const referenceName = context.referenceName + '/validator';
@@ -78,7 +78,7 @@ Handlebars.registerHelper('resolveReference', function (context) {
 
 Handlebars.registerHelper('resolveValidator', function (context) {
   if (!IsReferenceExpression(context) || context.key === undefined) {
-    throw Error('Expected a reference expression with a reference key');
+    throw Error('Expected a reference expression with a reference key for validator', { cause: context });
   }
 
   const referenceKey = context.key + '/validator';

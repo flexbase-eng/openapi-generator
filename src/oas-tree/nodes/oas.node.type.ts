@@ -12,7 +12,9 @@ export type OasNodeKindType =
   | 'response'
   | 'request'
   | 'content'
-  | 'body';
+  | 'body'
+  | 'response_content'
+  | 'operation_response';
 
 export abstract class OasNodeType extends OasNode {
   constructor(private readonly _kindType: OasNodeKindType, modifiers: OasNodeModifiers) {

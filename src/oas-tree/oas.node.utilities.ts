@@ -9,10 +9,12 @@ import { OasNodeTypeComposite } from './nodes/oas.node.type.composite';
 import { OasNodeTypeContent } from './nodes/oas.node.type.content';
 import { OasNodeTypeObject } from './nodes/oas.node.type.object';
 import { OasNodeTypeOmit } from './nodes/oas.node.type.omit';
+import { OasNodeTypeOperationResponse } from './nodes/oas.node.type.operation.response';
 import { OasNodeTypePrimative } from './nodes/oas.node.type.primative';
 import { OasNodeTypeReference } from './nodes/oas.node.type.reference';
 import { OasNodeTypeRequest } from './nodes/oas.node.type.request';
 import { OasNodeTypeResponse } from './nodes/oas.node.type.response';
+import { OasNodeTypeResponseContent } from './nodes/oas.node.type.response.content';
 import { OasNodeTypeUnion } from './nodes/oas.node.type.union';
 
 export function IsObjectNode(test: any): test is OasNodeTypeObject {
@@ -73,4 +75,12 @@ export function IsOmitNode(test: any): test is OasNodeTypeOmit {
 
 export function IsNodeType(test: OasNode): test is OasNodeType {
   return test.kind === 'type';
+}
+
+export function IsResponseContentNode(test: any): test is OasNodeTypeResponseContent {
+  return test?.kind === 'type' && test?.kindType === 'response_content';
+}
+
+export function IsOperationResponseNode(test: any): test is OasNodeTypeOperationResponse {
+  return test?.kind === 'type' && test?.kindType === 'operation_response';
 }

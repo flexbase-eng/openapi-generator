@@ -8,7 +8,7 @@ export type {{>expression id suffix=./suffix prefix=./prefix}} = {{>expression d
 {{>expression id}}{{^required}}?{{/required}}: {{>expression definition enum=./enum}};
 {{/compare~}}
 
-{{#*inline "validator"}}
+{{~#*inline "validator"}}
 {{~#compare validation "!==" false}}
 {{#compare node "===" "ReferenceExpression"}}
     new {{prefix}}ValidationPipe({{& resolveValidator .}})
@@ -16,19 +16,17 @@ export type {{>expression id suffix=./suffix prefix=./prefix}} = {{>expression d
     {{log "Only references are support for validation currently" level="warn"}}
 {{/compare}}
 {{/compare~}}
-{{/inline}}
+{{/inline~}}
 
-{{#*inline "callValidator"}}
+{{~#*inline "responseValidator"}}
 {{~#compare validation "!==" false}}
-{{#compare node "===" "ResponseExpression"}}
-    {{log .}}
-    if(response.status === {{toInt statusCode}}) {
-        const responseValidator = new {{prefix}}ValidationPipe({{& resolveValidator .}});
-        responseValidator.transform(response, { type: 'custom' });
+{{#compare node "===" "OperationResponseExpression"}}
+    if(response.$status === {{toInt statusCode}}) {
+        handleValidation(response, {{& resolveValidator response}}, handleResponseValidatorErrors);
         }
 {{/compare}}
 {{/compare~}}
-{{/inline}}
+{{/inline~}}
 
 {{~#compare node "===" "OperationDeclaration"}}
 protected abstract {{>expression id prefix="_"}}(
@@ -44,18 +42,15 @@ protected abstract {{>expression id prefix="_"}}(
     {{~#if requests.headerParameters~}}
     headers:{{#requests.headerParameters}}{{> expression}},{{/requests.headerParameters}}
     {{~/if~}}
-): Promise<{{prefix}}ControllerResponse<
+): Promise<
     {{^isEmpty responses}}
     {{#forEach responses}}
     {{>expression .}} {{#unless isLast}}|{{/unless}}
-    {{/forEach}},
-    {{#forEach responses}}
-    {{>expression this.headers}} {{#unless isLast}}|{{/unless}}
-    {{/forEach}}    
+    {{/forEach}}
     {{else}}
     void
     {{/isEmpty}}    
-    >>;
+    >;
 @{{& httpMethod}}('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}')
 async {{>expression id}}(
     {{#if requests.bodies}}    
@@ -70,33 +65,28 @@ async {{>expression id}}(
     {{#if requests.headerParameters}}
     @Headers({{>validator requests.headerParameters prefix=prefix validation=../extensions.x-validation}}) headers:{{#requests.headerParameters}}{{> expression}},{{/requests.headerParameters}}
     {{/if}}
-): Promise<{{prefix}}ControllerResponse<
+): Promise<
     {{^isEmpty responses}}
     {{#forEach responses}}
     {{>expression .}} {{#unless isLast}}|{{/unless}}
-    {{/forEach}},
-    {{#forEach responses}}
-    {{>expression this.headers}} {{#unless isLast}}|{{/unless}}
     {{/forEach}}
     {{else}}
     void
     {{/isEmpty}}
-    >> {
+    > {
     const response = await this.{{>expression id prefix="_"}}(
         {{#if requests.bodies}}body,{{/if}}
         {{#if requests.pathParameters}}path,{{/if}}
         {{#if requests.queryParameters}}query,{{/if}}
         {{#if requests.headerParameters}}headers,{{/if}}
     );
-    {{!-- 
-    {{^isEmpty responses}}
+    {{!-- {{^isEmpty responses}}
     {{#forEach responses}}
-    {{>callValidator . prefix=../prefix validation=../extensions.x-validation}}
+    {{>responseValidator . prefix=../prefix validation=../extensions.x-validation}}
     {{/forEach}}
-    {{/isEmpty}}
-    --}}
+    {{/isEmpty}} --}}
     return response;
 }
 
 {{#if requests.cookieParameters}}{{log "Cookie parameters not supported yet" level="warn"}}{{/if}}
-{{/compare}}
+{{/compare~}}

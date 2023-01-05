@@ -12,6 +12,8 @@ import {
   IsContentNode,
   IsBodyNode,
   IsOmitNode,
+  IsResponseContentNode,
+  IsOperationResponseNode,
 } from './oas.node.utilities';
 import { OasNode } from './nodes/oas.node';
 import { OasNodeDeclaration } from './nodes/oas.node.declaration';
@@ -78,11 +80,7 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
 
   convertOperation(node: OasNodeOperation): any {
     const request = node.request ? this.convertNode(node.request) : undefined;
-    const responses = node.responses
-      ? Array.isArray(node.responses)
-        ? node.responses.map(r => this.convertNode(r))
-        : this.convertNode(node.responses)
-      : undefined;
+    const responses = node.responses ? node.responses.map(r => this.convertNode(r)) : undefined;
     return {
       kind: node.kind,
       httpMethod: node.httpMethod,
@@ -120,16 +118,16 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
       return { ...json, identifier: this.convertNode(node.identifier) };
     } else if (IsPrimativeNode(node)) {
       return { ...json, primativeType: node.primativeType };
-    } else if (IsResponseNode(node)) {
+    } else if (IsOperationResponseNode(node)) {
       return {
         ...json,
         statusCode: node.statusCode,
-        content: node.content
-          ? Array.isArray(node.content)
-            ? node.content.map(x => this.convertNode(x))
-            : this.convertNode(node.content)
-          : undefined,
-        headers: node.headers ? this.convertNode(node.headers) : undefined,
+        responses: node.responses ? this.convertNode(node.responses) : undefined,
+      };
+    } else if (IsResponseNode(node)) {
+      return {
+        ...json,
+        content: node.content ? node.content.map(x => this.convertNode(x)) : undefined,
       };
     } else if (IsRequestNode(node)) {
       return {
@@ -142,6 +140,13 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
       };
     } else if (IsContentNode(node)) {
       return { ...json, mediaType: node.mediaType, contentType: this.convertNode(node.contentType) };
+    } else if (IsResponseContentNode(node)) {
+      return {
+        ...json,
+        mediaType: node.mediaType,
+        contentType: this.convertNode(node.contentType),
+        headers: node.headers ? this.convertNode(node.headers) : undefined,
+      };
     } else if (IsBodyNode(node)) {
       return { ...json, contents: node.contents.map(x => this.convertNode(x)) };
     } else if (IsOmitNode(node)) {

@@ -51,7 +51,7 @@
 {{/compare~}}
 
 {{~#compare node "===" "ResponseExpression"}}
-    {{#each responses}}{{>validation.expression . modelName=../modelName propertyName=../propertyName}}{{/each}}
+    {{#each bodies}}{{>validation.expression . modelName=../modelName propertyName=../propertyName}}{{/each}}
 {{/compare~}}
 
 {{~#compare node "===" "RequestExpression"}}
@@ -61,6 +61,19 @@
 {{~#compare node "===" "MediaExpression"}}
     {{~#inArray (toArray "application/json" "application/x-www-form-urlencoded" ) mediaType}}
     {{#if body}}{{> validation.expression body modelName=modelName propertyName=propertyName}}{{/if}}
+    {{else}}
+    {{log "Unsupported response media type" mediaType level="warn"}}
+    {{/inArray~}} 
+{{/compare~}}
+
+{{~#compare node "===" "MediaResponseExpression"}}
+    {{~#inArray (toArray "application/json" ) mediaType}}
+    {{#if body}}
+    const $body = {{modelName}}['$body'];
+    {{> validation.expression body modelName="$body" propertyName="$body"}}{{/if}}    
+    {{#if headers}}
+    const $headers = {{modelName}}['$headers'];
+    {{> validation.expression headers modelName="$headers" propertyName="$headers"}}{{/if}}
     {{else}}
     {{log "Unsupported response media type" mediaType level="warn"}}
     {{/inArray~}} 

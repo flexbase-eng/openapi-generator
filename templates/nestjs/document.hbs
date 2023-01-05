@@ -13,12 +13,6 @@ import { DateTime, Duration } from "luxon";
 const Scopes = (...scopes: string[]) => SetMetadata('scopes', scopes);
 
 {{#astDocument}}
-export type {{replace title (toRegex "(-|\.| )+" "g") "_"}}ControllerResponse<BODY, HEADER extends Record<string, any> | never = never> = {
-    $status?: number,
-    $headers?: HEADER,
-    $body: BODY,
-};
-
 interface ValidatorResponse {
   errors: Map<string, string | string[]>;
   allowedProperties: string[];
@@ -33,17 +27,17 @@ function verifyDefinition(inputToValidate: any, properties: Set<string>): Map<st
   return errors;
 }
 
-export const {{replace title (toRegex "(-|\.| )+" "g") "_"}}HandleRequestValidatorErrors: HandleErrorsFn = (errors: Map<string, string | string[]>) => {
+const handleRequestValidatorErrors: HandleErrorsFn = (errors: Map<string, string | string[]>) => {
   const error: Record<string, string | string[]> = Object.fromEntries(errors);
   if (Object.keys(error).length > 0) {
     throw new BadRequestException({ statusCode: 400, message: 'Bad Request', error });
   }
 }
 
-export const {{replace title (toRegex "(-|\.| )+" "g") "_"}}HandleResponseValidatorErrors: HandleErrorsFn = (errors: Map<string, string | string[]>) => {
+const handleResponseValidatorErrors: HandleErrorsFn = (errors: Map<string, string | string[]>) => {
   const error: Record<string, string | string[]> = Object.fromEntries(errors);
   if (Object.keys(error).length > 0) {
-    throw new InternalServerErrorException({ statusCode: 400, message: 'Malformed response detected', error});
+    throw new InternalServerErrorException({ statusCode: 500, message: 'Malformed response detected', error});
   }
 }
 
@@ -65,10 +59,10 @@ function handleValidation(value: any, validatorFn: ValidatorFn, handleErrors: Ha
   handleErrors(validatorResponse.errors);  
 }
 
-class {{replace title (toRegex "(-|\.| )+" "g") "_"}}ValidationPipe implements PipeTransform {
+export class {{replace title (toRegex "(-|\.| )+" "g") "_"}}ValidationPipe implements PipeTransform {
   constructor(private readonly _validatorFn: ValidatorFn) {}
   transform(value: any, _: ArgumentMetadata) {
-    handleValidation(value, this._validatorFn, {{replace title (toRegex "(-|\.| )+" "g") "_"}}HandleRequestValidatorErrors);
+    handleValidation(value, this._validatorFn, handleRequestValidatorErrors);
     return value;
   }
 };
@@ -102,7 +96,7 @@ class {{replace title (toRegex "(-|\.| )+" "g") "_"}}ValidationPipe implements P
 //#region Responses
 {{#each responses}}
 {{>declaration suffix="Response"}}
-{{>validation.declaration suffix="ResponseValidator"}}
+{{!-- {{>validation.declaration suffix="ResponseValidator"}} --}}
 {{/each}}
 //#endregion
 {{/if}}

@@ -10,6 +10,15 @@ export interface MediaExpression extends MediaNode {
   node: 'MediaExpression';
 }
 
+export interface MediaResponseExpression extends MediaNode {
+  node: 'MediaResponseExpression';
+  headers?: Expression;
+}
+
 export function IsMediaExpression(node: Node): node is MediaExpression {
   return node.node === 'MediaExpression';
+}
+
+export function IsMediaResponseExpression(node: Node): node is MediaResponseExpression {
+  return node.node === 'MediaResponseExpression';
 }

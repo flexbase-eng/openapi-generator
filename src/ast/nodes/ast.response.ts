@@ -1,16 +1,22 @@
 import { Expression } from './ast.expression';
 import { Node } from './ast.node';
 
-export interface ResponseNode extends Node {
+export interface ResponseExpression extends Node {
+  node: 'ResponseExpression';
   headers?: Expression;
-  responses?: Expression[];
+  bodies?: Expression[];
 }
 
-export interface ResponseExpression extends ResponseNode {
-  node: 'ResponseExpression';
+export interface OperationResponseExpression extends Node {
+  node: 'OperationResponseExpression';
   statusCode: string;
+  response: Expression;
 }
 
 export function IsResponseExpression(node: Node): node is ResponseExpression {
   return node.node === 'ResponseExpression';
+}
+
+export function IsOperationResponseExpression(node: Node): node is OperationResponseExpression {
+  return node.node === 'OperationResponseExpression';
 }

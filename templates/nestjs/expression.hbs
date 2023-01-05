@@ -28,22 +28,34 @@
     {{#forEach elements}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}
 {{/compare~}}
 
-
 {{~#compare node "===" "ResponseExpression"}}
-{{#if responses}}
-    {{#forEach responses}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}
-{{/if}}
+{    
+    {{#if bodies}}
+    {{#forEach bodies}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}
+    {{/if}}
+}
+{{/compare~}}
+
+{{~#compare node "===" "OperationResponseExpression"}}
+{$status: {{statusCode}} } & {{>expression response}}
 {{/compare~}}
 
 {{~#compare node "===" "RequestExpression"}}
-{{#if bodies}}
-    {{#forEach bodies}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}
-{{/if}}
+{{#if bodies}}{{#forEach bodies}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}
 {{/compare~}}
 
 {{~#compare node "===" "MediaExpression"}}
     {{~#inArray (toArray "application/json" "application/x-www-form-urlencoded" ) mediaType}}
     {{#body}}{{> expression}}{{/body}}
+    {{else}}
+    {{log "Unsupported media type" mediaType level="warn"}}
+    {{/inArray~}} 
+{{/compare~}}
+
+{{~#compare node "===" "MediaResponseExpression"}}
+    {{~#inArray (toArray "application/json" ) mediaType}}
+    {{#body}}$body: {{> expression}}{{/body}}
+    {{#headers}}$headers: {{> expression}}{{/headers}}
     {{else}}
     {{log "Unsupported response media type" mediaType level="warn"}}
     {{/inArray~}} 

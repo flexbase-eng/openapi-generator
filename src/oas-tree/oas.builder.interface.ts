@@ -3,7 +3,6 @@ import { OpenApiSpecTree } from './oas.tree';
 import { OasNodeDeclaration, ParameterLocations } from './nodes/oas.node.declaration';
 import { OasNodeOperation } from './nodes/oas.node.operation';
 import { OasNodeType } from './nodes/oas.node.type';
-import { OasNodeTypeResponse } from './nodes/oas.node.type.response';
 
 export interface ParameterNodes {
   queryNodes: OasNodeType[];
@@ -33,7 +32,7 @@ export interface IOpenApiSpecBuilder {
   ): ParameterNodes;
   generateParameter(parameter: OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject): ParameterLocationAndNode | undefined;
   generateHeader(name: string, header: OpenAPIV3.ReferenceObject | OpenAPIV3.HeaderObject): OasNodeType;
-  generateResponse(code: string, response: OpenAPIV3.ReferenceObject | OpenAPIV3.ResponseObject): OasNodeTypeResponse | undefined;
+  generateResponse(response: OpenAPIV3.ReferenceObject | OpenAPIV3.ResponseObject): OasNodeType | undefined;
   generateResponses(responses: OpenAPIV3.ResponsesObject): OasNodeType | OasNodeType[] | undefined;
   generateRequestBody(request: OpenAPIV3.RequestBodyObject | OpenAPIV3.ReferenceObject, modelMappings: Map<string, OasNodeDeclaration>): OasNodeType;
   createDeclarationMappings(declarations: OasNodeDeclaration[]): Map<string, OasNodeDeclaration>;

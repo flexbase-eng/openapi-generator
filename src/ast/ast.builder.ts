@@ -13,6 +13,8 @@ import {
   IsRequestNode,
   IsResponseNode,
   IsNodeType,
+  IsResponseContentNode,
+  IsOperationResponseNode,
 } from '../oas-tree/oas.node.utilities';
 import { OpenApiSpecTree } from '../oas-tree/oas.tree';
 import { ArrayExpression, IsArrayExpression } from './nodes/ast.array';
@@ -20,13 +22,13 @@ import { CompositeExpression, IsCompositeExpression } from './nodes/ast.composit
 import { Expression } from './nodes/ast.expression';
 import { IdentifierExpression } from './nodes/ast.identifier';
 import { IsLiteralExpression, LiteralExpression } from './nodes/ast.literal';
-import { IsMediaExpression, MediaExpression } from './nodes/ast.media';
+import { IsMediaExpression, IsMediaResponseExpression, MediaExpression, MediaResponseExpression } from './nodes/ast.media';
 import { IsObjectExpression, ObjectExpression, PropertyDeclaration } from './nodes/ast.object';
 import { IsOmitExpression, OmitExpression } from './nodes/ast.omit';
 import { OperationDeclaration } from './nodes/ast.operation';
 import { IsReferenceExpression, ReferenceExpression } from './nodes/ast.reference';
 import { IsRequestExpression, RequestExpression } from './nodes/ast.request';
-import { IsResponseExpression, ResponseExpression } from './nodes/ast.response';
+import { IsOperationResponseExpression, IsResponseExpression, OperationResponseExpression, ResponseExpression } from './nodes/ast.response';
 import { TodoExpression } from './nodes/ast.todo';
 import { IsUnionExpression, UnionExpression } from './nodes/ast.union';
 import { AstDocument } from './nodes/ast.document';
@@ -129,6 +131,14 @@ export class AstBuilder implements IAstBuilder {
         mediaType: oasNode.mediaType,
         body: this.makeExpression(oasNode.contentType),
       };
+    } else if (IsResponseContentNode(oasNode)) {
+      return <MediaResponseExpression>{
+        node: 'MediaResponseExpression',
+        astId: uuidv4(),
+        mediaType: oasNode.mediaType,
+        body: this.makeExpression(oasNode.contentType),
+        headers: oasNode.headers ? this.makeExpression(oasNode.headers) : undefined,
+      };
     } else if (IsBodyNode(oasNode)) {
       return <RequestExpression>{
         node: 'RequestExpression',
@@ -149,12 +159,17 @@ export class AstBuilder implements IAstBuilder {
       return <ResponseExpression>{
         node: 'ResponseExpression',
         astId: uuidv4(),
-        statusCode: oasNode.statusCode,
-        headers: oasNode.headers ? this.makeExpression(oasNode.headers) : undefined,
-        responses: Array.isArray(oasNode.content)
+        bodies: oasNode.content
           ? oasNode.content.map(content => this.makeExpression(content))
-          : oasNode.content !== undefined
-          ? [this.makeExpression(oasNode.content)]
+          : [<LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: 'null' }],
+      };
+    } else if (IsOperationResponseNode(oasNode)) {
+      return <OperationResponseExpression>{
+        node: 'OperationResponseExpression',
+        astId: uuidv4(),
+        statusCode: oasNode.statusCode,
+        response: oasNode.responses
+          ? this.makeExpression(oasNode.responses)
           : [<LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: 'null' }],
       };
     }
@@ -171,11 +186,7 @@ export class AstBuilder implements IAstBuilder {
       id,
       httpMethod: oasOperation.httpMethod,
       path: oasOperation.path,
-      responses: oasOperation.responses
-        ? Array.isArray(oasOperation.responses)
-          ? oasOperation.responses.map(r => this.makeExpression(r))
-          : [this.makeExpression(oasOperation.responses)]
-        : [<LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: 'null' }],
+      responses: oasOperation.responses ? oasOperation.responses.map(r => this.makeExpression(r)) : undefined,
       requests: oasOperation.request ? this.makeExpression(oasOperation.request) : undefined,
       title: oasOperation.modifiers.title,
       description: oasOperation.modifiers.description,
@@ -366,12 +377,14 @@ export class AstBuilder implements IAstBuilder {
   }
 
   private flatten(references: Map<string, ModelDeclaration>, expression: Expression, resolveReference: boolean): Expression {
-    if (IsReferenceExpression(expression) && resolveReference) {
-      const model = references.get(expression.key);
-      if (!model) {
-        this._logger.warn(`Unable to find reference ${expression.key}`);
-      } else {
-        return model.definition;
+    if (IsReferenceExpression(expression)) {
+      if (resolveReference) {
+        const model = references.get(expression.key);
+        if (!model) {
+          this._logger.warn(`Unable to find reference ${expression.key}`);
+        } else {
+          return model.definition;
+        }
       }
     } else if (IsObjectExpression(expression)) {
       expression.properties.forEach(x => (x.definition = this.flatten(references, x.definition, resolveReference)));
@@ -401,6 +414,11 @@ export class AstBuilder implements IAstBuilder {
       }
     } else if (IsMediaExpression(expression)) {
       expression.body = this.flatten(references, expression.body, resolveReference);
+    } else if (IsMediaResponseExpression(expression)) {
+      expression.body = this.flatten(references, expression.body, resolveReference);
+      if (expression.headers) {
+        expression.headers = this.flatten(references, expression.headers, resolveReference);
+      }
     } else if (IsRequestExpression(expression)) {
       if (expression.bodies) {
         expression.bodies = expression.bodies.map(x => this.flatten(references, x, resolveReference));
@@ -417,13 +435,17 @@ export class AstBuilder implements IAstBuilder {
       if (expression.queryParameters) {
         expression.queryParameters = this.flatten(references, expression.queryParameters, resolveReference);
       }
+    } else if (IsOperationResponseExpression(expression)) {
+      expression.response = this.flatten(references, expression.response, resolveReference);
     } else if (IsResponseExpression(expression)) {
       if (expression.headers) {
         expression.headers = this.flatten(references, expression.headers, resolveReference);
       }
-      if (expression.responses) {
-        expression.responses = expression.responses.map(x => this.flatten(references, x, resolveReference));
+      if (expression.bodies) {
+        expression.bodies = expression.bodies.map(x => this.flatten(references, x, resolveReference));
       }
+    } else if (!IsLiteralExpression(expression)) {
+      this._logger.error("flatten: shouldn't get here", expression);
     }
     return expression;
   }
@@ -450,31 +472,6 @@ export class AstBuilder implements IAstBuilder {
     astDocument.referenceParameters
       .filter(IsModelDeclaration)
       .forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
-
-    const flattenResponse = (expression: ResponseExpression) => {
-      const headers: Expression[] = expression.headers ? [expression.headers] : [];
-      if (expression.responses) {
-        const nonRefs = expression.responses.filter(x => !IsReferenceExpression(x));
-        const refs = expression.responses.filter(IsReferenceExpression).map(x => this.flatten(references, x, true));
-        expression.responses = refs.concat(nonRefs);
-
-        headers.push(
-          ...expression.responses
-            .filter(IsResponseExpression)
-            .filter(x => x.headers)
-            .map(x => x.headers!)
-        );
-      }
-      if (headers.length > 1) {
-        expression.headers = <UnionExpression>{ node: 'UnionExpression', astId: uuidv4(), elements: headers };
-      } else if (headers.length === 1) {
-        expression.headers = headers[0];
-      }
-    };
-
-    for (const operation of astDocument.operations) {
-      (operation.responses ?? []).forEach(flattenResponse);
-    }
   }
 
   private findReferences(
@@ -517,6 +514,9 @@ export class AstBuilder implements IAstBuilder {
       this.findReferences(referenceLookup, references, expression.elements, updatedOwnerList);
     } else if (IsMediaExpression(expression)) {
       this.findReferences(referenceLookup, references, expression.body, updatedOwnerList);
+    } else if (IsMediaResponseExpression(expression)) {
+      this.findReferences(referenceLookup, references, expression.body, updatedOwnerList);
+      this.findReferences(referenceLookup, references, expression.headers, updatedOwnerList);
     } else if (IsRequestExpression(expression)) {
       (expression.bodies ?? []).forEach(x => this.findReferences(referenceLookup, references, x, updatedOwnerList));
       this.findReferences(referenceLookup, references, expression.pathParameters, updatedOwnerList);
@@ -525,9 +525,11 @@ export class AstBuilder implements IAstBuilder {
       this.findReferences(referenceLookup, references, expression.queryParameters, updatedOwnerList);
     } else if (IsResponseExpression(expression)) {
       this.findReferences(referenceLookup, references, expression.headers, updatedOwnerList);
-      (expression.responses ?? []).forEach(x => this.findReferences(referenceLookup, references, x, updatedOwnerList));
+      (expression.bodies ?? []).forEach(x => this.findReferences(referenceLookup, references, x, updatedOwnerList));
+    } else if (IsOperationResponseExpression(expression)) {
+      this.findReferences(referenceLookup, references, expression.response, updatedOwnerList);
     } else {
-      this._logger.error("shouldn't get here");
+      this._logger.error("findReferences: shouldn't get here", expression);
     }
   }
 
