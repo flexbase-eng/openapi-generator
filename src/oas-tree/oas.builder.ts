@@ -1,5 +1,12 @@
 import { OpenAPIV3 } from 'openapi-types';
-import { IsArraySchemaObject, IsReferenceObject } from '../utilities/openapi.utilities';
+import {
+  IsArraySchemaObject,
+  IsReferenceObject,
+  IsSecurityApiKey,
+  IsSecurityHttp,
+  IsSecurityOAuth2,
+  IsSecurityOpenIdConnect,
+} from '../utilities/openapi.utilities';
 import { OpenApiSpecTree } from './oas.tree';
 import { OasNode } from './nodes/oas.node';
 import { OasNodeDeclaration, DeclarationType, ParameterLocations } from './nodes/oas.node.declaration';
@@ -34,6 +41,11 @@ import { IOpenApiSpecBuilder, ParameterLocationAndNode, ParameterNodes } from '.
 import { Logger } from '@flexbase/logger';
 import { OasNodeTypeResponseContent } from './nodes/oas.node.type.response.content';
 import { OasNodeTypeOperationResponse } from './nodes/oas.node.type.operation.response';
+import { OasNodeTypeSecurityOAuth2, OasNodeTypeSecurityOAuth2Flow } from './nodes/oas.node.type.security.oauth2';
+import { OasNodeTypeSecurityHttp } from './nodes/oas.node.type.security.http';
+import { OasNodeTypeSecurityApiKey, SecurityLocation } from './nodes/oas.node.type.security.apikey';
+import { OasNodeTypeSecurityOpenIdConnect } from './nodes/oas.node.type.security.openidconnect';
+import { OasNodeTypeOperationSecurity } from './nodes/oas.node.type.operation.security';
 
 export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
   constructor(private readonly _logger: Logger) {}
@@ -108,16 +120,6 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
           continue;
         }
 
-        // const header = nodeType.headers;
-        // if (header) {
-        //   if (!IsReferenceNode(header)) {
-        //     const headerName = `${name}Header`;
-        //     const headerRefName = `${refName}/header/`;
-        //     declarations.push(new OasNodeDeclaration(headerName, 'response', header, header.modifiers, headerRefName));
-        //     nodeType.headers = new OasNodeTypeReference(headerRefName, {});
-        //   }
-        // }
-
         const modifiers = nodeType.modifiers;
         nodeType.modifiers = {};
         declarations.push(new OasNodeDeclaration(name, 'response', nodeType, modifiers, refName));
@@ -143,6 +145,24 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         const modifiers = type.modifiers;
         type.modifiers = {};
         declarations.push(new OasNodeDeclaration(name, 'parameter', type, modifiers, refName, location));
+      }
+    }
+
+    if (components.securitySchemes) {
+      const records = Object.entries(components.securitySchemes);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const refName = `#/components/securitySchemes/${name}`;
+        this.nameChecker(name);
+
+        const nodeType = this.generateSecurityScheme(schema);
+        if (!nodeType) {
+          continue;
+        }
+        const modifiers = nodeType.modifiers;
+        nodeType.modifiers = {};
+        declarations.push(new OasNodeDeclaration(name, 'security', nodeType, modifiers, refName));
       }
     }
 
@@ -275,16 +295,13 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
       const title = operationObject.summary ?? pathItem.summary;
       const description = operationObject.description ?? pathItem.description;
       const deprecated = operationObject.deprecated;
+
+      const security = this.generateSecurity(operationObject.security);
+
       let returns: string[] | undefined;
       const extensions = this.getExtensions(operationObject);
 
       const responses = this.generateResponses(operationObject.responses);
-
-      // pull response returns to populate the operation comments
-      // if (responses && responses.modifiers.returns) {
-      //   returns = responses.modifiers.returns;
-      //   responses.modifiers.returns = undefined;
-      // }
 
       const parameters = this.generateParameters(operationObject.parameters, modelMappings);
       parameters.cookieNodes.push(...cookieNodes);
@@ -307,6 +324,7 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
         pathPattern,
         responses,
         request,
+        security,
         { title, description, deprecated, returns, extensions, tags: operationObject.tags }
       );
       nodeOperations.push(nodeOperation);
@@ -465,6 +483,28 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     return new OasNodeTypeResponse(contentNodes, { description });
   }
 
+  generateSecurity(security?: OpenAPIV3.SecurityRequirementObject[]): OasNodeType[] | undefined {
+    if (security === undefined) {
+      return undefined;
+    }
+
+    const securityItems = security.flatMap(x => Object.entries(x));
+    if (securityItems.length === 0) {
+      return [];
+    }
+
+    const operationSecurity: OasNodeType[] = [];
+
+    for (const securityItem of securityItems) {
+      const securityScheme = securityItem[0];
+      const securityObject = securityItem[1];
+
+      operationSecurity.push(new OasNodeTypeOperationSecurity(`#/components/securitySchemes/${securityScheme}`, securityObject, {}));
+    }
+
+    return operationSecurity;
+  }
+
   generateResponses(responses: OpenAPIV3.ResponsesObject): OasNodeType[] | undefined {
     const responsesEntities = Object.entries(responses);
     if (responsesEntities.length === 0) {
@@ -508,6 +548,63 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
     }
 
     return new OasNodeTypeBody(contentNodes, { description, required });
+  }
+
+  generateSecurityScheme(securityScheme: OpenAPIV3.SecuritySchemeObject | OpenAPIV3.ReferenceObject): OasNodeType | undefined {
+    if (IsReferenceObject(securityScheme)) {
+      return this.generateTypeFromSchema(securityScheme);
+    }
+
+    if (IsSecurityHttp(securityScheme)) {
+      return new OasNodeTypeSecurityHttp(securityScheme.scheme, securityScheme.bearerFormat, { description: securityScheme.description });
+    } else if (IsSecurityApiKey(securityScheme)) {
+      return new OasNodeTypeSecurityApiKey(securityScheme.name, securityScheme.in as SecurityLocation, {
+        description: securityScheme.description,
+      });
+    } else if (IsSecurityOAuth2(securityScheme)) {
+      const implicitFlow = securityScheme.flows.implicit
+        ? new OasNodeTypeSecurityOAuth2Flow(
+            securityScheme.flows.implicit.authorizationUrl,
+            undefined,
+            securityScheme.flows.implicit.refreshUrl,
+            securityScheme.flows.implicit.scopes
+          )
+        : undefined;
+      const passwordFlow = securityScheme.flows.password
+        ? new OasNodeTypeSecurityOAuth2Flow(
+            undefined,
+            securityScheme.flows.password.tokenUrl,
+            securityScheme.flows.password.refreshUrl,
+            securityScheme.flows.password.scopes
+          )
+        : undefined;
+      const clientCredentialsFlow = securityScheme.flows.clientCredentials
+        ? new OasNodeTypeSecurityOAuth2Flow(
+            undefined,
+            securityScheme.flows.clientCredentials.tokenUrl,
+            securityScheme.flows.clientCredentials.refreshUrl,
+            securityScheme.flows.clientCredentials.scopes
+          )
+        : undefined;
+      const authorizationCodeFlow = securityScheme.flows.authorizationCode
+        ? new OasNodeTypeSecurityOAuth2Flow(
+            securityScheme.flows.authorizationCode.authorizationUrl,
+            securityScheme.flows.authorizationCode.tokenUrl,
+            securityScheme.flows.authorizationCode.refreshUrl,
+            securityScheme.flows.authorizationCode.scopes
+          )
+        : undefined;
+
+      return new OasNodeTypeSecurityOAuth2(implicitFlow, passwordFlow, clientCredentialsFlow, authorizationCodeFlow, {
+        description: securityScheme.description,
+      });
+    } else if (IsSecurityOpenIdConnect(securityScheme)) {
+      return new OasNodeTypeSecurityOpenIdConnect(securityScheme.openIdConnectUrl, { description: securityScheme.description });
+    } else {
+      this._logger.warn('Unknown security type', securityScheme);
+    }
+
+    return undefined;
   }
 
   createPrimativeNode(primativeType: string, modifiers: OasNodeModifiers): OasNodeType {

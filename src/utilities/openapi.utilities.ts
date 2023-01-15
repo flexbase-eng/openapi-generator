@@ -15,3 +15,19 @@ export function IsArraySchemaObject(test: OpenAPIV3.SchemaObject): test is OpenA
 export function IsOperation(test: OpenAPI.Operation): test is OpenAPIV3.OperationObject {
   return true;
 }
+
+export function IsSecurityHttp(test: OpenAPIV3.SecuritySchemeObject): test is OpenAPIV3.HttpSecurityScheme {
+  return test.type === 'http';
+}
+
+export function IsSecurityApiKey(test: OpenAPIV3.SecuritySchemeObject): test is OpenAPIV3.ApiKeySecurityScheme {
+  return test.type === 'apiKey';
+}
+
+export function IsSecurityOAuth2(test: OpenAPIV3.SecuritySchemeObject): test is OpenAPIV3.OAuth2SecurityScheme {
+  return test.type === 'oauth2';
+}
+
+export function IsSecurityOpenIdConnect(test: OpenAPIV3.SecuritySchemeObject): test is OpenAPIV3.OpenIdSecurityScheme {
+  return test.type === 'openIdConnect';
+}

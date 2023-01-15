@@ -14,6 +14,7 @@ export class OasNodeOperation extends OasNode {
     private readonly _path: string,
     private _responses: OasNodeType[] | undefined,
     private readonly _request: OasNodeType | undefined,
+    private readonly _security: OasNodeType[] | undefined,
     modifiers: OasNodeModifiers
   ) {
     super('operation', modifiers);
@@ -47,5 +48,9 @@ export class OasNodeOperation extends OasNode {
 
   get request(): OasNodeType | undefined {
     return this._request;
+  }
+
+  get security(): OasNodeType[] | undefined {
+    return this._security;
   }
 }

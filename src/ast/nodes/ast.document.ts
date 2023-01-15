@@ -19,4 +19,5 @@ export interface AstDocument extends Node {
   unknownParameters: Array<Declaration>;
   operations: Array<OperationDeclaration>;
   tags: Array<TagNode>;
+  security: Array<Declaration>;
 }

@@ -15,6 +15,11 @@ import {
   IsNodeType,
   IsResponseContentNode,
   IsOperationResponseNode,
+  IsOperationSecurityNode,
+  IsSecurityApiKeyNode,
+  IsSecurityHttpNode,
+  IsSecurityOAuth2Node,
+  IsSecurityOpenIdConnectNode,
 } from '../oas-tree/oas.node.utilities';
 import { OpenApiSpecTree } from '../oas-tree/oas.tree';
 import { ArrayExpression, IsArrayExpression } from './nodes/ast.array';
@@ -39,11 +44,32 @@ import { IAstBuilder } from './ast.builder.interface';
 import { TagNode } from './nodes/ast.tag';
 import { Declaration } from './nodes/ast.declaration';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  IsOperationSecurityExpression,
+  IsSecurityExpression,
+  IsSecurityOAuthFlowExpression,
+  OperationSecurityExpression,
+  SecurityExpression,
+  SecurityOAuthFlowExpression,
+} from './nodes/ast.security';
+import { OasNodeTypeSecurityOAuth2Flow } from 'src/oas-tree/nodes/oas.node.type.security.oauth2';
 
 const ASTDOCUMENT_GLOBAL_TAGS = 'ASTDOCUMENT_GLOBAL_TAGS';
 
 export class AstBuilder implements IAstBuilder {
   constructor(private readonly _logger: Logger) {}
+
+  private makeOAuthFlow(flow?: OasNodeTypeSecurityOAuth2Flow): SecurityOAuthFlowExpression | undefined {
+    if (flow) {
+      return <SecurityOAuthFlowExpression>{
+        node: 'SecurityOAuthFlowExpression',
+        authorizationUrl: flow.authorizationUrl,
+        tokenUrl: flow.tokenUrl,
+        refreshUrl: flow.refreshUrl,
+        scopes: flow.scopes,
+      };
+    }
+  }
 
   private makePropertyExpressions(oasNode: OasNodeTypeObject): Array<PropertyDeclaration> {
     return oasNode.fields.map(
@@ -172,9 +198,49 @@ export class AstBuilder implements IAstBuilder {
           ? this.makeExpression(oasNode.responses)
           : [<LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: 'null' }],
       };
+    } else if (IsOperationSecurityNode(oasNode)) {
+      return <OperationSecurityExpression>{
+        node: 'OperationSecurityExpression',
+        astId: uuidv4(),
+        scheme: this.makeExpression(oasNode.securityScheme),
+        names: oasNode.names,
+      };
+    } else if (IsSecurityApiKeyNode(oasNode)) {
+      return <SecurityExpression>{
+        node: 'SecurityExpression',
+        astId: uuidv4(),
+        scheme: <LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: oasNode.type },
+        name: oasNode.name,
+        location: oasNode.in,
+      };
+    } else if (IsSecurityHttpNode(oasNode)) {
+      return <SecurityExpression>{
+        node: 'SecurityExpression',
+        astId: uuidv4(),
+        scheme: <LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: oasNode.type },
+        bearerFormat: oasNode.bearerFormat,
+      };
+    } else if (IsSecurityOAuth2Node(oasNode)) {
+      return <SecurityExpression>{
+        node: 'SecurityExpression',
+        astId: uuidv4(),
+        scheme: <LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: oasNode.type },
+        implicitFlow: this.makeOAuthFlow(oasNode.implicitFlow),
+        passwordFlow: this.makeOAuthFlow(oasNode.passwordFlow),
+        clientCredentialsFlow: this.makeOAuthFlow(oasNode.clientCredentialsFlow),
+        authorizationCodeFlow: this.makeOAuthFlow(oasNode.authorizationCodeFlow),
+      };
+    } else if (IsSecurityOpenIdConnectNode(oasNode)) {
+      return <SecurityExpression>{
+        node: 'SecurityExpression',
+        astId: uuidv4(),
+        scheme: <LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: oasNode.type },
+        openIdConnectUrl: oasNode.openIdConnectUrl,
+      };
+    } else {
+      this._logger.error('makeExpression: unknown node encountered', oasNode);
+      return <TodoExpression>{ node: 'TodoExpression', astId: uuidv4(), what: IsNodeType(oasNode) ? oasNode.kindType : oasNode.kind };
     }
-
-    return <TodoExpression>{ node: 'TodoExpression', astId: uuidv4(), what: IsNodeType(oasNode) ? oasNode.kindType : oasNode.kind };
   }
 
   private makeOperationDeclaration(oasOperation: OasNodeOperation): OperationDeclaration {
@@ -194,6 +260,7 @@ export class AstBuilder implements IAstBuilder {
       examples: oasOperation.modifiers.examples,
       deprecated: oasOperation.modifiers.deprecated,
       tags: oasOperation.modifiers.tags,
+      security: oasOperation.security ? oasOperation.security.map(x => this.makeExpression(x)) : undefined,
     };
   }
 
@@ -209,6 +276,7 @@ export class AstBuilder implements IAstBuilder {
     const unknownParameters: Array<ModelDeclaration> = [];
     const operations: Array<OperationDeclaration> = [];
     const tags: Array<TagNode> = [];
+    const security: Array<ModelDeclaration> = [];
 
     for (const decl of oas.declarations) {
       const node: ModelDeclaration = {
@@ -246,8 +314,10 @@ export class AstBuilder implements IAstBuilder {
         } else {
           unknownParameters.push(node);
         }
+      } else if (decl.declarationType === 'security') {
+        security.push(node);
       } else {
-        throw Error();
+        throw Error('Unknown declaration type', { cause: decl });
       }
     }
 
@@ -277,6 +347,7 @@ export class AstBuilder implements IAstBuilder {
       unknownParameters,
       operations,
       tags,
+      security,
     };
 
     return document;
@@ -307,6 +378,7 @@ export class AstBuilder implements IAstBuilder {
         unknownParameters: [],
         operations: [],
         tags: [],
+        security: [],
       };
       tagMap.set(name, doc);
     }
@@ -348,6 +420,7 @@ export class AstBuilder implements IAstBuilder {
     this.addDeclarationsToTagMap(tagMap, 'cookieParameters', astDocument.cookieParameters, version);
     this.addDeclarationsToTagMap(tagMap, 'referenceParameters', astDocument.referenceParameters, version);
     this.addDeclarationsToTagMap(tagMap, 'operations', astDocument.operations, version);
+    this.addDeclarationsToTagMap(tagMap, 'security', astDocument.security, version);
 
     //copy global/shared tags to other docs
     tagMap.delete(ASTDOCUMENT_GLOBAL_TAGS);
@@ -369,6 +442,7 @@ export class AstBuilder implements IAstBuilder {
       doc.queryParameters.push(...globalDoc.queryParameters);
       doc.cookieParameters.push(...globalDoc.cookieParameters);
       doc.referenceParameters.push(...globalDoc.referenceParameters);
+      doc.security.push(...globalDoc.security);
     }
 
     const docs = Array.from(tagMap.values());
@@ -444,6 +518,8 @@ export class AstBuilder implements IAstBuilder {
       if (expression.bodies) {
         expression.bodies = expression.bodies.map(x => this.flatten(references, x, resolveReference));
       }
+    } else if (IsSecurityExpression(expression)) {
+      expression.scheme = this.flatten(references, expression.scheme, resolveReference);
     } else if (!IsLiteralExpression(expression)) {
       this._logger.error("flatten: shouldn't get here", expression);
     }
@@ -461,6 +537,7 @@ export class AstBuilder implements IAstBuilder {
     astDocument.queryParameters.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
     astDocument.cookieParameters.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
     astDocument.referenceParameters.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
+    astDocument.security.filter(IsModelDeclaration).forEach(m => references.set(m.referenceName ?? m.id.name, m));
 
     astDocument.models.filter(IsModelDeclaration).forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
     astDocument.responses.filter(IsModelDeclaration).forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
@@ -472,6 +549,7 @@ export class AstBuilder implements IAstBuilder {
     astDocument.referenceParameters
       .filter(IsModelDeclaration)
       .forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
+    astDocument.security.filter(IsModelDeclaration).forEach(m => (m.definition = this.flatten(references, m.definition, resolveReferences)));
   }
 
   private findReferences(
@@ -480,7 +558,7 @@ export class AstBuilder implements IAstBuilder {
     expression: Expression | undefined,
     ownerList: string[]
   ) {
-    if (expression === undefined || IsLiteralExpression(expression)) {
+    if (expression === undefined || IsLiteralExpression(expression) || IsSecurityOAuthFlowExpression(expression)) {
       return;
     }
 
@@ -528,6 +606,14 @@ export class AstBuilder implements IAstBuilder {
       (expression.bodies ?? []).forEach(x => this.findReferences(referenceLookup, references, x, updatedOwnerList));
     } else if (IsOperationResponseExpression(expression)) {
       this.findReferences(referenceLookup, references, expression.response, updatedOwnerList);
+    } else if (IsSecurityExpression(expression)) {
+      this.findReferences(referenceLookup, references, expression.scheme, updatedOwnerList);
+      this.findReferences(referenceLookup, references, expression.authorizationCodeFlow, updatedOwnerList);
+      this.findReferences(referenceLookup, references, expression.clientCredentialsFlow, updatedOwnerList);
+      this.findReferences(referenceLookup, references, expression.implicitFlow, updatedOwnerList);
+      this.findReferences(referenceLookup, references, expression.passwordFlow, updatedOwnerList);
+    } else if (IsOperationSecurityExpression(expression)) {
+      this.findReferences(referenceLookup, references, expression.scheme, updatedOwnerList);
     } else {
       this._logger.error("findReferences: shouldn't get here", expression);
     }
@@ -546,6 +632,7 @@ export class AstBuilder implements IAstBuilder {
     astDocument.queryParameters.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
     astDocument.cookieParameters.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
     astDocument.referenceParameters.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
+    astDocument.security.filter(IsModelDeclaration).forEach(m => referenceLookup.set(m.referenceName ?? m.id.name, m.astId));
 
     astDocument.models.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
     astDocument.responses.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
@@ -555,13 +642,13 @@ export class AstBuilder implements IAstBuilder {
     astDocument.queryParameters.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
     astDocument.cookieParameters.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
     astDocument.referenceParameters.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
+    astDocument.security.forEach(x => this.findReferences(referenceLookup, references, x.definition, [x.astId]));
 
     for (const operation of astDocument.operations) {
       references.set(operation.astId, [operation.astId]); // reference self so it doesn't get culled
-      for (const responseExp of operation.responses ?? []) {
-        this.findReferences(referenceLookup, references, responseExp, [operation.astId]);
-      }
+      (operation.responses ?? []).forEach(x => this.findReferences(referenceLookup, references, x, [operation.astId]));
       this.findReferences(referenceLookup, references, operation.requests, [operation.astId]);
+      (operation.security ?? []).forEach(x => this.findReferences(referenceLookup, references, x, [operation.astId]));
     }
 
     // loop until we have removed all unreferenced models
@@ -598,5 +685,6 @@ export class AstBuilder implements IAstBuilder {
     astDocument.queryParameters = astDocument.queryParameters.filter(x => toKeep.has(x.astId));
     astDocument.cookieParameters = astDocument.cookieParameters.filter(x => toKeep.has(x.astId));
     astDocument.referenceParameters = astDocument.referenceParameters.filter(x => toKeep.has(x.astId));
+    astDocument.security = astDocument.security.filter(x => toKeep.has(x.astId));
   }
 }

@@ -8,6 +8,7 @@ import { OmitExpression } from './ast.omit';
 import { ReferenceExpression } from './ast.reference';
 import { RequestExpression } from './ast.request';
 import { OperationResponseExpression, ResponseExpression } from './ast.response';
+import { OperationSecurityExpression, SecurityExpression, SecurityOAuthFlowExpression } from './ast.security';
 import { TodoExpression } from './ast.todo';
 import { UnionExpression } from './ast.union';
 
@@ -25,4 +26,7 @@ export type Expression =
   | RequestExpression
   | ResponseExpression
   | OperationResponseExpression
-  | IdentifierExpression;
+  | IdentifierExpression
+  | SecurityExpression
+  | OperationSecurityExpression
+  | SecurityOAuthFlowExpression;

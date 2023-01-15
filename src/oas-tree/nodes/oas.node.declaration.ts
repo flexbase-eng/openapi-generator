@@ -4,7 +4,7 @@ import { OasNodeModifiers } from './oas.node.modifiers';
 import { OasNodeType } from './oas.node.type';
 
 export type ParameterLocations = 'query' | 'header' | 'path' | 'cookie' | 'reference' | 'unknown';
-export type DeclarationType = 'model' | 'request' | 'response' | 'parameter' | 'inline';
+export type DeclarationType = 'model' | 'request' | 'response' | 'parameter' | 'inline' | 'security';
 
 export class OasNodeDeclaration extends OasNode {
   private readonly _identifier: OasNodeLiteral;

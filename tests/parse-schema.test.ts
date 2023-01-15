@@ -18,11 +18,11 @@ test('petstore schemas', async () => {
 
   const oasTree = oasBuilder.generateOasTree(apiDoc);
 
-  expect(oasTree.declarations).toHaveLength(10);
+  expect(oasTree.declarations).toHaveLength(12);
   expect(oasTree.operations).toHaveLength(19);
 
   const poco = oasConverter.convertOasToPoco(oasTree);
 
-  expect(poco.declarations).toHaveLength(10);
+  expect(poco.declarations).toHaveLength(12);
   expect(poco.operations).toHaveLength(19);
 });

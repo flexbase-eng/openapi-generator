@@ -16,6 +16,11 @@ import { OasNodeTypeRequest } from './nodes/oas.node.type.request';
 import { OasNodeTypeResponse } from './nodes/oas.node.type.response';
 import { OasNodeTypeResponseContent } from './nodes/oas.node.type.response.content';
 import { OasNodeTypeUnion } from './nodes/oas.node.type.union';
+import { OasNodeTypeSecurityOpenIdConnect } from './nodes/oas.node.type.security.openidconnect';
+import { OasNodeTypeSecurityApiKey } from './nodes/oas.node.type.security.apikey';
+import { OasNodeTypeSecurityHttp } from './nodes/oas.node.type.security.http';
+import { OasNodeTypeSecurityOAuth2 } from './nodes/oas.node.type.security.oauth2';
+import { OasNodeTypeOperationSecurity } from './nodes/oas.node.type.operation.security';
 
 export function IsObjectNode(test: any): test is OasNodeTypeObject {
   return test?.kind === 'type' && test?.kindType === 'object';
@@ -83,4 +88,24 @@ export function IsResponseContentNode(test: any): test is OasNodeTypeResponseCon
 
 export function IsOperationResponseNode(test: any): test is OasNodeTypeOperationResponse {
   return test?.kind === 'type' && test?.kindType === 'operation_response';
+}
+
+export function IsSecurityApiKeyNode(test: any): test is OasNodeTypeSecurityApiKey {
+  return test?.kind === 'type' && test?.kindType === 'security' && test?.type === 'apiKey';
+}
+
+export function IsSecurityHttpNode(test: any): test is OasNodeTypeSecurityHttp {
+  return test?.kind === 'type' && test?.kindType === 'security' && test?.type === 'http';
+}
+
+export function IsSecurityOAuth2Node(test: any): test is OasNodeTypeSecurityOAuth2 {
+  return test?.kind === 'type' && test?.kindType === 'security' && test?.type === 'oauth2';
+}
+
+export function IsSecurityOpenIdConnectNode(test: any): test is OasNodeTypeSecurityOpenIdConnect {
+  return test?.kind === 'type' && test?.kindType === 'security' && test?.type === 'openIdConnect';
+}
+
+export function IsOperationSecurityNode(test: any): test is OasNodeTypeOperationSecurity {
+  return test?.kind === 'type' && test?.kindType === 'operation_security';
 }

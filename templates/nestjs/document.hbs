@@ -10,8 +10,6 @@
 import { Body, Get, Param, Post, Put, Query, Patch, Delete, Headers, Head, Options, SetMetadata, PipeTransform, ArgumentMetadata, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { DateTime, Duration } from "luxon";
 
-const Scopes = (...scopes: string[]) => SetMetadata('scopes', scopes);
-
 {{#astDocument}}
 interface ValidatorResponse {
   errors: Map<string, string | string[]>;
@@ -31,13 +29,6 @@ const handleRequestValidatorErrors: HandleErrorsFn = (errors: Map<string, string
   const error: Record<string, string | string[]> = Object.fromEntries(errors);
   if (Object.keys(error).length > 0) {
     throw new BadRequestException({ statusCode: 400, message: 'Bad Request', error });
-  }
-}
-
-const handleResponseValidatorErrors: HandleErrorsFn = (errors: Map<string, string | string[]>) => {
-  const error: Record<string, string | string[]> = Object.fromEntries(errors);
-  if (Object.keys(error).length > 0) {
-    throw new InternalServerErrorException({ statusCode: 500, message: 'Malformed response detected', error});
   }
 }
 

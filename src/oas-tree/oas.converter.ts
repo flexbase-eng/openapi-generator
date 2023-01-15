@@ -14,6 +14,11 @@ import {
   IsOmitNode,
   IsResponseContentNode,
   IsOperationResponseNode,
+  IsSecurityApiKeyNode,
+  IsSecurityHttpNode,
+  IsSecurityOAuth2Node,
+  IsSecurityOpenIdConnectNode,
+  IsOperationSecurityNode,
 } from './oas.node.utilities';
 import { OasNode } from './nodes/oas.node';
 import { OasNodeDeclaration } from './nodes/oas.node.declaration';
@@ -21,6 +26,7 @@ import { OasNodeLiteral } from './nodes/oas.node.literal';
 import { OasNodeOperation } from './nodes/oas.node.operation';
 import { OasNodeType } from './nodes/oas.node.type';
 import { OasNodeTag } from './nodes/oas.node.tag';
+import { OasNodeTypeSecurityOAuth2Flow } from './nodes/oas.node.type.security.oauth2';
 
 export class OpenApiSpecConverter implements IOpenApiSpecConverter {
   convertOasToPoco(oas: OpenApiSpecTree): any {
@@ -54,6 +60,9 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
 
       case 'tag':
         return this.convertTag(node as OasNodeTag);
+
+      default:
+        throw new Error('Unknown node kind', { cause: node });
     }
   }
 
@@ -89,6 +98,7 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
       responses,
       request,
       modifiers: node.modifiers,
+      security: node.security ? node.security.map(x => this.convertNode(x)) : undefined,
     };
   }
 
@@ -151,8 +161,34 @@ export class OpenApiSpecConverter implements IOpenApiSpecConverter {
       return { ...json, contents: node.contents.map(x => this.convertNode(x)) };
     } else if (IsOmitNode(node)) {
       return { ...json, originalType: this.convertNode(node.originalType), omitFields: node.omitFields };
+    } else if (IsSecurityApiKeyNode(node)) {
+      return { ...json, type: node.type, name: node.name, in: node.in };
+    } else if (IsSecurityHttpNode(node)) {
+      return { ...json, type: node.type, scheme: node.scheme, bearerFormat: node.bearerFormat };
+    } else if (IsSecurityOAuth2Node(node)) {
+      return {
+        ...json,
+        type: node.type,
+        implicitFlow: node.implicitFlow ? this.convertSecurityFlow(node.implicitFlow) : undefined,
+        passwordFlow: node.passwordFlow ? this.convertSecurityFlow(node.passwordFlow) : undefined,
+        clientCredentialsFlow: node.clientCredentialsFlow ? this.convertSecurityFlow(node.clientCredentialsFlow) : undefined,
+        authorizationCodeFlow: node.authorizationCodeFlow ? this.convertSecurityFlow(node.authorizationCodeFlow) : undefined,
+      };
+    } else if (IsSecurityOpenIdConnectNode(node)) {
+      return { ...json, type: node.type, openIdConnectUrl: node.openIdConnectUrl };
+    } else if (IsOperationSecurityNode(node)) {
+      return { ...json, securityScheme: this.convertNode(node.securityScheme), names: node.names };
     } else {
       throw Error('Unknown object node in ast', { cause: node });
     }
+  }
+
+  convertSecurityFlow(node: OasNodeTypeSecurityOAuth2Flow) {
+    return {
+      authorizationUrl: node.authorizationUrl,
+      tokenUrl: node.tokenUrl,
+      refreshUrl: node.refreshUrl,
+      scopes: node.scopes,
+    };
   }
 }
