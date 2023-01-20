@@ -59,7 +59,6 @@ async function writeOutput(
         tabWidth: 2,
         useTabs: false,
         printWidth: 150,
-        parser: 'typescript',
       });
     } catch (e) {
       logger.info(e);

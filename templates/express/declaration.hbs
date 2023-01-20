@@ -1,0 +1,40 @@
+{{>comments}}
+
+{{#compare node "===" "ModelDeclaration"}}
+export type {{>expression id suffix=./suffix prefix=./prefix}} = {{>expression definition}}
+{{/compare}}
+
+{{~#compare node "===" "PropertyDeclaration"}}
+{{>expression id}}{{^required}}?{{/required}}: {{>expression definition enum=./enum}};
+{{/compare~}}
+
+{{~#*inline "validator"}}
+{{~#compare validation "!==" false}}
+{{#compare node "===" "ReferenceExpression"}}
+    handleValidation({{input}}, {{& resolveValidator .}}, handleRequestValidatorErrors);
+{{else}}
+    {{log "Only references are support for validation currently" level="warn"}}
+{{/compare}}
+{{/compare~}}
+{{/inline~}}
+
+{{~#compare node "===" "OperationDeclaration"}}
+router.{{lowercase httpMethod}}('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}', function(req, res) {
+    {{#if requests.bodies}}    
+    {{#requests.bodies}}{{>validator . input="req.body" validation=../extensions.x-validation}}{{/requests.bodies}};
+    {{/if}}
+    {{#if requests.pathParameters}}
+    {{>validator requests.pathParameters input="req.params" validation=../extensions.x-validation}}
+    {{/if}}    
+    {{#if requests.queryParameters}}
+    {{>validator requests.queryParameters input="req.query" validation=../extensions.x-validation}}
+    {{/if}}
+    {{#if requests.headerParameters}}
+    {{>validator requests.headerParameters input="req.headers" validation=../extensions.x-validation}};
+    {{/if}}
+
+    res.send('test')
+})
+
+{{#if requests.cookieParameters}}{{log "Cookie parameters not supported yet" level="warn"}}{{/if}}
+{{/compare~}}

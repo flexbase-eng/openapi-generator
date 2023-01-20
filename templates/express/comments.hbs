@@ -1,0 +1,6 @@
+{{#wrap . "/**" "*/"}}
+{{~#title}}{{newline}}* @summary {{& .}}{{/title}}
+{{~#description}}{{newline}}* @description {{& .}}{{/description}}
+{{~#deprecated}}{{newline}}* @deprecated{{/deprecated}}
+{{~#readOnly}}{{newline}}* @readonly{{/readOnly}}
+{{/wrap}}
