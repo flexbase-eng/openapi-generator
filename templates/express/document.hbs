@@ -7,8 +7,11 @@
  @version {{astDocument.version}}
 ------------------------------------------------------------ */
 
+{{#astDocument}}
+
 const express = require('express')
 const router = express.Router()
+const { controller } = require('../{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}/index')
 
 function addOrSet(map, key, value) {
   const existing = map.get(key);
@@ -25,7 +28,7 @@ function addOrSet(map, key, value) {
 function handleRequestValidatorErrors(errors) {
   const error = Object.fromEntries(errors);
   if (Object.keys(error).length > 0) {
-    throw new BadRequestException({ statusCode: 400, message: 'Bad Request', error });
+    throw { statusCode: 400, message: 'Bad Request', error };
   }
 }
 
@@ -40,8 +43,6 @@ function handleValidation(value, validatorFn, handleErrors) {
   validatorResponse.errors = new Map([...validatorResponse.errors, ...verifyDefinition(value, new Set(validatorResponse.allowedProperties))]);
   handleErrors(validatorResponse.errors);  
 }
-
-{{#astDocument}}
 
 {{!-- first pass register all references --}}
 {{#*inline "reference"}}
@@ -118,4 +119,5 @@ function handleValidation(value, validatorFn, handleErrors) {
 {{>declaration prefix=(replace ../title (toRegex "(-|\.| )+" "g") "_")}}
 {{/each}}
 
+module.exports = router;
 {{/astDocument}}

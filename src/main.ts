@@ -59,6 +59,7 @@ async function writeOutput(
         tabWidth: 2,
         useTabs: false,
         printWidth: 150,
+        parser: ext === '.ts' ? 'typescript' : 'babel',
       });
     } catch (e) {
       logger.info(e);
@@ -111,7 +112,9 @@ export async function main(
 
     await fs.ensureDir(cliOptions.output);
 
-    const ext = cliOptions.ext ?? '.ts';
+    const tempExt = (cliOptions.ext as string) ?? 'ts';
+
+    const ext: string = tempExt.startsWith('.') ? tempExt : `.${tempExt}`;
     const debug = cliOptions.debug;
     const path = cliOptions.output;
 

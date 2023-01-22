@@ -19,7 +19,8 @@ export type {{>expression id suffix=./suffix prefix=./prefix}} = {{>expression d
 {{/inline~}}
 
 {{~#compare node "===" "OperationDeclaration"}}
-router.{{lowercase httpMethod}}('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}', function(req, res) {
+router.{{lowercase httpMethod}}('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}', async function(req, res, next) {
+    try {
     {{#if requests.bodies}}    
     {{#requests.bodies}}{{>validator . input="req.body" validation=../extensions.x-validation}}{{/requests.bodies}};
     {{/if}}
@@ -33,7 +34,10 @@ router.{{lowercase httpMethod}}('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}'
     {{>validator requests.headerParameters input="req.headers" validation=../extensions.x-validation}};
     {{/if}}
 
-    res.send('test')
+    return await {{>expression id prefix="controller."}}(req, res);
+    } catch(error) {
+        next(error);
+    }
 })
 
 {{#if requests.cookieParameters}}{{log "Cookie parameters not supported yet" level="warn"}}{{/if}}
