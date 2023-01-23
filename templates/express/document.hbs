@@ -44,6 +44,22 @@ function handleValidation(value, validatorFn, handleErrors) {
   handleErrors(validatorResponse.errors);  
 }
 
+function handleAuth(tokenSession, isAnonymousAuth, requiredScopes) {
+  if(!isAnonymousAuth) {
+    if (!tokenSession) {
+      throw { statusCode: 401, message: 'Unauthorized' };
+    }
+
+    const scopes = (tokenSession.claims['scope'] ?? '').split(' ');
+    if(requiredScopes.length > 0) {
+      const success = (Array.isArray(requiredScopes) ? requiredScopes : [requiredScopes]).every(r => scopes.includes(r));
+      if (!success) {
+        throw { statusCode: 401, message: 'Unauthorized' };
+      }
+    }
+  }
+}
+
 {{!-- first pass register all references --}}
 {{#*inline "reference"}}
 {{#compare node "===" "ModelDeclaration"}}
