@@ -45,7 +45,7 @@
 {{~#compare node "===" "ReferenceExpression"}}
     {
         const validatorResponse = {{& resolveValidator .}}({{modelName}});
-        errors = new Map<string, string | string[]>([...errors, ...validatorResponse.errors ]);
+        errors = new Map([...errors, ...validatorResponse.errors ]);
         allowedProperties.push(...validatorResponse.allowedProperties);
     }
 {{/compare~}}

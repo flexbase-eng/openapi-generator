@@ -50,7 +50,7 @@ async function writeOutput(
 
   const rendered = handlebarTemplate(context);
 
-  const runPrettier = (str: string): string => {
+  const runPrettier = (output: string, str: string): string => {
     try {
       return prettier.format(str, {
         semi: true,
@@ -62,14 +62,14 @@ async function writeOutput(
         parser: ext === '.ts' ? 'typescript' : 'babel',
       });
     } catch (e) {
-      logger.info(e);
+      logger.info(`Prettier error on ${output}`, e);
       return str;
     }
   };
 
   const output = Path.join(path, `${fileName}${ext}`);
 
-  await fs.writeFile(output, usePrettier ? runPrettier(rendered) : rendered, 'utf8');
+  await fs.writeFile(output, usePrettier ? runPrettier(output, rendered) : rendered, 'utf8');
 }
 
 export async function main(

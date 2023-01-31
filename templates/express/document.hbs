@@ -11,6 +11,7 @@
 
 const express = require('express')
 const router = express.Router()
+const { DateTime, Duration } = require('luxon')
 const { controller } = require('../{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}/index')
 
 function addOrSet(map, key, value) {
@@ -59,6 +60,8 @@ function handleAuth(tokenSession, isAnonymousAuth, requiredScopes) {
     }
   }
 }
+
+exports.{{replace title (toRegex "(-|\.| )+" "g") "_"}}Validation = (value, validatorFn) => handleValidation(value, validatorFn, handleRequestValidatorErrors)
 
 {{!-- first pass register all references --}}
 {{#*inline "reference"}}
@@ -135,5 +138,5 @@ function handleAuth(tokenSession, isAnonymousAuth, requiredScopes) {
 {{>declaration prefix=(replace ../title (toRegex "(-|\.| )+" "g") "_")}}
 {{/each}}
 
-module.exports = router;
+exports.router = router
 {{/astDocument}}
