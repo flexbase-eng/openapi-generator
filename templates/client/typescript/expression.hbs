@@ -29,11 +29,9 @@
 {{/compare~}}
 
 {{~#compare node "===" "ResponseExpression"}}
-{    
-    {{#if bodies}}
-    {{#forEach bodies}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}
-    {{/if}}
-}
+{{#if bodies}} { {{#forEach bodies}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}} }
+{{else}}void
+{{/if}}
 {{/compare~}}
 
 {{~#compare node "===" "OperationResponseExpression"}}
@@ -54,8 +52,8 @@
 
 {{~#compare node "===" "MediaResponseExpression"}}
     {{~#inArray (toArray "application/json" ) mediaType}}
-    {{#body}}$body: {{> expression}}{{/body}}
-    {{#headers}}$headers: {{> expression}}{{/headers}}
+    {{#body}}body: {{> expression}}{{/body}}
+    {{#headers}}headers: {{> expression}}{{/headers}}
     {{else}}
     {{log "Unsupported response media type" mediaType level="warn"}}
     {{/inArray~}} 

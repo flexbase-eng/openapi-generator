@@ -83,6 +83,7 @@
 {{#if operations}}
 type requestResponse = {
   status: number;
+  error?: Error;
   data: any;
 };
 type requestMethod = 'get' | 'post' | 'patch' | 'put' | 'delete' | 'head' | 'options';

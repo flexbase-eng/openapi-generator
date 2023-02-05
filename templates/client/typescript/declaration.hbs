@@ -24,12 +24,12 @@ async {{>expression id}}(
     {{/if}}
 ): Promise<{
     status: number,
-    data: {{^isEmpty responses}}
+    error?: Error,
+    {{^isEmpty responses}}
+    data: 
     {{#forEach responses}}
     {{>expression .}} {{#unless isLast}}|{{/unless}}
     {{/forEach}}
-    {{else}}
-    never
     {{/isEmpty}}
     }> {
         return await this._requestHandler('{{& lowercase httpMethod}}', `{{replace path (toRegex "{(\w+)}" "g") "${path.$1}"}}`, {

@@ -169,7 +169,7 @@ export class AstBuilder implements IAstBuilder {
       return <RequestExpression>{
         node: 'RequestExpression',
         astId: uuidv4(),
-        bodies: oasNode.contents.map(content => this.makeExpression(content)),
+        bodies: oasNode.contents.length > 0 ? oasNode.contents.map(content => this.makeExpression(content)) : undefined,
       };
     } else if (IsRequestNode(oasNode)) {
       return <RequestExpression>{
@@ -185,9 +185,7 @@ export class AstBuilder implements IAstBuilder {
       return <ResponseExpression>{
         node: 'ResponseExpression',
         astId: uuidv4(),
-        bodies: oasNode.content
-          ? oasNode.content.map(content => this.makeExpression(content))
-          : [<LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: 'null' }],
+        bodies: (oasNode.content ?? []).length > 0 ? oasNode.content!.map(content => this.makeExpression(content)) : undefined, // [<LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: 'null' }],
       };
     } else if (IsOperationResponseNode(oasNode)) {
       return <OperationResponseExpression>{
