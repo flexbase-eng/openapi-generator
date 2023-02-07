@@ -2,9 +2,15 @@
 
 {{~#compare node "===" "LiteralExpression"}}
     {{#extendProperty . "propertyType"}}{{replace value "integer" "number"}}{{/extendProperty}}
+    {{#compare propertyType "===" "number"}}
+    if(Number.isNaN({{propertyName}})) {
+        addOrSet(errors, '{{propertyName}}', 'is not a {{propertyType}}');
+    }
+    {{else}}
     if(typeof {{propertyName}} !== '{{propertyType}}') {
         addOrSet(errors, '{{propertyName}}', 'is not a {{propertyType}}');
     }
+    {{/compare}}
     {{#compare value "===" "integer"}}
     if(!Number.isInteger({{propertyName}})) {
         addOrSet(errors, '{{propertyName}}', 'is not an integer')

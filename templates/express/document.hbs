@@ -14,6 +14,16 @@ const router = express.Router()
 const { DateTime, Duration } = require('luxon')
 const { controller } = require('../{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}/index')
 
+function stringToBoolean(value) {
+  if (!value) {
+    return undefined;
+  }
+
+  if (['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase())) return true;
+  else if (['false', '0', 'no', 'off'].includes(value.trim().toLowerCase())) return false;
+  else return new Error();
+}
+
 function addOrSet(map, key, value) {
   const existing = map.get(key);
 

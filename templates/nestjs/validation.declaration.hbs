@@ -16,14 +16,17 @@ if({{modelName}}['{{propertyName}}'] === undefined) {
 }
 {{/if~}}
 
-const {{propertyName}} = {{modelName}}['{{propertyName}}'];
+const {{propertyName}} =
+    {{#compare (replace definition.value "integer" "number") "===" "number"}}Number{{/compare}}
+    {{#compare definition.value "===" "boolean"}}stringToBoolean{{/compare}}
+    ({{modelName}}['{{propertyName}}']);
 allowedProperties.push('{{propertyName}}');
 {{#if required}}
 if({{propertyName}} === undefined) {
     addOrSet(errors, '{{propertyName}}', 'required field is missing');
 } else 
 {{/if}}
-if({{propertyName}}) {
+if({{propertyName}} !== undefined) {
     {{>validation.expression definition modelName=modelName propertyName=propertyName ~}}
 
     {{#if format}}

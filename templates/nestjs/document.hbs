@@ -19,6 +19,16 @@ interface ValidatorResponse {
 type ValidatorFn = (inputToValidate: any) => ValidatorResponse;
 type HandleErrorsFn = (errors: Map<string, string | string[]>) => void;
 
+function stringToBoolean(value?: string): boolean | undefined | Error {
+  if (!value) {
+    return undefined;
+  }
+
+  if (['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase())) return true;
+  else if (['false', '0', 'no', 'off'].includes(value.trim().toLowerCase())) return false;
+  else return new Error();
+}
+
 function verifyDefinition(inputToValidate: any, properties: Set<string>): Map<string, string | string[]> {
   const errors = new Map<string, string | string[]>();
   Object.keys(inputToValidate).filter(prop => !properties.has(prop)).forEach(prop => errors.set(prop, 'unknown property'));
