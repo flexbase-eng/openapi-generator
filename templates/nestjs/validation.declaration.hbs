@@ -78,12 +78,12 @@ if({{propertyName}}) {
         }
     {{/if}}
     {{#if maximum}}
-        if({{propertyName}} <{{#isTruthy exclusiveMaximum}}={{/isTruthy}} {{maximum}})) {
+        if({{propertyName}} <{{#isTruthy exclusiveMaximum}}={{/isTruthy}} {{maximum}}) {
             addOrSet(errors, '{{propertyName}}', 'must be less than {{#isTruthy exclusiveMaximum}}or equal to {{/isTruthy}}{{maximum}}');
         }
     {{/if}}
     {{#if minimum}}
-        if({{propertyName}} >{{#isTruthy exclusiveMinimum}}={{/isTruthy}} {{minimum}})) {
+        if({{propertyName}} >{{#isTruthy exclusiveMinimum}}={{/isTruthy}} {{minimum}}) {
             addOrSet(errors, '{{propertyName}}', 'must be greater than {{#isTruthy exclusiveMinimum}}or equal to {{/isTruthy}}{{minimum}}');
         }
     {{/if}}    
