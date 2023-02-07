@@ -81,6 +81,7 @@ export class AstBuilder implements IAstBuilder {
           definition: this.makeExpression(field.type),
           description: field.modifiers.description ?? field.type.modifiers.description,
           format: field.modifiers.format ?? field.type.modifiers.format,
+          defaultValue: field.modifiers.default ?? field.type.modifiers.default,
           multipleOf: field.modifiers.multipleOf ?? field.type.modifiers.multipleOf,
           maximum: field.modifiers.maximum ?? field.type.modifiers.maximum,
           exclusiveMaximum: field.modifiers.exclusiveMaximum ?? field.type.modifiers.exclusiveMaximum,

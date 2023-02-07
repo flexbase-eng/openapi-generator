@@ -6,7 +6,7 @@
         addOrSet(errors, '{{propertyName}}', 'is not a {{propertyType}}');
     }
     {{#compare value "===" "integer"}}
-    if(!Number.isInteger('{{propertyName}}')) {
+    if(!Number.isInteger({{propertyName}})) {
         addOrSet(errors, '{{propertyName}}', 'is not an integer')
     }
     {{/compare}}

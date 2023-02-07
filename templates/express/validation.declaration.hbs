@@ -10,10 +10,17 @@ function {{>validation.expression id suffix=./suffix prefix=./prefix}}(inputToVa
 
 {{#compare node "===" "PropertyDeclaration"}}
 {{#extendProperty . "propertyName"}}{{>validation.expression id}}{{/extendProperty}}
+
+{{~#if defaultValue includeZero=true}}
+if({{modelName}}['{{propertyName}}'] === undefined) {
+    {{modelName}}['{{propertyName}}'] = {{#compare definition.value "===" "string"}}'{{/compare}}{{& defaultValue}}{{#compare definition.value "===" "string"}}'{{/compare}};
+}
+{{/if~}}
+
 const {{propertyName}} = {{modelName}}['{{propertyName}}'];
 allowedProperties.push('{{propertyName}}');
 {{#if required}}
-if(!{{propertyName}}) {
+if({{propertyName}} === undefined) {
     addOrSet(errors, '{{propertyName}}', 'required field is missing');
 } else 
 {{/if}}
@@ -79,12 +86,12 @@ if({{propertyName}}) {
         }
     {{/if}}
     {{#if maximum}}
-        if({{propertyName}} <{{#isTruthy exclusiveMaximum}}={{/isTruthy}} {{maximum}}) {
+        if({{propertyName}} >{{#isTruthy exclusiveMaximum}}={{/isTruthy}} {{maximum}}) {
             addOrSet(errors, '{{propertyName}}', 'must be less than {{#isTruthy exclusiveMaximum}}or equal to {{/isTruthy}}{{maximum}}');
         }
     {{/if}}
     {{#if minimum}}
-        if({{propertyName}} >{{#isTruthy exclusiveMinimum}}={{/isTruthy}} {{minimum}}) {
+        if({{propertyName}} <{{#isTruthy exclusiveMinimum}}={{/isTruthy}} {{minimum}}) {
             addOrSet(errors, '{{propertyName}}', 'must be greater than {{#isTruthy exclusiveMinimum}}or equal to {{/isTruthy}}{{minimum}}');
         }
     {{/if}}    

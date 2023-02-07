@@ -38,7 +38,10 @@ function addOrSet(map: Map<string, string | string[]>, key: string, value: strin
   if (existing === undefined) {
     map.set(key, value);
   } else {
-    map.set(key, [...existing, ...value]);
+    const temp: string[] = Array.isArray(existing) ? existing : [existing];
+    if (Array.isArray(value)) temp.push(...value);
+    else temp.push(value);
+    map.set(key, temp);
   }
 
   return map;

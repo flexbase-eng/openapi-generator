@@ -9,6 +9,7 @@ export interface Declaration extends Node {
   value?: Expression;
   description?: string;
   format?: string;
+  defaultValue?: any;
   multipleOf?: number;
   maximum?: number;
   exclusiveMaximum?: boolean;
