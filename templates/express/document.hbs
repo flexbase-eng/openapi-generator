@@ -14,14 +14,23 @@ const router = express.Router()
 const { DateTime, Duration } = require('luxon')
 const { controller } = require('../{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}/index')
 
-function stringToBoolean(value) {
+function stringToBoolean(value, defaultValue) {
   if (!value) {
-    return undefined;
+    return defaultValue;
   }
 
   if (['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase())) return true;
   else if (['false', '0', 'no', 'off'].includes(value.trim().toLowerCase())) return false;
   else return new Error();
+}
+
+function stringToNumber(value, defaultValue) {
+  if (!value) {
+    return defaultValue;
+  }
+
+  const num = Number(value);
+  return Number.isNaN(num) ? new Error() : num;
 }
 
 function addOrSet(map, key, value) {

@@ -10,16 +10,14 @@ export const {{>validation.expression id suffix=./suffix prefix=./prefix}}:Valid
 {{#compare node "===" "PropertyDeclaration"}}
 {{#extendProperty . "propertyName"}}{{>validation.expression id}}{{/extendProperty}}
 
-{{~#if defaultValue includeZero=true}}
-if({{modelName}}['{{propertyName}}'] === undefined) {
-    {{modelName}}['{{propertyName}}'] = {{#compare definition.value "===" "string"}}'{{/compare}}{{& defaultValue}}{{#compare definition.value "===" "string"}}'{{/compare}};
-}
-{{/if~}}
-
-const {{propertyName}} =
-    {{#compare (replace definition.value "integer" "number") "===" "number"}}Number{{/compare}}
-    {{#compare definition.value "===" "boolean"}}stringToBoolean{{/compare}}
-    ({{modelName}}['{{propertyName}}']);
+const {{propertyName}} = {{modelName}}['{{propertyName}}']
+    {{#if (compare (replace definition.value "integer" "number") "===" "number")}}
+        = stringToNumber({{modelName}}['{{propertyName}}'], {{& defaultValue}})
+    {{else if (compare definition.value "===" "boolean")}}
+        = stringToBoolean({{modelName}}['{{propertyName}}'], {{& defaultValue}})
+    {{else if defaultValue includeZero=true}}
+        ??= {{#compare definition.value "===" "string"}}'{{/compare}}{{& defaultValue}}{{#compare definition.value "===" "string"}}'{{/compare}}
+    {{/if}}    
 allowedProperties.push('{{propertyName}}');
 {{#if required}}
 if({{propertyName}} === undefined) {

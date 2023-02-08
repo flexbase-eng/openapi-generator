@@ -6,11 +6,10 @@
     if(Number.isNaN({{propertyName}})) {
         addOrSet(errors, '{{propertyName}}', 'is not a {{propertyType}}');
     }
-    {{else}}
+    {{/compare}}
     if(typeof {{propertyName}} !== '{{propertyType}}') {
         addOrSet(errors, '{{propertyName}}', 'is not a {{propertyType}}');
     }
-    {{/compare}}
     {{#compare value "===" "integer"}}
     if(!Number.isInteger({{propertyName}})) {
         addOrSet(errors, '{{propertyName}}', 'is not an integer')

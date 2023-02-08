@@ -19,14 +19,23 @@ interface ValidatorResponse {
 type ValidatorFn = (inputToValidate: any) => ValidatorResponse;
 type HandleErrorsFn = (errors: Map<string, string | string[]>) => void;
 
-function stringToBoolean(value?: string): boolean | undefined | Error {
+function stringToBoolean(value: string | undefined, defaultValue?: boolean): boolean | undefined | Error {
   if (!value) {
-    return undefined;
+    return defaultValue;
   }
 
   if (['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase())) return true;
   else if (['false', '0', 'no', 'off'].includes(value.trim().toLowerCase())) return false;
   else return new Error();
+}
+
+function stringToNumber(value: string | undefined, defaultValue?: number): number | undefined | Error {
+  if (!value) {
+    return defaultValue;
+  }
+
+  const num = Number(value);
+  return Number.isNaN(num) ? new Error() : num;
 }
 
 function verifyDefinition(inputToValidate: any, properties: Set<string>): Map<string, string | string[]> {
