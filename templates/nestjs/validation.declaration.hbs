@@ -80,27 +80,27 @@ if({{propertyName}} !== undefined) {
             {{log "Format type not supported" format level="warn"}}
         {{/compare}}
     {{/if}}
-    {{#if multipleOf}}
+    {{#if multipleOf includeZero=true}}
         if(Number.isSafeInteger({{propertyName}} / {{multipleOf}})) {
             addOrSet(errors, '{{propertyName}}', 'is not a multiple of {{multipleOf}}');
         }
     {{/if}}
-    {{#if maximum}}
+    {{#if maximum includeZero=true}}
         if({{propertyName}} >{{#isTruthy exclusiveMaximum}}={{/isTruthy}} {{maximum}}) {
-            addOrSet(errors, '{{propertyName}}', 'must be less than {{#isTruthy exclusiveMaximum}}or equal to {{/isTruthy}}{{maximum}}');
+            addOrSet(errors, '{{propertyName}}', 'must be less than {{#not exclusiveMaximum}}or equal to {{/not}}{{maximum}}');
         }
     {{/if}}
-    {{#if minimum}}
+    {{#if minimum includeZero=true}}
         if({{propertyName}} <{{#isTruthy exclusiveMinimum}}={{/isTruthy}} {{minimum}}) {
-            addOrSet(errors, '{{propertyName}}', 'must be greater than {{#isTruthy exclusiveMinimum}}or equal to {{/isTruthy}}{{minimum}}');
+            addOrSet(errors, '{{propertyName}}', 'must be greater than {{#not exclusiveMinimum}}or equal to {{/not}}{{minimum}}');
         }
     {{/if}}    
-    {{#if maxLength}}
+    {{#if maxLength includeZero=true}}
         if({{propertyName}}.length > {{maxLength}}) {
             addOrSet(errors, '{{propertyName}}', 'has maximum length of {{maxLength}}');
         }
     {{/if}}    
-    {{#if minLength}}
+    {{#if minLength includeZero=true}}
         if({{propertyName}}.length < {{minLength}}) {
             addOrSet(errors, '{{propertyName}}', 'has minimum length of {{minLength}}');
         }
@@ -110,12 +110,12 @@ if({{propertyName}} !== undefined) {
             addOrSet(errors, '{{propertyName}}', 'is invalid');
         }
     {{/if}}   
-    {{#if maxItems}}
+    {{#if maxItems includeZero=true}}
         if({{propertyName}}.length > {{maxItems}}) {
             addOrSet(errors, '{{propertyName}}', 'should have no more than {{maxItems}} items');
         }
     {{/if}}    
-    {{#if minItems}}
+    {{#if minItems includeZero=true}}
         if({{propertyName}}.length < {{minItems}}) {
             addOrSet(errors, '{{propertyName}}', 'should have at least {{minItems}} items');
         }
@@ -126,12 +126,12 @@ if({{propertyName}} !== undefined) {
             addOrSet(errors, '{{propertyName}}', 'should have not have duplicate items');
         }
     {{/if}}
-    {{#if maxProperties}}
+    {{#if maxProperties includeZero=true}}
         if(Object.keys({{propertyName}}).length > {{maxProperties}}) {
             addOrSet(errors, '{{propertyName}}', 'should have no more than {{maxProperties}} properties');
         }
     {{/if}}    
-    {{#if minProperties}}
+    {{#if minProperties includeZero=true}}
         if(Object.keys({{propertyName}}).length < {{minProperties}}) {
             addOrSet(errors, '{{propertyName}}', 'should have at least {{minProperties}} properties');
         }
