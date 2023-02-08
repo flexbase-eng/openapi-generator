@@ -19,6 +19,10 @@ function stringToBoolean(value, defaultValue) {
     return defaultValue;
   }
 
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
   if (['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase())) return true;
   else if (['false', '0', 'no', 'off'].includes(value.trim().toLowerCase())) return false;
   else return new Error();
