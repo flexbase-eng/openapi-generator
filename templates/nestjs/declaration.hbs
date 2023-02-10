@@ -29,7 +29,7 @@ export type {{>expression id suffix=./suffix prefix=./prefix}} = {{>expression d
 {{/inline~}}
 
 {{~#compare node "===" "OperationDeclaration"}}
-protected abstract {{>expression id prefix="_"}}(
+protected abstract {{>expression id prefix="_"}}(request: Request,
     {{~#if requests.bodies~}}
     body:{{#requests.bodies}}{{> expression}},{{/requests.bodies}}
     {{~/if~}}    
@@ -59,7 +59,7 @@ protected abstract {{>expression id prefix="_"}}(
     @SetMetadata('anonymous_auth', true)
 {{/isEmpty}}
 {{/if}}
-async {{>expression id}}(
+async {{>expression id}}(@Req() request: Request,
     {{#if requests.bodies}}    
     @Body({{#requests.bodies}}{{>validator . prefix=../prefix validation=../extensions.x-validation}}{{/requests.bodies}}) body:{{#requests.bodies}}{{> expression}},{{/requests.bodies}}
     {{/if}}
@@ -81,7 +81,7 @@ async {{>expression id}}(
     void
     {{/isEmpty}}
     > {
-    const response = await this.{{>expression id prefix="_"}}(
+    const response = await this.{{>expression id prefix="_"}}(request,
         {{#if requests.bodies}}body,{{/if}}
         {{#if requests.pathParameters}}path,{{/if}}
         {{#if requests.queryParameters}}query,{{/if}}
