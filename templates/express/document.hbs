@@ -43,7 +43,7 @@ function addOrSet(map, key, value) {
   if (existing === undefined) {
     map.set(key, value);
   } else {
-    const temp: string[] = Array.isArray(existing) ? existing : [existing];
+    const temp = Array.isArray(existing) ? existing : [existing];
     if (Array.isArray(value)) temp.push(...value);
     else temp.push(value);
     map.set(key, temp);
