@@ -1,6 +1,5 @@
 {{#compare node "===" "ModelDeclaration"}}
-exports.{{>validation.expression id suffix=./suffix prefix=./prefix}} = {{>validation.expression id suffix=./suffix prefix=./prefix}}
-function {{>validation.expression id suffix=./suffix prefix=./prefix}}(inputToValidate) {
+exports.{{>validation.expression id suffix=./suffix prefix=./prefix}} = (inputToValidate) => {
     let errors = new Map();
     const allowedProperties = [];
     {{>validation.expression definition modelName="inputToValidate" propertyName="inputToValidate"}}
