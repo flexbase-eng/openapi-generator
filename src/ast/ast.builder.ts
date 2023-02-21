@@ -106,46 +106,48 @@ export class AstBuilder implements IAstBuilder {
   }
 
   private makeExpression(oasNode: OasNode): Expression {
+    const astId = uuidv4();
+
     if (IsPrimativeNode(oasNode)) {
       return <LiteralExpression>{
         node: 'LiteralExpression',
-        astId: uuidv4(),
+        astId,
         value: oasNode.primativeType,
       };
     } else if (IsObjectNode(oasNode)) {
       const properties = this.makePropertyExpressions(oasNode);
 
       if (properties.length === 0) {
-        this._logger.info('Empty object detected');
+        this._logger.info(`${astId}: Empty object detected`);
       }
 
       return <ObjectExpression>{
         node: 'ObjectExpression',
-        astId: uuidv4(),
+        astId,
         properties,
       };
     } else if (IsArrayNode(oasNode)) {
       return <ArrayExpression>{
         node: 'ArrayExpression',
-        astId: uuidv4(),
+        astId,
         elements: this.makeExpression(oasNode.arrayType),
       };
     } else if (IsUnionNode(oasNode)) {
       return <UnionExpression>{
         node: 'UnionExpression',
-        astId: uuidv4(),
+        astId,
         elements: oasNode.unionTypes.map(type => this.makeExpression(type)),
       };
     } else if (IsCompositeNode(oasNode)) {
       return <CompositeExpression>{
         node: 'CompositeExpression',
-        astId: uuidv4(),
+        astId,
         elements: oasNode.compositeTypes.map(type => this.makeExpression(type)),
       };
     } else if (IsOmitNode(oasNode)) {
       return <OmitExpression>{
         node: 'OmitExpression',
-        astId: uuidv4(),
+        astId,
         elements: this.makeExpression(oasNode.originalType),
         omit: oasNode.omitFields.map(id => <IdentifierExpression>{ node: 'IdentifierExpression', astId: uuidv4(), name: id }),
       };
@@ -154,14 +156,14 @@ export class AstBuilder implements IAstBuilder {
     } else if (IsContentNode(oasNode)) {
       return <MediaExpression>{
         node: 'MediaExpression',
-        astId: uuidv4(),
+        astId,
         mediaType: oasNode.mediaType,
         body: this.makeExpression(oasNode.contentType),
       };
     } else if (IsResponseContentNode(oasNode)) {
       return <MediaResponseExpression>{
         node: 'MediaResponseExpression',
-        astId: uuidv4(),
+        astId,
         mediaType: oasNode.mediaType,
         body: this.makeExpression(oasNode.contentType),
         headers: oasNode.headers ? this.makeExpression(oasNode.headers) : undefined,
@@ -169,13 +171,13 @@ export class AstBuilder implements IAstBuilder {
     } else if (IsBodyNode(oasNode)) {
       return <RequestExpression>{
         node: 'RequestExpression',
-        astId: uuidv4(),
+        astId,
         bodies: oasNode.contents.length > 0 ? oasNode.contents.map(content => this.makeExpression(content)) : undefined,
       };
     } else if (IsRequestNode(oasNode)) {
       return <RequestExpression>{
         node: 'RequestExpression',
-        astId: uuidv4(),
+        astId,
         bodies: oasNode.body ? [this.makeExpression(oasNode.body)] : undefined,
         pathParameters: oasNode.pathParameters ? this.makeExpression(oasNode.pathParameters) : undefined,
         cookieParameters: oasNode.cookieParameters ? this.makeExpression(oasNode.cookieParameters) : undefined,
@@ -185,13 +187,13 @@ export class AstBuilder implements IAstBuilder {
     } else if (IsResponseNode(oasNode)) {
       return <ResponseExpression>{
         node: 'ResponseExpression',
-        astId: uuidv4(),
+        astId,
         bodies: (oasNode.content ?? []).length > 0 ? oasNode.content!.map(content => this.makeExpression(content)) : undefined, // [<LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: 'null' }],
       };
     } else if (IsOperationResponseNode(oasNode)) {
       return <OperationResponseExpression>{
         node: 'OperationResponseExpression',
-        astId: uuidv4(),
+        astId,
         statusCode: oasNode.statusCode,
         response: oasNode.responses
           ? this.makeExpression(oasNode.responses)
@@ -200,14 +202,14 @@ export class AstBuilder implements IAstBuilder {
     } else if (IsOperationSecurityNode(oasNode)) {
       return <OperationSecurityExpression>{
         node: 'OperationSecurityExpression',
-        astId: uuidv4(),
+        astId,
         scheme: this.makeExpression(oasNode.securityScheme),
         names: oasNode.names,
       };
     } else if (IsSecurityApiKeyNode(oasNode)) {
       return <SecurityExpression>{
         node: 'SecurityExpression',
-        astId: uuidv4(),
+        astId,
         scheme: <LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: oasNode.type },
         name: oasNode.name,
         location: oasNode.in,
@@ -215,14 +217,14 @@ export class AstBuilder implements IAstBuilder {
     } else if (IsSecurityHttpNode(oasNode)) {
       return <SecurityExpression>{
         node: 'SecurityExpression',
-        astId: uuidv4(),
+        astId,
         scheme: <LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: oasNode.type },
         bearerFormat: oasNode.bearerFormat,
       };
     } else if (IsSecurityOAuth2Node(oasNode)) {
       return <SecurityExpression>{
         node: 'SecurityExpression',
-        astId: uuidv4(),
+        astId,
         scheme: <LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: oasNode.type },
         implicitFlow: this.makeOAuthFlow(oasNode.implicitFlow),
         passwordFlow: this.makeOAuthFlow(oasNode.passwordFlow),
@@ -232,13 +234,13 @@ export class AstBuilder implements IAstBuilder {
     } else if (IsSecurityOpenIdConnectNode(oasNode)) {
       return <SecurityExpression>{
         node: 'SecurityExpression',
-        astId: uuidv4(),
+        astId,
         scheme: <LiteralExpression>{ node: 'LiteralExpression', astId: uuidv4(), value: oasNode.type },
         openIdConnectUrl: oasNode.openIdConnectUrl,
       };
     } else {
       this._logger.error('makeExpression: unknown node encountered', oasNode);
-      return <TodoExpression>{ node: 'TodoExpression', astId: uuidv4(), what: IsNodeType(oasNode) ? oasNode.kindType : oasNode.kind };
+      return <TodoExpression>{ node: 'TodoExpression', astId, what: IsNodeType(oasNode) ? oasNode.kindType : oasNode.kind };
     }
   }
 

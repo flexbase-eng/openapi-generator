@@ -61,7 +61,9 @@ function handleRequestValidatorErrors(errors) {
 
 function verifyDefinition(inputToValidate, properties) {
   const errors = new Map();
-  Object.keys(inputToValidate).filter(prop => !properties.has(prop)).forEach(prop => errors.set(prop, 'unknown property'));
+  if(properties.length > 0) {
+    Object.keys(inputToValidate).filter(prop => !properties.has(prop)).forEach(prop => errors.set(prop, 'unknown property'));
+  }
   return errors;
 }
 
@@ -87,7 +89,8 @@ function handleAuth(tokenSession, isAnonymousAuth, requiredScopes) {
   }
 }
 
-exports.{{replace title (toRegex "(-|\.| )+" "g") "_"}}Validation = (value, validatorFn) => handleValidation(value, validatorFn, handleRequestValidatorErrors)
+const {{replace title (toRegex "(-|\.| )+" "g") "_"}}Validation = (value, validatorFn) => handleValidation(value, validatorFn, handleRequestValidatorErrors);
+exports.{{replace title (toRegex "(-|\.| )+" "g") "_"}}Validation = {{replace title (toRegex "(-|\.| )+" "g") "_"}}Validation;
 
 {{!-- first pass register all references --}}
 {{#*inline "reference"}}
