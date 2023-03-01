@@ -1,6 +1,6 @@
 import { OpenAPI, OpenAPIV3 } from 'openapi-types';
 
-export function IsDocument(test: OpenAPI.Document): test is OpenAPIV3.Document {
+export function IsDocument(test: any): test is OpenAPIV3.Document {
   return 'components' in test;
 }
 

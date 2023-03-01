@@ -171,6 +171,9 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
 
   generateTypeFromSchema(schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject): OasNodeType {
     if (IsReferenceObject(schema)) {
+      if (!schema.$ref.startsWith('#')) {
+        this._logger.info(schema.$ref);
+      }
       return new OasNodeTypeReference(schema.$ref, {});
     }
 

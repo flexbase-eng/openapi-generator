@@ -1,8 +1,7 @@
-import OpenAPIParser from '@readme/openapi-parser';
+import { FileInfo, ResolverOptions } from '@readme/openapi-parser';
 import { Logger } from '@flexbase/logger';
 import { program } from 'commander';
 import glob from 'glob';
-import { OpenAPI } from 'openapi-types';
 import Path from 'path';
 import fs from 'fs-extra';
 import prettier from 'prettier';
@@ -12,6 +11,7 @@ import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
 import Handlebars, { referenceRegistrations } from './handlerbars';
 import { IAstBuilder } from './ast/ast.builder.interface';
 import { AstDocument } from './ast/nodes/ast.document';
+import $RefParser from '@stoplight/json-schema-ref-parser';
 
 async function writeOutput(
   astDocument: AstDocument,
@@ -72,6 +72,100 @@ async function writeOutput(
   await fs.writeFile(output, usePrettier ? runPrettier(output, rendered) : rendered, 'utf8');
 }
 
+class FileResolver implements ResolverOptions {
+  constructor(private readonly _logger: Logger) {}
+
+  get order() {
+    return 0;
+  }
+
+  canRead(file: any) {
+    const url = new URL(file.url);
+    const protocol = url.protocol;
+    return protocol === undefined || protocol === 'file';
+  }
+
+  async read(file: FileInfo) {
+    const path = new URL(file.url);
+
+    // console.log('Opening file: %s', path);
+
+    return await fs.readFile(path, 'utf8');
+
+    // try {
+    //   fs.readFile(path, (err, data) => {
+    //     if (err) {
+    //       reject(new ResolverError(ono(err, `Error opening file "${path}"`), path));
+    //     } else {
+    //       resolve(data);
+    //     }
+    //   });
+    // } catch (err) {
+    //   reject(new ResolverError(ono(err, `Error opening file "${path}"`), path));
+    // }
+  }
+}
+
+// async function loadOAS(path: string, rootPath: string): Promise<OpenAPI.Document> {
+//   try {
+//     path = new URL(path).toString();
+//   } catch {
+//     path = 'file://' + Path.isAbsolute(path) ? path : Path.join(rootPath, path);
+//   }
+//   return await OpenAPIParser.parse(path);
+// }
+
+// function findReferences(apiDoc: any): string[] {
+//   const references: string[] = [];
+
+//   Object.entries(apiDoc).forEach(([key, value]) => {
+//     if (key === '$ref' && typeof value === 'string') references.push(apiDoc[key]);
+//     else if (typeof value === 'object') {
+//       references.push(...findReferences(value));
+//     } else if (Array.isArray(value)) {
+//       for (const v in value) {
+//         references.push(...findReferences(v));
+//       }
+//     }
+//   });
+
+//   return references;
+// }
+
+// async function loadReferences(apiDoc: any, rootPath: string): Promise<{ apiDoc: OpenAPI.Document; refDocs: Map<string, OpenAPI.Document> }> {
+//   if (!IsDocument(apiDoc)) {
+//     throw new Error('Not an open api v3 spec, stopping');
+//   }
+
+//   const references = [...new Set(findReferences(apiDoc))];
+
+//   const refDocs = new Map<string, OpenAPI.Document>();
+
+//   for (const ref of references) {
+//     if (ref.startsWith('#')) {
+//       continue;
+//     }
+//     const doc = await loadOAS(ref, rootPath);
+
+//     refDocs.set(ref, doc);
+//   }
+
+//   return { apiDoc, refDocs };
+// }
+
+// function resolveFile(ref: URI) {
+//   return new Promise((resolve, reject) => {
+//     const path = ref.href();
+//     fs.readFile(path, 'utf8', (err, data) => {
+//       if (err) {
+//         reject(err);
+//       } else {
+//         resolve(data);
+//       }
+//     });
+//   });
+// }
+
 export async function main(
   oasBuilder: IOpenApiSpecBuilder,
   oasConverter: IOpenApiSpecConverter,
@@ -95,12 +189,61 @@ export async function main(
   const cliOptions = program.opts();
 
   try {
-    const openApiDoc: OpenAPI.Document = await OpenAPIParser.parse(cliOptions.input);
-    const apiDoc = openApiDoc; //await OpenAPIParser.dereference(openApiDoc);
+    await fs.ensureDir(cliOptions.output);
+
+    const tempExt = (cliOptions.ext as string) ?? 'ts';
+
+    const ext: string = tempExt.startsWith('.') ? tempExt : `.${tempExt}`;
+    const debug = cliOptions.debug;
+    const path = cliOptions.output;
+
+    // const rootPath = Path.dirname(cliOptions.input);
+
+    // const resolver = new Resolver({
+    //   resolvers: {
+    //     file: {
+    //       resolve: resolveFile,
+    //       // resolve: async (ref: URI, ctx: any) => {
+    //       //   let path = ref.valueOf();
+    //       //   path = Path.isAbsolute(path) ? path : Path.join(rootPath, path);
+    //       //   return await fs.readFile(path);
+    //       // },
+    //     },
+    //   },
+    // });
+
+    // const fileData = await fs.readFile(cliOptions.input);
+
+    //const apiDoc = await resolver.resolve(fileData, { baseUri: rootPath });
+
+    const apiDoc2 = await $RefParser.bundle(cliOptions.input, {
+      bundle: {
+        generateKey: (value: unknown, file: string, hash: string | null): string | null => {
+          const fileName = Path.basename(file);
+          const ext = Path.extname(file);
+
+          const path = Path.join(hash ?? '#', '/components/schemas', fileName.slice(0, fileName.length - ext.length));
+          return path;
+        },
+      },
+      resolve: {
+        file: new FileResolver(logger),
+      },
+    });
+
+    //const apiDoc = await OpenAPIParser.bundle(cliOptions.input, { resolve: { file: new FileResolver(logger) } });
+
+    //const { apiDoc, refDocs } = await loadReferences(await loadOAS(cliOptions.input, rootPath), rootPath);
+
+    // const apiDoc1 = await OpenAPIParser.parse(cliOptions.input);
+    //const apiDoc = await resolver.resolve(apiDoc1, { baseUri: rootPath + '/models' });
+
+    const apiDoc = apiDoc2;
+
+    //await fs.writeFile(Path.join(path, `${Path.basename(cliOptions.input)}.bundle.json`), JSON.stringify(apiDoc));
 
     if (!IsDocument(apiDoc)) {
-      logger.error('Not an open api v3 spec, stopping');
-      process.exit();
+      throw new Error('Not an open api v3 spec, stopping');
     }
 
     const oasTree = oasBuilder.generateOasTree(apiDoc);
@@ -109,14 +252,6 @@ export async function main(
     oasBuilder.makeOperationDeclarationsGlobal(oasTree);
 
     const astDocument = astBuilder.makeDocument(oasTree);
-
-    await fs.ensureDir(cliOptions.output);
-
-    const tempExt = (cliOptions.ext as string) ?? 'ts';
-
-    const ext: string = tempExt.startsWith('.') ? tempExt : `.${tempExt}`;
-    const debug = cliOptions.debug;
-    const path = cliOptions.output;
 
     if (debug) {
       const fileName = Path.join(path, `${oasTree.title}.oasTree.json`);
@@ -159,6 +294,5 @@ export async function main(
     }
   } catch (e) {
     logger.error(`An error occurred for ${cliOptions.input}`, e);
-    process.exit();
   }
 }
