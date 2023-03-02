@@ -2,7 +2,7 @@
 
 {{~#compare node "===" "ObjectExpression"}}
     {
-    {{#forEach properties}} {{>declaration .}}{{/forEach}}
+    {{#each properties}} {{>declaration .}}{{/each}}
     }
 {{/compare~}}
 
@@ -13,19 +13,19 @@
 {{~#compare node "===" "OmitExpression"}}
 {{#if omit}}
     & Omit<{{#elements}}{{> expression}}{{/elements}},
-    {{#forEach omit}}
+    {{#if omit}}{{#forEach omit}}
     {{>expression . prefix="'" suffix="'"}} {{#unless isLast}}|{{/unless}}
-    {{/forEach}}
+    {{/forEach}}{{/if}}
     >
 {{/if}}
 {{/compare~}}
 
 {{~#compare node "===" "CompositeExpression"}}
-    {{#forEach elements}}{{>expression .}}{{#unless isLast}}&{{/unless}}{{/forEach}}
+    {{#if elements}}{{#forEach elements}}{{>expression .}}{{#unless isLast}}&{{/unless}}{{/forEach}}{{/if}}
 {{/compare~}}
 
 {{~#compare node "===" "UnionExpression"}}
-    {{#forEach elements}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}
+    {{#if elements}}{{#forEach elements}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}
 {{/compare~}}
 
 {{~#compare node "===" "ResponseExpression"}}

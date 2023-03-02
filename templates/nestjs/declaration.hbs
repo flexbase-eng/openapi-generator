@@ -43,13 +43,13 @@ protected abstract {{>expression id prefix="_"}}(request: Request,
     headers:{{#requests.headerParameters}}{{> expression}},{{/requests.headerParameters}}
     {{~/if~}}
 ): Promise<
-    {{^isEmpty responses}}
+    {{#if responses}}
     {{#forEach responses}}
     {{>expression .}} {{#unless isLast}}|{{/unless}}
     {{/forEach}}
     {{else}}
     void
-    {{/isEmpty}}    
+    {{/if}}    
     >;
 @{{& httpMethod}}('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}')
 {{#if (isArray security)}}
@@ -73,13 +73,13 @@ async {{>expression id}}(@Req() request: Request,
     @Headers({{>validator requests.headerParameters prefix=prefix validation=../extensions.x-validation}}) headers:{{#requests.headerParameters}}{{> expression}},{{/requests.headerParameters}}
     {{/if}}
 ): Promise<
-    {{^isEmpty responses}}
+    {{#if responses}}
     {{#forEach responses}}
     {{>expression .}} {{#unless isLast}}|{{/unless}}
     {{/forEach}}
     {{else}}
     void
-    {{/isEmpty}}
+    {{/if}}
     > {
     const response = await this.{{>expression id prefix="_"}}(request,
         {{#if requests.bodies}}body,{{/if}}

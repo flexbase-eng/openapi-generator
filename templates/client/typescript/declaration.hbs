@@ -25,12 +25,12 @@ async {{>expression id}}(
 ): Promise<{
     status: number,
     error?: Error,
-    {{^isEmpty responses}}
+    {{#if responses}}
     data: 
     {{#forEach responses}}
     {{>expression .}} {{#unless isLast}}|{{/unless}}
     {{/forEach}}
-    {{/isEmpty}}
+    {{/if}}
     }> {
         return await this._requestHandler('{{& lowercase httpMethod}}', `{{replace path (toRegex "{(\w+)}" "g") "${path.$1}"}}`, {
         {{#if requests.bodies}}body,{{/if}}
