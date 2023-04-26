@@ -1,4 +1,4 @@
-import { OpenApiSpecTree } from 'src/oas-tree/oas.tree';
+import { OpenApiSpecTree } from '../oas-tree/oas.tree';
 import { AstDocument } from './nodes/ast.document';
 
 export interface IAstBuilder {
