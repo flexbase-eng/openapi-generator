@@ -19,6 +19,9 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
+      output: {
+        banner: '#!/usr/bin/env node',
+      },
       plugins: [typescript()],
       external: [...Object.keys(pkg.dependencies || {})],
     },
