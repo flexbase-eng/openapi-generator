@@ -52,7 +52,7 @@ import {
   SecurityExpression,
   SecurityOAuthFlowExpression,
 } from './nodes/ast.security';
-import { OasNodeTypeSecurityOAuth2Flow } from 'src/oas-tree/nodes/oas.node.type.security.oauth2';
+import { OasNodeTypeSecurityOAuth2Flow } from '../oas-tree/nodes/oas.node.type.security.oauth2';
 
 const ASTDOCUMENT_GLOBAL_TAGS = 'ASTDOCUMENT_GLOBAL_TAGS';
 

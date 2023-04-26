@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "esnext",
+    "lib": ["ESNext"],
     "skipLibCheck": true,
     "esModuleInterop": true,
     "strict": true,
@@ -9,33 +10,10 @@
     "noFallthroughCasesInSwitch": true,
     "module": "esnext",
     "moduleResolution": "node",
-    "declaration": true,
-    "declarationDir": "dist",
     "stripInternal": true,
-    "sourceMap": true,
-    "inlineSources": true,
-    "baseUrl": ".",
     "resolveJsonModule": true,
     "experimentalDecorators": true,
-    "plugins": [
-			{ "transform": "typescript-transform-paths" },
-			{
-				"transform": "./typescript-transformer-append-js-extension/index.ts",
-				"after": true,
-			}
-		]
+    "noEmit": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "output"],
-  "typedocOptions": {
-    "entryPoints": [
-      "src/index.ts"
-    ],
-    "out": "docs",
-    "theme": "github-wiki"
-  },
-  "ts-node": {
-    "transpileOnly": true,
-    "require": [ "typescript-transform-paths/register" ],
-  },
+  "include": ["src/**/*"]
 }

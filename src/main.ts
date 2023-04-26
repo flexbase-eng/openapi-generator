@@ -1,7 +1,7 @@
 import { FileInfo, ResolverOptions } from '@readme/openapi-parser';
 import { Logger } from '@flexbase/logger';
 import { program } from 'commander';
-import glob from 'glob';
+import * as glob from 'glob';
 import Path from 'path';
 import fs from 'fs-extra';
 import prettier from 'prettier';
