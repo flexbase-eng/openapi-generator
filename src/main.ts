@@ -4,7 +4,7 @@ import { program } from 'commander';
 import * as glob from 'glob';
 import Path from 'path';
 import fs from 'fs-extra';
-import prettier from 'prettier';
+import prettier, { BuiltInParserName } from 'prettier';
 import { IsDocument } from './utilities/openapi.utilities';
 import { IOpenApiSpecBuilder } from './oas-tree/oas.builder.interface';
 import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
@@ -12,6 +12,21 @@ import Handlebars, { referenceRegistrations } from './handlerbars';
 import { IAstBuilder } from './ast/ast.builder.interface';
 import { AstDocument } from './ast/nodes/ast.document';
 import $RefParser from '@stoplight/json-schema-ref-parser';
+import pkg from '../package.json' assert { type: 'json' };
+import { OpenApiGeneratorConfiguation } from './runtime.config';
+import { build } from './build';
+
+const runPrettier = (str: string, ext: BuiltInParserName): string => {
+  return prettier.format(str, {
+    semi: true,
+    singleQuote: true,
+    arrowParens: 'avoid',
+    tabWidth: 2,
+    useTabs: false,
+    printWidth: 150,
+    parser: ext,
+  });
+};
 
 async function writeOutput(
   astDocument: AstDocument,
@@ -50,26 +65,9 @@ async function writeOutput(
 
   const rendered = handlebarTemplate(context);
 
-  const runPrettier = (output: string, str: string): string => {
-    try {
-      return prettier.format(str, {
-        semi: true,
-        singleQuote: true,
-        arrowParens: 'avoid',
-        tabWidth: 2,
-        useTabs: false,
-        printWidth: 150,
-        parser: ext === '.ts' ? 'typescript' : 'babel',
-      });
-    } catch (e) {
-      logger.info(`Prettier error on ${output}`, e);
-      return str;
-    }
-  };
-
   const output = Path.join(path, `${fileName}${ext}`);
 
-  await fs.writeFile(output, usePrettier ? runPrettier(output, rendered) : rendered, 'utf8');
+  await fs.writeFile(output, usePrettier ? runPrettier(rendered, ext === '.ts' ? 'typescript' : 'babel') : rendered, 'utf8');
 }
 
 class FileResolver implements ResolverOptions {
@@ -88,85 +86,139 @@ class FileResolver implements ResolverOptions {
   async read(file: FileInfo) {
     const path = new URL(file.url);
 
-    // console.log('Opening file: %s', path);
-
     return await fs.readFile(path, 'utf8');
-
-    // try {
-    //   fs.readFile(path, (err, data) => {
-    //     if (err) {
-    //       reject(new ResolverError(ono(err, `Error opening file "${path}"`), path));
-    //     } else {
-    //       resolve(data);
-    //     }
-    //   });
-    // } catch (err) {
-    //   reject(new ResolverError(ono(err, `Error opening file "${path}"`), path));
-    // }
   }
 }
 
-// async function loadOAS(path: string, rootPath: string): Promise<OpenAPI.Document> {
-//   try {
-//     path = new URL(path).toString();
-//   } catch {
-//     path = 'file://' + Path.isAbsolute(path) ? path : Path.join(rootPath, path);
-//   }
-//   return await OpenAPIParser.parse(path);
-// }
+const parseSpec = async (spec: string, oasBuilder: IOpenApiSpecBuilder, astBuilder: IAstBuilder, logger: Logger): Promise<AstDocument> => {
+  const apiDoc = await $RefParser.bundle(spec, {
+    bundle: {
+      generateKey: (value: unknown, file: string, hash: string | null): string | null => {
+        const fileName = Path.basename(file);
+        const ext = Path.extname(file);
 
-// function findReferences(apiDoc: any): string[] {
-//   const references: string[] = [];
+        const path = Path.join(hash ?? '#', '/components/schemas', fileName.slice(0, fileName.length - ext.length));
+        return path;
+      },
+    },
+    resolve: {
+      file: new FileResolver(logger),
+    },
+  });
 
-//   Object.entries(apiDoc).forEach(([key, value]) => {
-//     if (key === '$ref' && typeof value === 'string') references.push(apiDoc[key]);
-//     else if (typeof value === 'object') {
-//       references.push(...findReferences(value));
-//     } else if (Array.isArray(value)) {
-//       for (const v in value) {
-//         references.push(...findReferences(v));
-//       }
-//     }
-//   });
+  if (!IsDocument(apiDoc)) {
+    throw new Error(`${apiDoc} is not an open api v3 spec`);
+  }
 
-//   return references;
-// }
+  const oasTree = oasBuilder.generateOasTree(apiDoc);
 
-// async function loadReferences(apiDoc: any, rootPath: string): Promise<{ apiDoc: OpenAPI.Document; refDocs: Map<string, OpenAPI.Document> }> {
-//   if (!IsDocument(apiDoc)) {
-//     throw new Error('Not an open api v3 spec, stopping');
-//   }
+  // move operation declarations to lookups and replace with references
+  oasBuilder.makeOperationDeclarationsGlobal(oasTree);
 
-//   const references = [...new Set(findReferences(apiDoc))];
-
-//   const refDocs = new Map<string, OpenAPI.Document>();
-
-//   for (const ref of references) {
-//     if (ref.startsWith('#')) {
-//       continue;
-//     }
-//     const doc = await loadOAS(ref, rootPath);
-
-//     refDocs.set(ref, doc);
-//   }
-
-//   return { apiDoc, refDocs };
-// }
-
-// function resolveFile(ref: URI) {
-//   return new Promise((resolve, reject) => {
-//     const path = ref.href();
-//     fs.readFile(path, 'utf8', (err, data) => {
-//       if (err) {
-//         reject(err);
-//       } else {
-//         resolve(data);
-//       }
-//     });
-//   });
-// }
+  return astBuilder.makeDocument(oasTree);
+};
 
 export async function main(
+  oasBuilder: IOpenApiSpecBuilder,
+  oasConverter: IOpenApiSpecConverter,
+  astBuilder: IAstBuilder,
+  logger: Logger
+): Promise<void> {
+  program.name(pkg.name).description(pkg.description).version(pkg.version);
+
+  /**
+   *  TODO parse into
+   *   - models
+   *   - paths (routes)
+   *   - validations
+   */
+
+  // take input folder, path template, model template, validation template, template folder, tests
+  // --model {name}.models.{ext}
+  // if separate path, model, and validation aren't supplied then include them single output
+
+  let config: OpenApiGeneratorConfiguation = {
+    include: [],
+    target: '',
+    template: '',
+    prettier: true,
+    tags: true,
+    flatten: true,
+    references: true,
+    debug: false,
+  };
+
+  program
+    .option('-d, --debug', 'Enable debug mode')
+    .option('--include <glob>', 'Specifies the glob pattern for files to parse')
+    .option('--target <path>', 'Specifies the target file')
+    .option('--template <path>', 'Specifies the template to use for generation')
+    .option('--sharedTemplates <glob>', 'Specifies the glob pattern for shared templates')
+    .option('--config <file>', 'Specify a configuration to use', '.openapigenerator.json')
+    .option('--no-prettier', 'Disable prettier')
+    .option('--no-tags', 'Disable organization by tags')
+    .option('--no-flatten', 'Disable flatten model optimization')
+    .option('--no-references', 'Resolve all references')
+    .action(options => {
+      const fileConfig = fs.existsSync(options.config ?? '.openapigenerator.json')
+        ? fs.readJsonSync(options.config ?? '.openapigenerator.json')
+        : undefined;
+
+      if (fileConfig) config = { ...fileConfig };
+
+      if (options.include != undefined) config.include = Array.isArray(options.include) ? options.include : [options.include];
+      if (options.target != undefined) config.target = options.target;
+      if (options.template != undefined) config.template = options.template;
+      if (options.debug != undefined) config.debug = options.debug;
+      if (options.sharedTemplates != undefined)
+        config.sharedTemplates = Array.isArray(options.sharedTemplates) ? options.sharedTemplates : [options.sharedTemplates];
+      if (options.tags != undefined) config.tags = options.tags;
+      if (options.flatten != undefined) config.flatten = options.flatten;
+      if (options.prettier != undefined) config.prettier = options.prettier;
+      if (options.references != undefined) config.references = options.references;
+    });
+
+  try {
+    (Handlebars.logger as any)['actualLogger'] = logger;
+
+    program.parse(process.argv);
+
+    const astList: AstDocument[] = [];
+
+    const globInput = glob.sync(config.include);
+    for (const file of globInput) {
+      try {
+        const ast = await parseSpec(file, oasBuilder, astBuilder, logger);
+        astList.push(ast);
+      } catch (e) {
+        logger.error(e);
+      }
+    }
+
+    const globTemplates = glob.sync(config.sharedTemplates ?? '');
+    for (const file of globTemplates) {
+      const name = Path.basename(file);
+      const ext = Path.extname(name);
+      Handlebars.registerPartial(name.replace(ext, ''), fs.readFileSync(file, 'utf8'));
+    }
+
+    // const templateFile = await fs.readFile(config.template, 'utf8');
+    // const handlebarTemplate = Handlebars.compile(templateFile);
+
+    for (const ast of astList) {
+      try {
+        await build(config, ast, astBuilder, logger);
+      } catch (e) {
+        logger.error(e);
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  return;
+}
+
+export async function _main(
   oasBuilder: IOpenApiSpecBuilder,
   oasConverter: IOpenApiSpecConverter,
   astBuilder: IAstBuilder,
@@ -184,6 +236,7 @@ export async function main(
     .option('--no-flatten', 'Disable flatten model optimization')
     .option('--no-references', 'Resolve all references')
     .option('-d, --debug', 'Output the internal representations')
+
     .parse(process.argv);
 
   const cliOptions = program.opts();

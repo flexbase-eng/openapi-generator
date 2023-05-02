@@ -48,6 +48,7 @@
     "packr": "packr",
     "generate": "yarn start -o ./output/nestjs -t ./templates/nestjs/document.hbs -p ./templates/nestjs/**/*.hbs -d -i",
     "generate:express": "yarn start -o ./output/express -t ./templates/express/document.hbs -p ./templates/express/**/*.hbs -e .js -i",
+    "generate:koa": "yarn start -o ./output/koa -t ./templates/koa/document.hbs -p ./templates/koa/**/*.hbs -i",
     "generate:client:typescript": "yarn start -o ./output/client/typescript -t ./templates/client/typescript/document.hbs -p ./templates/client/typescript/**/*.hbs -i",
     "start:petstore": "yarn generate ./tests/data/petstore.yaml -n petstore"
   },
