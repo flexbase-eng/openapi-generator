@@ -21,17 +21,6 @@ export async function main(
 ): Promise<void> {
   program.name(pkg.name).description(pkg.description).version(pkg.version);
 
-  /**
-   *  TODO parse into
-   *   - models
-   *   - paths (routes)
-   *   - validations
-   */
-
-  // take input folder, path template, model template, validation template, template folder, tests
-  // --model {name}.models.{ext}
-  // if separate path, model, and validation aren't supplied then include them single output
-
   let config: OpenApiGeneratorConfiguation = {
     include: [],
     target: '',
