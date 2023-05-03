@@ -30,10 +30,11 @@ export async function main(
     flatten: true,
     references: true,
     debug: false,
+    debugPath: '',
   };
 
   program
-    .option('-d, --debug', 'Enable debug mode')
+    .option('-d, --debug [path]', 'Enable debug mode with optional output path')
     .option('--include <glob>', 'Specifies the glob pattern for files to parse')
     .option('--target <path>', 'Specifies the target file')
     .option('--template <path>', 'Specifies the template to use for generation')
@@ -48,12 +49,18 @@ export async function main(
         ? fs.readJsonSync(options.config ?? '.openapigenerator.json')
         : undefined;
 
-      if (fileConfig) config = { ...fileConfig };
+      if (fileConfig) {
+        process.chdir(Path.dirname(options.config));
+        config = { ...config, ...fileConfig };
+      }
 
       if (options.include != undefined) config.include = Array.isArray(options.include) ? options.include : [options.include];
       if (options.target != undefined) config.target = options.target;
       if (options.template != undefined) config.template = options.template;
-      if (options.debug != undefined) config.debug = options.debug;
+      if (options.debug != undefined) {
+        if (typeof options.debug === 'string') config.debugPath = options.debug;
+        config.debug = true;
+      }
       if (options.sharedTemplates != undefined)
         config.sharedTemplates = Array.isArray(options.sharedTemplates) ? options.sharedTemplates : [options.sharedTemplates];
       if (options.tags != undefined) config.tags = options.tags;

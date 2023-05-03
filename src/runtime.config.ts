@@ -23,4 +23,5 @@ export interface OpenApiGeneratorConfiguation {
   flatten: boolean;
   references: boolean;
   debug: boolean;
+  debugPath: string;
 }

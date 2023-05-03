@@ -43,7 +43,7 @@ export const parseSpec = async (
   oasBuilder.makeOperationDeclarationsGlobal(oasTree);
 
   if (config.debug) {
-    const name = Path.join(Path.dirname(specPath), `${oasTree.title}.oasTree.json`);
+    const name = Path.join(Path.dirname(config.debugPath), `${oasTree.title}.oasTree.json`);
     let json = JSON.stringify(oasConverter.convertOasToPoco(oasTree));
     try {
       json = runPrettier(json, 'json');
@@ -51,6 +51,7 @@ export const parseSpec = async (
       logger.info(`Prettier error on ${name}`, e);
     }
     await fs.writeFile(name, json);
+    console.info(`${oasTree.title} debug output: ${name}`);
   }
 
   return astBuilder.makeDocument(oasTree);

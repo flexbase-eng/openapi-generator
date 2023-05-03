@@ -27,6 +27,18 @@ export const build = async (config: OpenApiGeneratorConfiguation, astDocument: A
     const variableName = doc.title.replace(regex, '-').toLocaleLowerCase();
     variables.set('{name}', variableName);
 
+    if (config.debug) {
+      const name = Path.join(config.debugPath, `${variableName}.ast.json`);
+      let json = JSON.stringify(astDocument);
+      try {
+        json = runPrettier(json, 'json');
+      } catch (e) {
+        logger.info(`Prettier error on ${name}`, e);
+      }
+      await fs.writeFile(name, json);
+      console.info(`${apiName}:${variableName} debug output: ${name}`);
+    }
+
     if (config.template && config.target) {
       referenceRegistrations.clear();
       const templateFile = await fs.readFile(config.template, 'utf8');
@@ -104,15 +116,4 @@ const generate = async (
   }
 
   await fs.writeFile(fileName, rendered, 'utf8');
-
-  if (config.debug) {
-    const name = Path.join(Path.dirname(fileName), `${Path.basename(fileName)}.ast.json`);
-    let json = JSON.stringify(astDocument);
-    try {
-      json = runPrettier(json, 'json');
-    } catch (e) {
-      logger.info(`Prettier error on ${name}`, e);
-    }
-    await fs.writeFile(name, json);
-  }
 };
