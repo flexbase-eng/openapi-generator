@@ -44,7 +44,7 @@ export const build = async (config: OpenApiGeneratorConfiguation, astDocument: A
       const templateFile = await fs.readFile(config.template, 'utf8');
       const handlebarTemplate = Handlebars.compile(templateFile);
       const fileName = substituteParams(config.target, variables);
-      generate(config, fileName, doc, handlebarTemplate, logger);
+      await generate(config, fileName, doc, handlebarTemplate, logger);
     }
 
     // TODO handle additional templates
@@ -53,7 +53,7 @@ export const build = async (config: OpenApiGeneratorConfiguation, astDocument: A
       const templateFile = await fs.readFile(config.operations.template, 'utf8');
       const handlebarTemplate = Handlebars.compile(templateFile);
       const fileName = substituteParams(config.operations.target, variables);
-      generate(config, fileName, doc, handlebarTemplate, logger);
+      await generate(config, fileName, doc, handlebarTemplate, logger);
     }
 
     if (config.models) {
@@ -61,7 +61,7 @@ export const build = async (config: OpenApiGeneratorConfiguation, astDocument: A
       const templateFile = await fs.readFile(config.models.template, 'utf8');
       const handlebarTemplate = Handlebars.compile(templateFile);
       const fileName = substituteParams(config.models.target, variables);
-      generate(config, fileName, doc, handlebarTemplate, logger);
+      await generate(config, fileName, doc, handlebarTemplate, logger);
     }
 
     if (config.validations) {
@@ -69,7 +69,7 @@ export const build = async (config: OpenApiGeneratorConfiguation, astDocument: A
       const templateFile = await fs.readFile(config.validations.template, 'utf8');
       const handlebarTemplate = Handlebars.compile(templateFile);
       const fileName = substituteParams(config.validations.target, variables);
-      generate(config, fileName, doc, handlebarTemplate, logger);
+      await generate(config, fileName, doc, handlebarTemplate, logger);
     }
   }
 };
