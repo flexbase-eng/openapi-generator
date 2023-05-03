@@ -1,0 +1,29 @@
+{
+    "include": [
+        "./openapi/**/*.yaml"
+    ],
+    "sharedTemplates": [
+        "./templates/koa/**/*.hbs"
+    ],
+    "target": "./output/{api}/{name}.ts",
+    "template": "./templates/koa/document.hbs",
+    "operations": {
+        "target": "",
+        "template": "",
+        "additionalTemplates": []
+    },
+    "models": {
+        "target": "",
+        "template": "",
+        "additionalTemplates": []
+    },
+    "validations": {
+        "target": "",
+        "template": "",
+        "additionalTemplates": []
+    },
+    "prettier": true,
+    "tags": true,
+    "flatten": true,
+    "references": true
+}

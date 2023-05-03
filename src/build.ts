@@ -5,7 +5,7 @@ import { OpenApiGeneratorConfiguation } from './runtime.config';
 import Path from 'path';
 import fs from 'fs-extra';
 import { Logger } from '@flexbase/logger';
-import prettier, { BuiltInParserName } from 'prettier';
+import { runPrettier } from './run.prettier';
 
 export const build = async (config: OpenApiGeneratorConfiguation, astDocument: AstDocument, astBuilder: IAstBuilder, logger: Logger) => {
   const documents: AstDocument[] = config.tags ? astBuilder.organizeByTags(astDocument) : [astDocument];
@@ -115,16 +115,4 @@ const generate = async (
     }
     await fs.writeFile(name, json);
   }
-};
-
-const runPrettier = (str: string, ext: BuiltInParserName): string => {
-  return prettier.format(str, {
-    semi: true,
-    singleQuote: true,
-    arrowParens: 'avoid',
-    tabWidth: 2,
-    useTabs: false,
-    printWidth: 150,
-    parser: ext,
-  });
 };

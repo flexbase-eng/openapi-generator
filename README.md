@@ -3,12 +3,11 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=flexbase-eng_openapi-generator&metric=coverage)](https://sonarcloud.io/summary/new_code?id=flexbase-eng_openapi-generator)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=flexbase-eng_openapi-generator&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=flexbase-eng_openapi-generator)
 
-[OpenAPI](https://www.openapis.org/) code generator. Currently support is geared towards typescript and javascript
+[OpenAPI](https://www.openapis.org/) code generator.
 
 #### TODO
 
 - [] finish full support for openapi spec v3
-- [] add validation
 
 ## Getting started
 
