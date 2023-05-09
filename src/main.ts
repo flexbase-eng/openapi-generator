@@ -5,7 +5,6 @@ import Path from 'path';
 import fs from 'fs-extra';
 import { IOpenApiSpecBuilder } from './oas-tree/oas.builder.interface';
 import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
-import Handlebars from './handlerbars';
 import { IAstBuilder } from './ast/ast.builder.interface';
 import { AstDocument } from './ast/nodes/ast.document';
 import pkg from '../package.json' assert { type: 'json' };
@@ -23,8 +22,6 @@ export async function main(
 
   let config: OpenApiGeneratorConfiguation = {
     include: [],
-    target: '',
-    template: '',
     prettier: true,
     tags: true,
     flatten: true,
@@ -36,8 +33,6 @@ export async function main(
   program
     .option('-d, --debug [path]', 'Enable debug mode with optional output path')
     .option('--include <glob>', 'Specifies the glob pattern for files to parse')
-    .option('--target <path>', 'Specifies the target file')
-    .option('--template <path>', 'Specifies the template to use for generation')
     .option('--sharedTemplates <glob>', 'Specifies the glob pattern for shared templates')
     .option('--config <file>', 'Specify a configuration to use', '.openapigenerator.json')
     .option('--no-prettier', 'Disable prettier')
@@ -55,8 +50,6 @@ export async function main(
       }
 
       if (options.include != undefined) config.include = Array.isArray(options.include) ? options.include : [options.include];
-      if (options.target != undefined) config.target = options.target;
-      if (options.template != undefined) config.template = options.template;
       if (options.debug != undefined) {
         if (typeof options.debug === 'string') config.debugPath = options.debug;
         config.debug = true;
@@ -70,8 +63,6 @@ export async function main(
     });
 
   try {
-    (Handlebars.logger as any)['actualLogger'] = logger;
-
     program.parse(process.argv);
 
     const astList: AstDocument[] = [];
@@ -86,13 +77,6 @@ export async function main(
       }
     }
 
-    const globTemplates = glob.sync(config.sharedTemplates ?? '');
-    for (const file of globTemplates) {
-      const name = Path.basename(file);
-      const ext = Path.extname(name);
-      Handlebars.registerPartial(name.replace(ext, ''), fs.readFileSync(file, 'utf8'));
-    }
-
     for (const ast of astList) {
       try {
         await build(config, ast, astBuilder, logger);
@@ -101,7 +85,7 @@ export async function main(
       }
     }
   } catch (e) {
-    console.error(e);
+    logger.error(e);
   }
   return;
 }

@@ -52,7 +52,6 @@ export const parseSpec = async (
       logger.info(`Prettier error on ${name}`, e);
     }
     await fs.writeFile(name, json);
-    console.info(`${oasTree.title} debug output: ${name}`);
   }
 
   return astBuilder.makeDocument(oasTree);

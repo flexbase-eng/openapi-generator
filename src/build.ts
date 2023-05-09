@@ -1,77 +1,89 @@
 import { IAstBuilder } from './ast/ast.builder.interface';
 import { AstDocument } from './ast/nodes/ast.document';
-import Handlebars, { referenceRegistrations } from './handlerbars';
-import { OpenApiGeneratorConfiguation } from './runtime.config';
+import { createHandlebars, referenceRegistrations } from './handlerbars';
+import { OpenApiGeneratorConfiguation, OpenApiGeneratorConfiguationGenerate } from './runtime.config';
 import Path from 'path';
 import fs from 'fs-extra';
 import { Logger } from '@flexbase/logger';
 import { runPrettier } from './run.prettier';
+import * as glob from 'glob';
 
 export const build = async (config: OpenApiGeneratorConfiguation, astDocument: AstDocument, astBuilder: IAstBuilder, logger: Logger) => {
-  const documents: AstDocument[] = config.tags ? astBuilder.organizeByTags(astDocument) : [astDocument];
+  if (config.generate === undefined) {
+    logger.info('No generate config settings found');
+    return;
+  }
 
-  const apiName = astDocument.title;
+  for (const entry of Object.entries(config.generate)) {
+    const generateConfig = entry[1];
 
-  const variables = new Map<string, string>();
+    const organizeByTags: boolean = generateConfig.tags ?? config.tags;
+    const shouldFlatten: boolean = generateConfig.flatten ?? config.flatten;
+    const resolveReferences: boolean = generateConfig.references ?? config.references;
 
-  const regex = /(_|\.| )+/g;
-  const variableApi = apiName.replace(regex, '-').toLocaleLowerCase();
-  variables.set('{api}', variableApi);
+    const documents: AstDocument[] = organizeByTags ? astBuilder.organizeByTags(astDocument) : [astDocument];
 
-  for (const doc of documents) {
-    if (config.flatten) {
-      astBuilder.flattenReferences(doc, !config.references);
-    }
-    astBuilder.removeUnreferencedModels(doc);
+    const apiName = astDocument.title;
 
-    const variableName = doc.title.replace(regex, '-').toLocaleLowerCase();
-    variables.set('{name}', variableName);
+    const variables = new Map<string, string>();
 
-    if (config.debug) {
-      await fs.ensureDir(config.debugPath);
-      const name = Path.join(config.debugPath, `${variableName}.ast.json`);
-      let json = JSON.stringify(astDocument);
-      try {
-        json = runPrettier(json, 'json');
-      } catch (e) {
-        logger.info(`Prettier error on ${name}`, e);
+    const regex = /(_|\.| )+/g;
+    const variableApi = apiName.replace(regex, '-').toLocaleLowerCase();
+    variables.set('{api}', variableApi);
+
+    for (const doc of documents) {
+      if (shouldFlatten) {
+        astBuilder.flattenReferences(doc, !resolveReferences);
       }
-      await fs.writeFile(name, json);
-      console.info(`${apiName}:${variableName} debug output: ${name}`);
-    }
+      astBuilder.removeUnreferencedModels(doc);
 
-    if (config.template && config.target) {
-      referenceRegistrations.clear();
-      const templateFile = await fs.readFile(config.template, 'utf8');
-      const handlebarTemplate = Handlebars.compile(templateFile);
-      const fileName = substituteParams(config.target, variables);
-      await generate(config, fileName, doc, handlebarTemplate, logger);
-    }
+      const variableName = doc.title.replace(regex, '-').toLocaleLowerCase();
+      variables.set('{name}', variableName);
 
-    // TODO handle additional templates
-    if (config.operations) {
-      referenceRegistrations.clear();
-      const templateFile = await fs.readFile(config.operations.template, 'utf8');
-      const handlebarTemplate = Handlebars.compile(templateFile);
-      const fileName = substituteParams(config.operations.target, variables);
-      await generate(config, fileName, doc, handlebarTemplate, logger);
+      await generate(config, generateConfig, variables, doc, logger);
     }
+  }
+};
 
-    if (config.models) {
-      referenceRegistrations.clear();
-      const templateFile = await fs.readFile(config.models.template, 'utf8');
-      const handlebarTemplate = Handlebars.compile(templateFile);
-      const fileName = substituteParams(config.models.target, variables);
-      await generate(config, fileName, doc, handlebarTemplate, logger);
-    }
+const generate = async (
+  config: OpenApiGeneratorConfiguation,
+  generateConfig: OpenApiGeneratorConfiguationGenerate,
+  variables: Map<string, string>,
+  astDocument: AstDocument,
+  logger: Logger
+) => {
+  if (config.debug) {
+    const variableName = variables.get('{name}');
 
-    if (config.validations) {
-      referenceRegistrations.clear();
-      const templateFile = await fs.readFile(config.validations.template, 'utf8');
-      const handlebarTemplate = Handlebars.compile(templateFile);
-      const fileName = substituteParams(config.validations.target, variables);
-      await generate(config, fileName, doc, handlebarTemplate, logger);
+    await fs.ensureDir(config.debugPath);
+    const name = Path.join(config.debugPath, `${variableName}.ast.json`);
+    let json = JSON.stringify(astDocument);
+    try {
+      json = runPrettier(json, 'json');
+    } catch (e) {
+      logger.info(`Prettier error on ${name}`, e);
     }
+    await fs.writeFile(name, json);
+  }
+
+  const templates: string[] = [...(config.sharedTemplates ?? []), ...(generateConfig.additionalTemplates ?? [])];
+
+  const handlebars = createHandlebars();
+  registerPartials(handlebars, templates);
+
+  referenceRegistrations.clear();
+  const templateFile = await fs.readFile(generateConfig.template, 'utf8');
+  const handlebarTemplate = handlebars.compile(templateFile);
+  const fileName = substituteParams(generateConfig.target, variables);
+  await render(config, fileName, astDocument, handlebarTemplate, logger);
+};
+
+const registerPartials = (handlebars: typeof Handlebars, templates: string[]) => {
+  const globTemplates = glob.sync(templates);
+  for (const file of globTemplates) {
+    const name = Path.basename(file);
+    const ext = Path.extname(name);
+    handlebars.registerPartial(name.replace(ext, ''), fs.readFileSync(file, 'utf8'));
   }
 };
 
@@ -93,7 +105,7 @@ const substituteParams = (value: string, variables: Map<string, string>): string
   return newValue;
 };
 
-const generate = async (
+const render = async (
   config: OpenApiGeneratorConfiguation,
   fileName: string,
   astDocument: AstDocument,
@@ -102,19 +114,23 @@ const generate = async (
 ) => {
   const context = { astDocument };
 
-  let rendered = handlebarTemplate(context);
-
   const ext = Path.extname(fileName);
 
   await fs.ensureDir(Path.dirname(fileName));
 
-  if (config.prettier) {
-    try {
-      rendered = runPrettier(rendered, ext === '.ts' ? 'typescript' : 'babel');
-    } catch (e) {
-      logger.info(`Prettier error on ${fileName}`, e);
-    }
-  }
+  try {
+    let rendered = handlebarTemplate(context);
 
-  await fs.writeFile(fileName, rendered, 'utf8');
+    if (config.prettier) {
+      try {
+        rendered = runPrettier(rendered, ext === '.ts' ? 'typescript' : 'babel');
+      } catch (e) {
+        logger.info(`Prettier error on ${fileName}`, e);
+      }
+    }
+
+    await fs.writeFile(fileName, rendered, 'utf8');
+  } catch (e) {
+    logger.error(`Error generating ${fileName}`, e);
+  }
 };

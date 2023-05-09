@@ -22,128 +22,132 @@ import {
 import { IsModelDeclaration } from './ast/nodes/ast.model';
 import { IsReferenceExpression } from './ast/nodes/ast.reference';
 
-[array, code, collection, comparison, date, html, i18n, inflection, markdown, math, misc, number, object, path, regex, string, url].forEach(
-  helper => {
-    Handlebars.registerHelper(helper);
-  }
-);
-
 export const referenceRegistrations = new Map<string, string>();
 
-Handlebars.registerHelper('registerReference', function (context, options: Handlebars.HelperOptions) {
-  if (!IsModelDeclaration(context) || context.referenceName === undefined) {
-    throw Error('Expected a model declaration with a reference name');
-  }
+export const createHandlebars = (): typeof Handlebars => {
+  const handlebars = Handlebars.create();
 
-  const name = options.fn(context);
+  [array, code, collection, comparison, date, html, i18n, inflection, markdown, math, misc, number, object, path, regex, string, url].forEach(
+    helper => {
+      handlebars.registerHelper(helper);
+    }
+  );
 
-  if (referenceRegistrations.has(context.referenceName)) {
-    Handlebars.log(2, `Multiple references ${context.referenceName} registered, last one wins!`);
-  }
+  handlebars.registerHelper('registerReference', function (context, options: Handlebars.HelperOptions) {
+    if (!IsModelDeclaration(context) || context.referenceName === undefined) {
+      throw Error('Expected a model declaration with a reference name');
+    }
 
-  referenceRegistrations.set(context.referenceName, name);
+    const name = options.fn(context);
 
-  return;
-});
+    if (referenceRegistrations.has(context.referenceName)) {
+      handlebars.log(2, `Multiple references ${context.referenceName} registered, last one wins!`);
+    }
 
-Handlebars.registerHelper('registerValidator', function (context, options: Handlebars.HelperOptions) {
-  if (!IsModelDeclaration(context) || context.referenceName === undefined) {
-    throw Error('Expected a model declaration with a reference name for validator');
-  }
+    referenceRegistrations.set(context.referenceName, name);
 
-  const referenceName = context.referenceName + '/validator';
+    return;
+  });
 
-  const name = options.fn(context);
+  handlebars.registerHelper('registerValidator', function (context, options: Handlebars.HelperOptions) {
+    if (!IsModelDeclaration(context) || context.referenceName === undefined) {
+      throw Error('Expected a model declaration with a reference name for validator');
+    }
 
-  if (referenceRegistrations.has(referenceName)) {
-    Handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
-  }
+    const referenceName = context.referenceName + '/validator';
 
-  referenceRegistrations.set(referenceName, name);
+    const name = options.fn(context);
 
-  return;
-});
+    if (referenceRegistrations.has(referenceName)) {
+      handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
+    }
 
-Handlebars.registerHelper('resolveReference', function (context) {
-  if (!IsReferenceExpression(context) || context.key === undefined) {
-    throw Error('Expected a reference expression with a reference key');
-  }
+    referenceRegistrations.set(referenceName, name);
 
-  const ref = referenceRegistrations.get(context.key);
-  if (!ref) {
-    Handlebars.log(2, `Reference ${context.key} not registered`);
-  }
-  return ref;
-});
+    return;
+  });
 
-Handlebars.registerHelper('resolveValidator', function (context) {
-  if (!IsReferenceExpression(context) || context.key === undefined) {
-    throw Error('Expected a reference expression with a reference key for validator', { cause: context });
-  }
+  handlebars.registerHelper('resolveReference', function (context) {
+    if (!IsReferenceExpression(context) || context.key === undefined) {
+      throw Error('Expected a reference expression with a reference key');
+    }
 
-  const referenceKey = context.key + '/validator';
+    const ref = referenceRegistrations.get(context.key);
+    if (!ref) {
+      handlebars.log(2, `Reference ${context.key} not registered`);
+    }
+    return ref;
+  });
 
-  const ref = referenceRegistrations.get(referenceKey);
-  if (!ref) {
-    Handlebars.log(2, `Reference ${referenceKey} not registered`);
-  }
-  return ref;
-});
+  handlebars.registerHelper('resolveValidator', function (context) {
+    if (!IsReferenceExpression(context) || context.key === undefined) {
+      throw Error('Expected a reference expression with a reference key for validator', { cause: context });
+    }
 
-Handlebars.registerHelper('wrap', function (context, prefix, suffix, options: Handlebars.HelperOptions) {
-  const rendered = options.fn(context);
+    const referenceKey = context.key + '/validator';
 
-  if (!rendered) {
-    return rendered;
-  }
+    const ref = referenceRegistrations.get(referenceKey);
+    if (!ref) {
+      handlebars.log(2, `Reference ${referenceKey} not registered`);
+    }
+    return ref;
+  });
 
-  const trimmed = rendered.trim();
+  handlebars.registerHelper('wrap', function (context, prefix, suffix, options: Handlebars.HelperOptions) {
+    const rendered = options.fn(context);
 
-  if (trimmed.length > 0) {
-    return `${prefix}${rendered}${suffix}`;
-  }
+    if (!rendered) {
+      return rendered;
+    }
 
-  return trimmed;
-});
+    const trimmed = rendered.trim();
 
-Handlebars.registerHelper('newline', function () {
-  return '\n';
-});
+    if (trimmed.length > 0) {
+      return `${prefix}${rendered}${suffix}`;
+    }
 
-Handlebars.registerHelper('toRegex', function (str, a) {
-  return new RegExp(str, a);
-});
+    return trimmed;
+  });
 
-Handlebars.registerHelper('replace', function (str, a, b, options: Handlebars.HelperOptions) {
-  const _isString = (val: unknown): val is string => {
-    return typeof val === 'string' && val !== '';
+  handlebars.registerHelper('newline', function () {
+    return '\n';
+  });
+
+  handlebars.registerHelper('toRegex', function (str, a) {
+    return new RegExp(str, a);
+  });
+
+  handlebars.registerHelper('replace', function (str, a, b, options: Handlebars.HelperOptions) {
+    const _isString = (val: unknown): val is string => {
+      return typeof val === 'string' && val !== '';
+    };
+    const _isRegex = (val: unknown) => {
+      const toString = Object.prototype.toString;
+      return toString.call(val) === '[object RegExp]';
+    };
+
+    const rendered = typeof str === 'object' && options ? options.fn(str) : str;
+
+    if (!_isString(rendered)) return '';
+    if (!_isString(a) && !_isRegex(a)) return rendered;
+    if (!_isString(b)) b = '';
+
+    return rendered.replace(a, b);
+  });
+
+  handlebars.registerHelper('extendProperty', function (context, name, options: Handlebars.HelperOptions) {
+    const rendered = options.fn(context);
+
+    context[name] = rendered;
+  });
+
+  (handlebars.logger as any)['actualLogger'] = new NoopLogger();
+
+  handlebars.log = (level, ...messages) => {
+    const levels = ['debug', 'info', 'warn', 'error'];
+    const actualLevel = typeof level === 'string' ? (levels.includes(level) ? level : 'info') : levels.at(level) ?? 'info';
+    (handlebars.logger as any)['actualLogger'][actualLevel](...messages);
   };
-  const _isRegex = (val: unknown) => {
-    const toString = Object.prototype.toString;
-    return toString.call(val) === '[object RegExp]';
-  };
 
-  const rendered = typeof str === 'object' && options ? options.fn(str) : str;
-
-  if (!_isString(rendered)) return '';
-  if (!_isString(a) && !_isRegex(a)) return rendered;
-  if (!_isString(b)) b = '';
-
-  return rendered.replace(a, b);
-});
-
-Handlebars.registerHelper('extendProperty', function (context, name, options: Handlebars.HelperOptions) {
-  const rendered = options.fn(context);
-
-  context[name] = rendered;
-});
-
-(Handlebars.logger as any)['actualLogger'] = new NoopLogger();
-
-Handlebars.log = (level, ...messages) => {
-  const levels = ['debug', 'info', 'warn', 'error'];
-  const actualLevel = typeof level === 'string' ? (levels.includes(level) ? level : 'info') : levels.at(level) ?? 'info';
-  (Handlebars.logger as any)['actualLogger'][actualLevel](...messages);
+  return handlebars;
 };
-
-export default Handlebars;
