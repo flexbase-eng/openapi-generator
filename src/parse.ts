@@ -44,7 +44,7 @@ export const parseSpec = async (
 
   if (config.debug) {
     await fs.ensureDir(config.debugPath);
-    const name = Path.join(Path.dirname(config.debugPath), `${oasTree.title}.oasTree.json`);
+    const name = Path.join(config.debugPath, `${oasTree.title}.oasTree.json`);
     let json = JSON.stringify(oasConverter.convertOasToPoco(oasTree));
     try {
       json = runPrettier(json, 'json');
