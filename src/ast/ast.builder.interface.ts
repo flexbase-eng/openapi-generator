@@ -6,4 +6,5 @@ export interface IAstBuilder {
   organizeByTags(astDocument: AstDocument): AstDocument[];
   flattenReferences(astDocument: AstDocument, resolveReferences: boolean): void;
   removeUnreferencedModels(astDocument: AstDocument): void;
+  isEmpty(astDocument: AstDocument): boolean;
 }

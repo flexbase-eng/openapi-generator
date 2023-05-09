@@ -28,6 +28,7 @@ export async function main(
     references: true,
     debug: false,
     debugPath: '',
+    skipEmpty: true,
   };
 
   program
@@ -39,6 +40,7 @@ export async function main(
     .option('--no-tags', 'Disable organization by tags')
     .option('--no-flatten', 'Disable flatten model optimization')
     .option('--no-references', 'Resolve all references')
+    .option('--no-skipempty', 'Generate empty files')
     .action(options => {
       const fileConfig = fs.existsSync(options.config ?? '.openapigenerator.json')
         ? fs.readJsonSync(options.config ?? '.openapigenerator.json')
@@ -60,6 +62,7 @@ export async function main(
       if (options.flatten != undefined) config.flatten = options.flatten;
       if (options.prettier != undefined) config.prettier = options.prettier;
       if (options.references != undefined) config.references = options.references;
+      if (options.skipEmpty != undefined) config.skipEmpty = options.skipEmpty;
     });
 
   try {

@@ -691,4 +691,18 @@ export class AstBuilder implements IAstBuilder {
     astDocument.referenceParameters = astDocument.referenceParameters.filter(x => toKeep.has(x.astId));
     astDocument.security = astDocument.security.filter(x => toKeep.has(x.astId));
   }
+
+  isEmpty(astDocument: AstDocument): boolean {
+    return (
+      astDocument.models.length === 0 &&
+      astDocument.responses.length === 0 &&
+      astDocument.requests.length === 0 &&
+      astDocument.pathParameters.length === 0 &&
+      astDocument.headerParameters.length === 0 &&
+      astDocument.queryParameters.length === 0 &&
+      astDocument.cookieParameters.length === 0 &&
+      astDocument.referenceParameters.length === 0 &&
+      astDocument.operations.length === 0
+    );
+  }
 }

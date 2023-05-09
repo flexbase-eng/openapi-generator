@@ -20,6 +20,7 @@ export const build = async (config: OpenApiGeneratorConfiguation, astDocument: A
     const organizeByTags: boolean = generateConfig.tags ?? config.tags;
     const shouldFlatten: boolean = generateConfig.flatten ?? config.flatten;
     const resolveReferences: boolean = generateConfig.references ?? config.references;
+    const skipEmpty: boolean = generateConfig.skipEmpty ?? config.skipEmpty;
 
     const documents: AstDocument[] = organizeByTags ? astBuilder.organizeByTags(astDocument) : [astDocument];
 
@@ -39,6 +40,10 @@ export const build = async (config: OpenApiGeneratorConfiguation, astDocument: A
 
       const variableName = doc.title.replace(regex, '-').toLocaleLowerCase();
       variables.set('{name}', variableName);
+
+      if (skipEmpty && astBuilder.isEmpty(doc)) {
+        continue;
+      }
 
       await generate(config, generateConfig, variables, doc, logger);
     }

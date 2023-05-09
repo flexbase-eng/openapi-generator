@@ -5,6 +5,7 @@ export interface OpenApiGeneratorConfiguationGenerate {
   tags?: boolean;
   flatten?: boolean;
   references?: boolean;
+  skipEmpty?: boolean;
 }
 
 export interface OpenApiGeneratorConfiguation {
@@ -17,4 +18,5 @@ export interface OpenApiGeneratorConfiguation {
   references: boolean;
   debug: boolean;
   debugPath: string;
+  skipEmpty: boolean;
 }
