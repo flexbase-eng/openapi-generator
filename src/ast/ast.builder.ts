@@ -335,6 +335,7 @@ export class AstBuilder implements IAstBuilder {
       node: 'Document',
       astId: uuidv4(),
       title: oas.title,
+      apiName: oas.title,
       description: oas.description,
       version: oas.version,
       models,
@@ -366,6 +367,7 @@ export class AstBuilder implements IAstBuilder {
         node: 'Document',
         astId: uuidv4(),
         title: name,
+        apiName: name,
         description: description,
         version: version,
         models: [],
@@ -409,7 +411,8 @@ export class AstBuilder implements IAstBuilder {
     globalDoc.title = astDocument.title;
 
     for (const tag of astDocument.tags) {
-      this.createDocumentFromTag(tagMap, tag.name, tag.description, version);
+      const tagDoc = this.createDocumentFromTag(tagMap, tag.name, tag.description, version);
+      tagDoc.apiName = globalDoc.title;
     }
 
     this.addDeclarationsToTagMap(tagMap, 'models', astDocument.models, version);

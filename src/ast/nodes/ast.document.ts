@@ -6,6 +6,7 @@ import { TagNode } from './ast.tag';
 export interface AstDocument extends Node {
   node: 'Document';
   title: string;
+  apiName: string;
   description?: string;
   version?: string;
   models: Array<Declaration>;
