@@ -28,6 +28,7 @@ export const build = async (config: OpenApiGeneratorConfiguation, astDocument: A
     variables.set('{name}', variableName);
 
     if (config.debug) {
+      await fs.ensureDir(config.debugPath);
       const name = Path.join(config.debugPath, `${variableName}.ast.json`);
       let json = JSON.stringify(astDocument);
       try {

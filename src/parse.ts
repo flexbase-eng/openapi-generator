@@ -34,7 +34,7 @@ export const parseSpec = async (
   });
 
   if (!IsDocument(apiDoc)) {
-    throw new Error(`${apiDoc} is not an open api v3 spec`);
+    throw new Error(`${specPath} is not an open api v3 spec`);
   }
 
   const oasTree = oasBuilder.generateOasTree(apiDoc);
@@ -43,6 +43,7 @@ export const parseSpec = async (
   oasBuilder.makeOperationDeclarationsGlobal(oasTree);
 
   if (config.debug) {
+    await fs.ensureDir(config.debugPath);
     const name = Path.join(Path.dirname(config.debugPath), `${oasTree.title}.oasTree.json`);
     let json = JSON.stringify(oasConverter.convertOasToPoco(oasTree));
     try {
