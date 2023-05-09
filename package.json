@@ -1,6 +1,6 @@
 {
   "name": "@flexbase/openapi-generator",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "Open API v3 code generator",
   "author": {
     "name": "Flexbase Technologies",
