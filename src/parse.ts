@@ -9,6 +9,7 @@ import { Logger } from '@flexbase/logger';
 import { OpenApiGeneratorConfiguation } from './runtime.config';
 import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
 import { runPrettier } from './run.prettier';
+import { AstBuilder } from './ast2/ast.builder';
 
 export const parseSpec = async (
   config: OpenApiGeneratorConfiguation,
@@ -37,6 +38,21 @@ export const parseSpec = async (
     throw new Error(`${specPath} is not an open api v3 spec`);
   }
 
+  if (config.debug) {
+    const ab = new AstBuilder();
+    const output = ab.parse(apiDoc);
+
+    await fs.ensureDir(config.debugPath);
+    const name = Path.join(config.debugPath, `ast2.json`);
+    let json = JSON.stringify(output);
+    try {
+      json = runPrettier(json, 'json');
+    } catch (e) {
+      logger.info(`Prettier error on ${name}`, e);
+    }
+    await fs.writeFile(name, json);
+  }
+
   const oasTree = oasBuilder.generateOasTree(apiDoc);
 
   // move operation declarations to lookups and replace with references
@@ -46,6 +62,18 @@ export const parseSpec = async (
     await fs.ensureDir(config.debugPath);
     const name = Path.join(config.debugPath, `${oasTree.title}.oasTree.json`);
     let json = JSON.stringify(oasConverter.convertOasToPoco(oasTree));
+    try {
+      json = runPrettier(json, 'json');
+    } catch (e) {
+      logger.info(`Prettier error on ${name}`, e);
+    }
+    await fs.writeFile(name, json);
+  }
+
+  if (config.debug) {
+    await fs.ensureDir(config.debugPath);
+    const name = Path.join(config.debugPath, `${oasTree.title}.openapi.json`);
+    let json = JSON.stringify(apiDoc);
     try {
       json = runPrettier(json, 'json');
     } catch (e) {

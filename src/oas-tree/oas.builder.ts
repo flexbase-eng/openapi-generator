@@ -51,9 +51,10 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
   constructor(private readonly _logger: Logger) {}
 
   private nameChecker(name: string): void {
-    const valid = /^[a-zA-Z_$][a-zA-Z_$0-9]*$/g.test(name);
+    // const valid = /^[a-zA-Z_$][a-zA-Z_$0-9]*$/g.test(name);
+    const valid = /[a-zA-Z_$][a-zA-Z_$0-9]*$/g.test(name);
     if (!valid) {
-      this._logger.info(`'${name}' may not be a valid variable identifier`);
+      this._logger.info(`${name} may not be a valid variable identifier`);
     }
   }
 
@@ -320,6 +321,8 @@ export class OpenApiSpecBuilder implements IOpenApiSpecBuilder {
       const requestBody = operationObject.requestBody ? this.generateRequestBody(operationObject.requestBody, modelMappings) : undefined;
 
       const request = new OasNodeTypeRequest(requestBody, path, cookie, header, query, { description, title });
+
+      if (operationObject.operationId) this.nameChecker(operationObject.operationId);
 
       const nodeOperation = new OasNodeOperation(
         (operationObject.operationId ?? 'OperationId_NOTDEFINED').replace(/-./g, x => x[1].toUpperCase()),

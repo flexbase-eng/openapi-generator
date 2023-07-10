@@ -1,0 +1,23 @@
+/* eslint-disable */
+/* ------------------------------------------------------------
+ File auto-generated
+
+ @summary {{astDocument.title}}
+ @description {{astDocument.description}}
+ @version {{astDocument.version}}
+------------------------------------------------------------ */
+
+{{#astDocument}}
+
+{{#if operations}}
+import * as models from '../models/{{lowercase (replace title (toRegex "([^a-zA-Z0-9])+" "g") "-")}}.js';
+
+{{>references}}
+
+{{#each operations}}
+{{>declaration prefix=(replace ../title (toRegex "([^a-zA-Z0-9])+" "g") "_")}}
+{{/each}}
+
+{{/if}}
+
+{{/astDocument}}

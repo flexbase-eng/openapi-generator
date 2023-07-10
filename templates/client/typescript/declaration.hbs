@@ -9,35 +9,35 @@ export type {{>expression id suffix=./suffix prefix=./prefix}} = {{>expression d
 {{/compare~}}
 
 {{~#compare node "===" "OperationDeclaration"}}
-async {{>expression id}}(
+export const {{prefix}}_{{>expression id}} = async (
     {{#if requests.bodies}}    
-    body:{{#requests.bodies}}{{> expression}},{{/requests.bodies}}
+    body:{{#requests.bodies}}{{> expression prefix="models."}},{{/requests.bodies}}
     {{/if}}
     {{#if requests.pathParameters}}
-    path:{{#requests.pathParameters}}{{> expression}},{{/requests.pathParameters}}
+    path:{{#requests.pathParameters}}{{> expression prefix="models."}},{{/requests.pathParameters}}
     {{/if}}    
     {{#if requests.queryParameters}}
-    query:{{#requests.queryParameters}}{{> expression}},{{/requests.queryParameters}}
+    query:{{#requests.queryParameters}}{{> expression prefix="models."}},{{/requests.queryParameters}}
     {{/if}}
     {{#if requests.headerParameters}}
-    headers:{{#requests.headerParameters}}{{> expression}},{{/requests.headerParameters}}
+    headers:{{#requests.headerParameters}}{{> expression prefix="models."}},{{/requests.headerParameters}}
     {{/if}}
-): Promise<{
-    status: number,
-    error?: Error,
+) => {
+    const endPoint = `{{replace path (toRegex "{(\w+)}" "g") "${path.$1}"}}`;
+
+    const response = await fetch(endPoint);
+
     {{#if responses}}
-    data: 
+    let rtn: 
     {{#forEach responses}}
-    {{>expression .}} {{#unless isLast}}|{{/unless}}
+    {{>expression . prefix="models."}} {{#unless isLast}}|{{/unless}}
     {{/forEach}}
+    {{else}}
+    const rtn = {};
     {{/if}}
-    }> {
-        return await this._requestHandler('{{& lowercase httpMethod}}', `{{replace path (toRegex "{(\w+)}" "g") "${path.$1}"}}`, {
-        {{#if requests.bodies}}body,{{/if}}
-        {{#if requests.queryParameters}}query: Object.keys(query).map(key => key + '=' + query[key]).join('&'),{{/if}}
-        {{#if requests.headerParameters}}headers,{{/if}}
-        });
+
+    
+
 }
 
-{{#if requests.cookieParameters}}{{log "Cookie parameters not supported yet" level="warn"}}{{/if}}
 {{/compare~}}

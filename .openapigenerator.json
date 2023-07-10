@@ -1,33 +1,19 @@
 {
-    "include": [
-        "./openapi/**/*.yaml"
-    ],
-    "sharedTemplates": [
-        "./templates/koa/**/*.hbs"
-    ],
-    "generate": {
-        "index": {
-            "target": "./output/{api}/{name}.ts",
-            "template": "./templates/koa/document.hbs"
-        },
-        "operations": {
-            "target": "",
-            "template": "",
-            "additionalTemplates": []
-        },
-        "models": {
-            "target": "",
-            "template": "",
-            "additionalTemplates": []
-        },
-        "validations": {
-            "target": "",
-            "template": "",
-            "additionalTemplates": []
-        }
+  "include": ["./openapi/reference/finicity.yaml"],
+  "sharedTemplates": ["./templates/client/typescript/**/*.hbs"],
+  "generate": {
+    "routes": {
+      "target": "./output/{api}/routes/{name}.ts",
+      "template": "./templates/client/typescript/routes.hbs"
     },
-    "prettier": true,
-    "tags": true,
-    "flatten": true,
-    "references": true
+    "models": {
+      "target": "./output/{api}/models/{name}.ts",
+      "template": "./templates/client/typescript/models.hbs"
+    }
+  },
+  "prettier": true,
+  "tags": true,
+  "flatten": true,
+  "references": true,
+  "debugPath": "./output/{api}/ast/"
 }

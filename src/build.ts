@@ -24,11 +24,12 @@ export const build = async (config: OpenApiGeneratorConfiguation, astDocument: A
 
     const documents: AstDocument[] = organizeByTags ? astBuilder.organizeByTags(astDocument) : [astDocument];
 
-    const apiName = astDocument.title;
+    const apiName = astDocument.title.trim();
 
     const variables = new Map<string, string>();
 
-    const regex = /(_|\.| )+/g;
+    //const regex = /(\(|\)|_|\.| )+/g;
+    const regex = /([^a-zA-Z0-9])+/g;
     const variableApi = apiName.replace(regex, '-').toLocaleLowerCase();
     variables.set('{api}', variableApi);
 
@@ -38,7 +39,7 @@ export const build = async (config: OpenApiGeneratorConfiguation, astDocument: A
       }
       astBuilder.removeUnreferencedModels(doc);
 
-      const variableName = doc.title.replace(regex, '-').toLocaleLowerCase();
+      const variableName = doc.title.trim().replace(regex, '-').toLocaleLowerCase();
       variables.set('{name}', variableName);
 
       if (skipEmpty && astBuilder.isEmpty(doc)) {

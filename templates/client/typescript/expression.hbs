@@ -2,7 +2,7 @@
 
 {{~#compare node "===" "ObjectExpression"}}
     {
-    {{#forEach properties}} {{>declaration .}}{{/forEach}}
+    {{#each properties}} {{>declaration .}}{{/each}}
     }
 {{/compare~}}
 
@@ -21,30 +21,32 @@
 {{/compare~}}
 
 {{~#compare node "===" "CompositeExpression"}}
-    {{#forEach elements}}{{>expression .}}{{#unless isLast}}&{{/unless}}{{/forEach}}
+    {{#if elements}}{{#forEach elements}}{{>expression .}}{{#unless isLast}}&{{/unless}}{{/forEach}}{{/if}}
 {{/compare~}}
 
 {{~#compare node "===" "UnionExpression"}}
-    {{#forEach elements}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}
+    {{#if elements}}{{#forEach elements}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}
 {{/compare~}}
 
 {{~#compare node "===" "ResponseExpression"}}
-{{#if bodies}} { {{#forEach bodies}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}} }
-{{else}}void
-{{/if}}
+{    
+    {{#if bodies}}
+    {{#forEach bodies}}{{>expression . suffix=./suffix prefix=./prefix}}{{#unless isLast}}|{{/unless}}{{/forEach}}
+    {{/if}}
+}
 {{/compare~}}
 
 {{~#compare node "===" "OperationResponseExpression"}}
-{{>expression response}}
+{$status: {{statusCode}} } & {{>expression response}}
 {{/compare~}}
 
 {{~#compare node "===" "RequestExpression"}}
-{{#if bodies}}{{#forEach bodies}}{{>expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}
+{{#if bodies}}{{#forEach bodies}}{{>expression . suffix=./suffix prefix=./prefix}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}
 {{/compare~}}
 
 {{~#compare node "===" "MediaExpression"}}
     {{~#inArray (toArray "application/json" "application/x-www-form-urlencoded" ) mediaType}}
-    {{#body}}{{> expression}}{{/body}}
+    {{#body}}{{> expression suffix=./suffix prefix=./prefix}}{{/body}}
     {{else}}
     {{log "Unsupported media type" mediaType level="warn"}}
     {{/inArray~}} 
@@ -52,18 +54,15 @@
 
 {{~#compare node "===" "MediaResponseExpression"}}
     {{~#inArray (toArray "application/json" ) mediaType}}
-    {{#body}}body: {{> expression}}{{/body}}
-    {{#headers}}headers: {{> expression}}{{/headers}}
+    {{#body}}$body: {{> expression suffix=./suffix prefix=./prefix}}{{/body}}
+    {{#headers}}$headers: {{> expression suffix=./suffix prefix=./prefix}}{{/headers}}
     {{else}}
     {{log "Unsupported response media type" mediaType level="warn"}}
     {{/inArray~}} 
 {{/compare~}}
 
-{{~#compare node "===" "ReferenceExpression"}}{{& resolveReference .}}{{/compare~}}
+{{~#compare node "===" "ReferenceExpression"}}{{& prefix}}{{& resolveReference .}}{{& suffix}}{{/compare~}}
 
 {{~#compare node "===" "LiteralExpression"}}{{#if enum}}"{{& join enum "\"|\""}}"{{else}}{{& replace value "integer" "number"}}{{/if}}{{/compare~}}
 
 {{~#compare node "===" "TodoExpression"}}{{log "TODO expression" what level="warn"}}{{/compare~}}
-
-
-
