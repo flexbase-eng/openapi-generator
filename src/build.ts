@@ -56,7 +56,7 @@ const generate = async (
   generateConfig: OpenApiGeneratorConfiguationGenerate,
   variables: Map<string, string>,
   astDocument: AstDocument,
-  logger: Logger
+  logger: Logger,
 ) => {
   if (config.debug) {
     const variableName = variables.get('{name}');
@@ -65,7 +65,7 @@ const generate = async (
     const name = Path.join(config.debugPath, `${variableName}.ast.json`);
     let json = JSON.stringify(astDocument);
     try {
-      json = runPrettier(json, 'json');
+      json = await runPrettier(json, 'json');
     } catch (e) {
       logger.info(`Prettier error on ${name}`, e);
     }
@@ -116,7 +116,7 @@ const render = async (
   fileName: string,
   astDocument: AstDocument,
   handlebarTemplate: HandlebarsTemplateDelegate<any>,
-  logger: Logger
+  logger: Logger,
 ) => {
   const context = { astDocument };
 
@@ -129,7 +129,7 @@ const render = async (
 
     if (config.prettier) {
       try {
-        rendered = runPrettier(rendered, ext === '.ts' ? 'typescript' : 'babel');
+        rendered = await runPrettier(rendered, ext === '.ts' ? 'typescript' : 'babel');
       } catch (e) {
         logger.info(`Prettier error on ${fileName}`, e);
       }

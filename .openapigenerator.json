@@ -1,5 +1,5 @@
 {
-  "include": ["./openapi/reference/finicity.yaml"],
+  "include": ["../platform/openapi/Identity.yaml"],
   "sharedTemplates": ["./templates/client/typescript/**/*.hbs"],
   "generate": {
     "routes": {

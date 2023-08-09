@@ -105,21 +105,14 @@ export class OpenApiParser {
   }
 
   createProperty(name: string, schema: OpenAPI.SchemaObject | OpenAPI.ReferenceObject) {
-
     return {
       node: 'PropertyExpression',
       identifier: {
         node: 'IdentifierExpression',
-        value: name
+        value: name,
       },
-      type: 
-    }
-
-    const propertyType = this.parseSchema(schema);
-    properties.push({
-      identifier,
-      propertyType,
-    });
+      type: this.parseSchema(schema),
+    };
   }
 
   createObject(schema: OpenAPI.NonArraySchemaObject) {
@@ -128,7 +121,6 @@ export class OpenApiParser {
       const propEntries = Object.entries(schema.properties);
       for (const propEntry of propEntries) {
         properties.push(this.createProperty(propEntry[0], propEntry[1]));
-        
       }
     }
 
