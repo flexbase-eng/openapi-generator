@@ -93,6 +93,8 @@ export class OpenApiParser {
       }
     }
 
+    // TODO headers, securitySchemes, links, callbacks, pathItems
+
     return { models, requestBodies, responses, parameters };
   }
 
