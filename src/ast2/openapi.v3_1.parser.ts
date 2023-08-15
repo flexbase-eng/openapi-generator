@@ -1,4 +1,4 @@
-import { OpenAPIV3_1 as OpenAPI } from 'openapi-types';
+import { OpenAPIV3_1 as OpenAPI, OpenAPIV3 } from 'openapi-types';
 
 type UnionToIntersection<U> = (U extends never ? never : (arg: U) => never) extends (arg: infer I) => void ? I : never;
 
@@ -20,7 +20,9 @@ export class OpenApiParser {
   parse(document: OpenAPI.Document) {
     const components = document.components ? this.parseComponents(document.components) : {};
 
-    return { components };
+    const paths = document.paths ? this.parsePaths(document.paths) : {};
+
+    return { components, paths };
   }
 
   parseComponents(components: OpenAPI.ComponentsObject) {
@@ -28,6 +30,10 @@ export class OpenApiParser {
     const requestBodies = [];
     const responses = [];
     const parameters = [];
+    const headers = [];
+    const securitySchemes = [];
+    const callbacks = [];
+    const pathItems = [];
 
     if (components.schemas) {
       const records = Object.entries(components.schemas);
@@ -93,9 +99,89 @@ export class OpenApiParser {
       }
     }
 
-    // TODO headers, securitySchemes, links, callbacks, pathItems
+    if (components.headers) {
+      const records = Object.entries(components.headers);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const refName = `#/components/headers/${name}`;
 
-    return { models, requestBodies, responses, parameters };
+        const nodeType = this.parseHeaderObject(schema);
+        headers.push({
+          identifier: this.createIdentifier(name),
+          refName,
+          ...nodeType,
+        });
+      }
+    }
+
+    if (components.securitySchemes) {
+      const records = Object.entries(components.securitySchemes);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const refName = `#/components/securitySchemes/${name}`;
+
+        const nodeType = this.parseSecurityScheme(schema);
+        securitySchemes.push({
+          identifier: this.createIdentifier(name),
+          refName,
+          ...nodeType,
+        });
+      }
+    }
+
+    if (components.callbacks) {
+      const records = Object.entries(components.callbacks);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const refName = `#/components/callbacks/${name}`;
+
+        const nodeType = this.parseCallback(schema);
+        callbacks.push({
+          identifier: this.createIdentifier(name),
+          refName,
+          ...nodeType,
+        });
+      }
+    }
+
+    if (components.pathItems) {
+      const records = Object.entries(components.pathItems);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const refName = `#/components/pathItems/${name}`;
+
+        const nodeType = this.parsePathItemObject(schema);
+        pathItems.push({
+          identifier: this.createIdentifier(name),
+          refName,
+          ...nodeType,
+        });
+      }
+    }
+
+    return { models, requestBodies, responses, parameters, headers, securitySchemes, callbacks, pathItems };
+  }
+
+  parsePaths(paths: OpenAPI.PathsObject) {
+    const nodes = [];
+
+    const records = Object.entries(paths);
+    for (const record of records) {
+      const name = record[0];
+      const schema = record[1];
+
+      const nodeType = schema ? this.parsePathItemObject(schema) : undefined;
+      nodes.push({
+        identifier: this.createIdentifier(name),
+        ...nodeType,
+      });
+    }
+
+    return nodes;
   }
 
   isReferenceObject(test: object): test is OpenAPI.ReferenceObject {
@@ -413,6 +499,173 @@ export class OpenApiParser {
       name: schema.name,
       in: schema.in,
       ...this.parseParameterBaseObject(schema),
+    };
+  }
+
+  parseSecurityScheme(schema: OpenAPI.ReferenceObject | OpenAPI.SecuritySchemeObject) {
+    if (this.isReferenceObject(schema)) {
+      return this.createReference(schema);
+    }
+
+    const node: Record<string, unknown> = {
+      type: schema.type,
+      description: schema.description,
+    };
+
+    switch (schema.type) {
+      case 'http':
+        node['bearerFormat'] = schema.bearerFormat;
+        node['scheme'] = schema.scheme;
+        break;
+
+      case 'apiKey':
+        node['name'] = schema.name;
+        node['in'] = schema.in;
+        break;
+
+      case 'openIdConnect':
+        node['openIdConnectUrl'] = schema.openIdConnectUrl;
+        break;
+
+      case 'oauth2':
+        node['flows'] = schema.flows;
+        break;
+    }
+
+    return node;
+  }
+
+  parseCallback(schema: OpenAPI.ReferenceObject | OpenAPI.CallbackObject) {
+    if (this.isReferenceObject(schema)) {
+      return this.createReference(schema);
+    }
+
+    const nodes = [];
+
+    const records = Object.entries(schema);
+    for (const record of records) {
+      const name = record[0];
+      const schema = record[1];
+      const refName = `#/components/callbacks/${name}`;
+
+      const nodeType = this.parsePathItemObject(schema);
+      nodes.push({
+        identifier: this.createIdentifier(name),
+        refName,
+        ...nodeType,
+      });
+    }
+
+    return {
+      node: 'CallbackExpression',
+      nodes,
+    };
+  }
+
+  parsePathItemObject(schema: OpenAPI.ReferenceObject | OpenAPI.PathItemObject) {
+    if (this.isReferenceObject(schema)) {
+      return this.createReference(schema);
+    }
+
+    const operations = [];
+    let parameters;
+
+    for (const method in OpenAPIV3.HttpMethods) {
+      const operationObject = schema[method.toLowerCase() as OpenAPIV3.HttpMethods];
+      if (!operationObject) {
+        continue;
+      }
+
+      const nodeType = this.parseOperationObject(operationObject, method.toLowerCase());
+      operations.push(nodeType);
+    }
+
+    if (schema.parameters) {
+      parameters = [];
+      for (const record of schema.parameters) {
+        const nodeType = this.parseParameter(record);
+        parameters.push(nodeType);
+      }
+    }
+
+    return {
+      operations,
+      parameters,
+    };
+  }
+
+  parseOperationObject(schema: OpenAPI.OperationObject, method: string): object {
+    let parameters;
+    let responses;
+    let callbacks;
+
+    const tags = schema.tags;
+    const description = schema.description;
+    const summary = schema.summary;
+    const operationId = schema.operationId;
+    const deprecated = schema.deprecated;
+    const extensions = this.getExtensions(schema);
+
+    if (schema.parameters) {
+      parameters = [];
+      for (const record of schema.parameters) {
+        if (!schema) {
+          continue;
+        }
+
+        const nodeType = this.parseParameter(record);
+        parameters.push(nodeType);
+      }
+    }
+
+    const requestBody = schema.requestBody ? this.parseRequestBody(schema.requestBody) : undefined;
+
+    if (schema.responses) {
+      responses = [];
+      const records = Object.entries(schema.responses);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+
+        const nodeType = this.parseResponse(schema);
+        responses.push({
+          status: name,
+          ...nodeType,
+        });
+      }
+    }
+
+    if (schema.callbacks) {
+      callbacks = [];
+      const records = Object.entries(schema.callbacks);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+
+        const nodeType = this.parseCallback(schema);
+        callbacks.push({
+          identifier: this.createIdentifier(name),
+          ...nodeType,
+        });
+      }
+    }
+
+    const security = schema.security;
+
+    return {
+      node: 'OperationExpression',
+      method,
+      tags,
+      description,
+      summary,
+      operationId,
+      deprecated,
+      parameters,
+      requestBody,
+      responses,
+      callbacks,
+      security,
+      extensions,
     };
   }
 

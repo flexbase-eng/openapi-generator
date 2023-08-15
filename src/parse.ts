@@ -30,7 +30,7 @@ export const parseSpec = async (
       },
     },
     resolve: {
-      file: new FileResolver(logger),
+      stoplight: new StoplightResolver(),
     },
   });
 
@@ -85,22 +85,14 @@ export const parseSpec = async (
   return astBuilder.makeDocument(oasTree);
 };
 
-class FileResolver implements ResolverOptions {
-  constructor(private readonly _logger: Logger) {}
+class StoplightResolver implements ResolverOptions {
+  order = 0;
 
-  get order() {
-    return 0;
-  }
+  canRead = (file: FileInfo) => {
+    return file.url.startsWith('stoplight://');
+  };
 
-  canRead(file: any) {
-    const url = new URL(file.url);
-    const protocol = url.protocol;
-    return protocol === undefined || protocol === 'file';
-  }
-
-  async read(file: FileInfo) {
-    const path = new URL(file.url);
-
-    return await fs.readFile(path, 'utf8');
+  read(file: FileInfo) {
+    return file.url;
   }
 }
