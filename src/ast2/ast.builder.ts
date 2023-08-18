@@ -1,6 +1,7 @@
 import { OpenAPI, OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
-import { OpenApiParser as OpenApiParser3 } from './openapi.v3.parser';
-import { OpenApiParser as OpenApiParser3_1 } from './openapi.v3_1.parser';
+import { OpenApiParser3 } from './openapi.v3.parser';
+import { OpenApiParser3_1 } from './openapi.v3_1.parser';
+import { OpenApiCompiler } from './openapi.compiler';
 
 export class AstBuilder {
   isOpenAPIV2(value: OpenAPI.Document): value is OpenAPIV2.Document {
@@ -29,5 +30,12 @@ export class AstBuilder {
       const parser = new OpenApiParser3_1();
       return parser.parse(document);
     }
+
+    throw new Error('version not supported');
+  }
+
+  compile(documentTree: { components: Record<string, unknown>; paths: Record<string, unknown> }) {
+    const compiler = new OpenApiCompiler();
+    return compiler.compile(documentTree);
   }
 }
