@@ -1,15 +1,10 @@
 import { OpenAPIV3 as OpenAPI } from 'openapi-types';
-import { Identifier, ReferenceIdentifier } from './parsed_ast/identifier';
-import { Literal, LiteralBoolean, LiteralInteger, LiteralNumber, LiteralObject, LiteralString } from './parsed_ast/literal';
-import { ObjectDeclaration } from './parsed_ast/declaration';
-import { Statement } from './parsed_ast/statement';
-import { Node, NodeModifiers } from './parsed_ast/node';
 import { OpenApiParser } from './openapi.parser';
-import { Components } from './parsed_ast/components';
+import { Component, Components, ParsedNode } from './parsed_nodes';
 
 export class OpenApiParser3 extends OpenApiParser {
   parse(document: OpenAPI.Document) {
-    const components = document.components ? this.parseComponents(document.components) : new Components();
+    const components = document.components ? this.parseComponents(document.components) : {};
 
     const paths = document.paths ? this.parsePaths(document.paths) : {};
 
@@ -17,117 +12,115 @@ export class OpenApiParser3 extends OpenApiParser {
   }
 
   parseComponents(components: OpenAPI.ComponentsObject): Components {
-    const models: ObjectDeclaration[] = [];
-    const requestBodies: ObjectDeclaration[] = [];
-    const responses: ObjectDeclaration[] = [];
-    const parameters: ObjectDeclaration[] = [];
-    const headers: ObjectDeclaration[] = [];
-    const securitySchemes: ObjectDeclaration[] = [];
-    const callbacks: ObjectDeclaration[] = [];
-
-    const symbols = new Components();
+    const models: Component[] = [];
+    const requestBodies: Component[] = [];
+    const responses: Component[] = [];
+    const parameters: Component[] = [];
+    const headers: Component[] = [];
+    const securitySchemes: Component[] = [];
+    const callbacks: Component[] = [];
 
     if (components.schemas) {
       const records = Object.entries(components.schemas);
       for (const record of records) {
         const name = record[0];
         const schema = record[1];
-        const refName = `#/components/schemas/${name}`;
+        const referenceName = `#/components/schemas/${name}`;
 
-        const declaration = this.parseComponentSchema(new ObjectDeclaration(name, 'model'), schema);
-        symbols.addExpression(declaration);
+        const definition = this.parseSchema(schema);
+        models.push({ name, referenceName, definition });
       }
     }
 
-    // if (components.requestBodies) {
-    //   const records = Object.entries(components.requestBodies);
-    //   for (const record of records) {
-    //     const name = record[0];
-    //     const schema = record[1];
-    //     const refName = `#/components/requestBodies/${name}`;
+    if (components.requestBodies) {
+      const records = Object.entries(components.requestBodies);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/requestBodies/${name}`;
 
-    //     const nodeType = this.parseRequestBody(schema);
-    //     requestBodies.push(new Declaration(this.createIdentifier(name), nodeType));
-    //   }
-    // }
+        const definition = this.parseRequestBody(schema);
+        requestBodies.push({ name, referenceName, definition });
+      }
+    }
 
-    // if (components.responses) {
-    //   const records = Object.entries(components.responses);
-    //   for (const record of records) {
-    //     const name = record[0];
-    //     const schema = record[1];
-    //     const refName = `#/components/responses/${name}`;
+    if (components.responses) {
+      const records = Object.entries(components.responses);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/responses/${name}`;
 
-    //     const nodeType = this.parseResponse(schema);
-    //     responses.push(new Declaration(this.createIdentifier(name), nodeType));
-    //   }
-    // }
+        const definition = this.parseResponse(schema);
+        responses.push({ name, referenceName, definition });
+      }
+    }
 
-    // if (components.parameters) {
-    //   const records = Object.entries(components.parameters);
-    //   for (const record of records) {
-    //     const name = record[0];
-    //     const schema = record[1];
-    //     const refName = `#/components/parameters/${name}`;
+    if (components.parameters) {
+      const records = Object.entries(components.parameters);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/parameters/${name}`;
 
-    //     const nodeType = this.parseParameter(schema);
-    //     parameters.push(new Declaration(this.createIdentifier(name), nodeType));
-    //   }
-    // }
+        const definition = this.parseParameter(schema);
+        parameters.push({ name, referenceName, definition });
+      }
+    }
 
-    // if (components.headers) {
-    //   const records = Object.entries(components.headers);
-    //   for (const record of records) {
-    //     const name = record[0];
-    //     const schema = record[1];
-    //     const refName = `#/components/headers/${name}`;
+    if (components.headers) {
+      const records = Object.entries(components.headers);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/headers/${name}`;
 
-    //     const nodeType = this.parseHeaderObject(schema);
-    //     headers.push(new Declaration(this.createIdentifier(name), nodeType));
-    //   }
-    // }
+        const definition = this.parseHeaderObject(schema);
+        headers.push({ name, referenceName, definition });
+      }
+    }
 
-    // if (components.securitySchemes) {
-    //   const records = Object.entries(components.securitySchemes);
-    //   for (const record of records) {
-    //     const name = record[0];
-    //     const schema = record[1];
-    //     const refName = `#/components/securitySchemes/${name}`;
+    if (components.securitySchemes) {
+      const records = Object.entries(components.securitySchemes);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/securitySchemes/${name}`;
 
-    //     const nodeType = this.parseSecurityScheme(schema);
-    //     securitySchemes.push(new Declaration(this.createIdentifier(name), nodeType));
-    //   }
-    // }
+        const definition = this.parseSecurityScheme(schema);
+        securitySchemes.push({ name, referenceName, definition });
+      }
+    }
 
-    // if (components.callbacks) {
-    //   const records = Object.entries(components.callbacks);
-    //   for (const record of records) {
-    //     const name = record[0];
-    //     const schema = record[1];
-    //     const refName = `#/components/callbacks/${name}`;
+    if (components.callbacks) {
+      const records = Object.entries(components.callbacks);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/callbacks/${name}`;
 
-    //     const nodeType = this.parseCallback(schema);
-    //     callbacks.push(new Declaration(this.createIdentifier(name), nodeType));
-    //   }
-    // }
+        const definition = this.parseCallback(schema);
+        callbacks.push({ name, referenceName, definition });
+      }
+    }
 
-    return symbols;
+    return { models, requestBodies, responses, parameters, headers, securitySchemes, callbacks };
   }
 
-  parsePaths(paths: OpenAPI.PathsObject) {
-    // const nodes = [];
-    // const records = Object.entries(paths);
-    // for (const record of records) {
-    //   const name = record[0];
-    //   const schema = record[1];
-    //   const nodeType = schema ? this.parsePathItemObject(schema) : undefined;
-    //   nodes.push({
-    //     identifier: this.createIdentifier(name),
-    //     ...nodeType,
-    //   });
-    // }
-    // return nodes;
-  }
+  //parsePaths(paths: OpenAPI.PathsObject) {
+  // const nodes = [];
+  // const records = Object.entries(paths);
+  // for (const record of records) {
+  //   const name = record[0];
+  //   const schema = record[1];
+  //   const nodeType = schema ? this.parsePathItemObject(schema) : undefined;
+  //   nodes.push({
+  //     identifier: this.createIdentifier(name),
+  //     ...nodeType,
+  //   });
+  // }
+  // return nodes;
+  //}
 
   // isReferenceObject(test: object): test is OpenAPI.ReferenceObject {
   //   return '$ref' in test;
