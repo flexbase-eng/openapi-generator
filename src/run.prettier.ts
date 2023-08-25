@@ -1,7 +1,7 @@
 import prettier, { BuiltInParserName } from 'prettier';
 
-export const runPrettier = (str: string, ext: BuiltInParserName): string => {
-  return prettier.format(str, {
+export const runPrettier = async (str: string, ext: BuiltInParserName) => {
+  return await prettier.format(str, {
     semi: true,
     singleQuote: true,
     arrowParens: 'avoid',

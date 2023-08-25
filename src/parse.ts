@@ -16,7 +16,7 @@ export const parseSpec = async (
   oasBuilder: IOpenApiSpecBuilder,
   oasConverter: IOpenApiSpecConverter,
   astBuilder: IAstBuilder,
-  logger: Logger
+  logger: Logger,
 ): Promise<AstDocument> => {
   const apiDoc = await $RefParser.bundle(specPath, {
     bundle: {
@@ -47,7 +47,7 @@ export const parseSpec = async (
     const name = Path.join(config.debugPath, `${oasTree.title}.oasTree.json`);
     let json = JSON.stringify(oasConverter.convertOasToPoco(oasTree));
     try {
-      json = runPrettier(json, 'json');
+      json = await runPrettier(json, 'json');
     } catch (e) {
       logger.info(`Prettier error on ${name}`, e);
     }
