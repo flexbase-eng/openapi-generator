@@ -1,4 +1,3 @@
-import { NoopLogger } from '@flexbase/logger';
 import Handlebars from 'handlebars';
 import {
   array,
@@ -21,6 +20,7 @@ import {
 } from 'useful-handlebars-helpers';
 import { IsModelDeclaration } from './ast/nodes/ast.model';
 import { IsReferenceExpression } from './ast/nodes/ast.reference';
+import { ChalkLogger } from './chalk.logger';
 
 export const referenceRegistrations = new Map<string, string>();
 
@@ -30,7 +30,7 @@ export const createHandlebars = (): typeof Handlebars => {
   [array, code, collection, comparison, date, html, i18n, inflection, markdown, math, misc, number, object, path, regex, string, url].forEach(
     helper => {
       handlebars.registerHelper(helper);
-    }
+    },
   );
 
   handlebars.registerHelper('registerReference', function (context, options: Handlebars.HelperOptions) {
@@ -141,7 +141,7 @@ export const createHandlebars = (): typeof Handlebars => {
     context[name] = rendered;
   });
 
-  (handlebars.logger as any)['actualLogger'] = new NoopLogger();
+  (handlebars.logger as any)['actualLogger'] = new ChalkLogger();
 
   handlebars.log = (level, ...messages) => {
     const levels = ['debug', 'info', 'warn', 'error'];
