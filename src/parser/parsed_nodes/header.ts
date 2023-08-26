@@ -15,5 +15,5 @@ export interface Header extends ParsedNode {
 
 export interface NamedHeader extends ParsedNode {
   name: string;
-  definition: Header;
+  definition: ParsedNode;
 }

@@ -35,6 +35,8 @@ import {
 import { Header, NamedHeader } from './parsed_nodes/header';
 import { Logger } from '@flexbase/logger';
 import { CallbackList } from './parsed_nodes/callback';
+import { ParsedDocument } from './parsed.document';
+import { Tag } from './parsed_nodes/tag';
 
 type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
 type ReferenceObject = OpenAPIV3.ReferenceObject | OpenAPIV3_1.ReferenceObject;
@@ -56,6 +58,7 @@ type OperationObject = OpenAPIV3.OperationObject | OpenAPIV3_1.OperationObject;
 type PathsObject = OpenAPIV3.PathsObject | OpenAPIV3_1.PathsObject;
 type Document = OpenAPIV3.Document | OpenAPIV3_1.Document;
 type ComponentsObject = OpenAPIV3.ComponentsObject | OpenAPIV3_1.ComponentsObject;
+type TagObject = OpenAPIV3.TagObject | OpenAPIV3_1.TagObject;
 
 const nonArraySchemaObjectType: string[] = ['string', 'number', 'boolean', 'integer', 'null'];
 
@@ -64,12 +67,17 @@ type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
 export abstract class OpenApiParser {
   constructor(private readonly _logger: Logger) {}
 
-  parse(document: Document) {
+  parse(document: Document): ParsedDocument {
+    const title = document.info.title;
+    const description = document.info.description;
+    const version = document.info.version;
+    const tags = document.tags ? document.tags.map(tag => this.parseTag(tag)) : [];
+
     const components = document.components ? this.parseComponents(document.components) : {};
 
-    const paths = document.paths ? this.parsePaths(document.paths) : {};
+    const paths = document.paths ? this.parsePaths(document.paths) : [];
 
-    return { components, paths };
+    return { title, description, version, components, paths, tags };
   }
 
   protected parseComponents(components: ComponentsObject): Components {
@@ -166,6 +174,22 @@ export abstract class OpenApiParser {
     }
 
     return { models, requestBodies, responses, parameters, headers, securitySchemes, callbacks };
+  }
+
+  protected parsePaths(paths: PathsObject): Path[] {
+    const nodes: Path[] = [];
+    const records = Object.entries(paths);
+    for (const record of records) {
+      const name = record[0];
+      const schema = record[1];
+      const definition = schema ? this.parsePathItemObject(schema) : undefined;
+      nodes.push({
+        type: 'pathItem',
+        name,
+        definition,
+      });
+    }
+    return nodes;
   }
 
   private isReferenceObject(test: object): test is ReferenceObject {
@@ -276,22 +300,6 @@ export abstract class OpenApiParser {
 
     this._logger.error(schema);
     throw new Error(`Unknown schema`);
-  }
-
-  protected parsePaths(paths: PathsObject): Path[] {
-    const nodes: Path[] = [];
-    const records = Object.entries(paths);
-    for (const record of records) {
-      const name = record[0];
-      const schema = record[1];
-      const definition = schema ? this.parsePathItemObject(schema) : undefined;
-      nodes.push({
-        type: 'pathItem',
-        name,
-        definition,
-      });
-    }
-    return nodes;
   }
 
   private parseMediaContent(mediaContent?: { [media: string]: MediaTypeObject }): MediaContent[] | undefined {
@@ -668,6 +676,10 @@ export abstract class OpenApiParser {
     };
   }
 
+  private parseTag(schema: TagObject): Tag {
+    return { type: 'tag', name: schema.name, description: schema.description };
+  }
+
   private createReference(schema: ReferenceObject): Reference {
     return {
       type: 'reference',
@@ -680,7 +692,7 @@ export abstract class OpenApiParser {
   private createLiteral(schema: NonArraySchemaObject, modifiers: Modifiers): Primative {
     return {
       type: schema.type! as PrimativeTypes,
-      modifiers,
+      ...modifiers,
     };
   }
 
@@ -703,7 +715,7 @@ export abstract class OpenApiParser {
       }
     }
 
-    return { type: 'object', properties, modifiers };
+    return { type: 'object', properties, ...modifiers };
   }
 
   private parseAllOf(schema: WithRequired<NonArraySchemaObject, 'allOf'>, modifiers: Modifiers): Composite {
@@ -713,7 +725,7 @@ export abstract class OpenApiParser {
 
     return {
       type: 'composite',
-      modifiers,
+      ...modifiers,
       definitions,
     };
   }
@@ -725,7 +737,7 @@ export abstract class OpenApiParser {
 
     return {
       type: 'union',
-      modifiers,
+      ...modifiers,
       definitions,
     };
   }
@@ -737,7 +749,7 @@ export abstract class OpenApiParser {
 
     return {
       type: 'union',
-      modifiers,
+      ...modifiers,
       definitions,
     };
   }
@@ -745,7 +757,7 @@ export abstract class OpenApiParser {
   private parseNotObject(schema: ReferenceObject | SchemaObject, modifiers: Modifiers): Exclusion {
     return {
       type: 'exclusion',
-      modifiers,
+      ...modifiers,
       definition: this.parseSchema(schema),
     };
   }
@@ -753,7 +765,7 @@ export abstract class OpenApiParser {
   private createArray(schema: ArraySchemaObject, modifiers: Modifiers): ArrayNode {
     return {
       type: 'array',
-      modifiers,
+      ...modifiers,
       definition: this.parseSchema(schema.items),
     };
   }
