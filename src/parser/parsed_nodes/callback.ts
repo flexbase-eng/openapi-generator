@@ -1,5 +1,5 @@
 import { ParsedNode } from './parsed.node';
-import { PathItem } from './path.item';
+import { PathItem } from './path';
 import { Reference } from './reference';
 
 export interface Callback extends ParsedNode {
@@ -7,7 +7,6 @@ export interface Callback extends ParsedNode {
   definition: PathItem | Reference;
 }
 
-export interface CallbackGroup extends ParsedNode {
-  name: string;
+export interface CallbackList extends ParsedNode {
   callbacks: Callback[] | Reference;
 }

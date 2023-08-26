@@ -1,4 +1,4 @@
-import { CallbackGroup } from './callback';
+import { CallbackList } from './callback';
 import { Parameter } from './parameter';
 import { ParsedNode } from './parsed.node';
 import { Reference } from './reference';
@@ -15,7 +15,7 @@ export interface Operation extends ParsedNode {
   parameters?: (Parameter | Reference)[];
   requestBody?: RequestBody | Reference;
   responses?: NamedResponse[];
-  callbacks?: CallbackGroup[];
+  callbacks?: CallbackList;
   security?: Record<string, string[]>[];
   extensions?: Record<string, string>;
 }

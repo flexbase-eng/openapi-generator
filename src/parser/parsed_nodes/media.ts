@@ -2,7 +2,7 @@ import { MediaEncoding } from './encoding';
 import { ParsedNode } from './parsed.node';
 
 export interface MediaType extends ParsedNode {
-  type?: ParsedNode;
+  definition?: ParsedNode;
   encodings?: MediaEncoding[];
 }
 

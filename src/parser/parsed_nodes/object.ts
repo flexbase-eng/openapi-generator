@@ -1,7 +1,7 @@
 import { Modifiers } from './modifiers';
 import { ParsedNode } from './parsed.node';
 
-export interface Object extends ParsedNode {
+export interface ObjectNode extends ParsedNode {
   properties: Property[];
   modifiers: Modifiers;
 }

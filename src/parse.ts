@@ -9,7 +9,7 @@ import { Logger } from '@flexbase/logger';
 import { OpenApiGeneratorConfiguation } from './runtime.config';
 import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
 import { runPrettier } from './run.prettier';
-import { AstBuilder } from './ast2/ast.builder';
+import { OpenApiParserFactor } from './parser/openapi.parser.factory';
 
 export const parseSpec = async (
   config: OpenApiGeneratorConfiguation,
@@ -39,8 +39,7 @@ export const parseSpec = async (
   }
 
   if (config.debug) {
-    const ab = new AstBuilder();
-    const output = ab.parse(apiDoc);
+    const output = OpenApiParserFactor.parse(apiDoc, logger);
 
     await fs.ensureDir(config.debugPath);
     const name = Path.join(config.debugPath, `ast2.json`);

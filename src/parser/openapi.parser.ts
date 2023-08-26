@@ -28,12 +28,16 @@ import {
   Response,
   SecurityScheme,
   Union,
+  ObjectNode,
+  Component,
+  Components,
 } from './parsed_nodes';
 import { Header, NamedHeader } from './parsed_nodes/header';
+import { Logger } from '@flexbase/logger';
+import { CallbackList } from './parsed_nodes/callback';
 
 type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
 type ReferenceObject = OpenAPIV3.ReferenceObject | OpenAPIV3_1.ReferenceObject;
-type BaseSchemaObject = OpenAPIV3.BaseSchemaObject | OpenAPIV3_1.BaseSchemaObject;
 type ArraySchemaObject = OpenAPIV3.ArraySchemaObject | OpenAPIV3_1.ArraySchemaObject;
 type NonArraySchemaObject = OpenAPIV3.NonArraySchemaObject | OpenAPIV3_1.NonArraySchemaObject;
 type NonArraySchemaObjectType = OpenAPIV3.NonArraySchemaObjectType | OpenAPIV3_1.NonArraySchemaObjectType;
@@ -50,10 +54,120 @@ type CallbackObject = OpenAPIV3.CallbackObject | OpenAPIV3_1.CallbackObject;
 type PathItemObject = OpenAPIV3.PathItemObject | OpenAPIV3_1.PathItemObject;
 type OperationObject = OpenAPIV3.OperationObject | OpenAPIV3_1.OperationObject;
 type PathsObject = OpenAPIV3.PathsObject | OpenAPIV3_1.PathsObject;
+type Document = OpenAPIV3.Document | OpenAPIV3_1.Document;
+type ComponentsObject = OpenAPIV3.ComponentsObject | OpenAPIV3_1.ComponentsObject;
 
 const nonArraySchemaObjectType: string[] = ['string', 'number', 'boolean', 'integer', 'null'];
 
+type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
+
 export abstract class OpenApiParser {
+  constructor(private readonly _logger: Logger) {}
+
+  parse(document: Document) {
+    const components = document.components ? this.parseComponents(document.components) : {};
+
+    const paths = document.paths ? this.parsePaths(document.paths) : {};
+
+    return { components, paths };
+  }
+
+  protected parseComponents(components: ComponentsObject): Components {
+    const models: Component[] = [];
+    const requestBodies: Component[] = [];
+    const responses: Component[] = [];
+    const parameters: Component[] = [];
+    const headers: Component[] = [];
+    const securitySchemes: Component[] = [];
+    const callbacks: Component[] = [];
+
+    if (components.schemas) {
+      const records = Object.entries(components.schemas);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/schemas/${name}`;
+
+        const definition = this.parseSchema(schema);
+        models.push({ name, referenceName, definition });
+      }
+    }
+
+    if (components.requestBodies) {
+      const records = Object.entries(components.requestBodies);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/requestBodies/${name}`;
+
+        const definition = this.parseRequestBody(schema);
+        requestBodies.push({ name, referenceName, definition });
+      }
+    }
+
+    if (components.responses) {
+      const records = Object.entries(components.responses);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/responses/${name}`;
+
+        const definition = this.parseResponse(schema);
+        responses.push({ name, referenceName, definition });
+      }
+    }
+
+    if (components.parameters) {
+      const records = Object.entries(components.parameters);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/parameters/${name}`;
+
+        const definition = this.parseParameter(schema);
+        parameters.push({ name, referenceName, definition });
+      }
+    }
+
+    if (components.headers) {
+      const records = Object.entries(components.headers);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/headers/${name}`;
+
+        const definition = this.parseHeaderObject(schema);
+        headers.push({ name, referenceName, definition });
+      }
+    }
+
+    if (components.securitySchemes) {
+      const records = Object.entries(components.securitySchemes);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/securitySchemes/${name}`;
+
+        const definition = this.parseSecurityScheme(schema);
+        securitySchemes.push({ name, referenceName, definition });
+      }
+    }
+
+    if (components.callbacks) {
+      const records = Object.entries(components.callbacks);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/callbacks/${name}`;
+
+        const definition = this.parseCallback(schema, name);
+        callbacks.push({ name, referenceName, definition });
+      }
+    }
+
+    return { models, requestBodies, responses, parameters, headers, securitySchemes, callbacks };
+  }
+
   private isReferenceObject(test: object): test is ReferenceObject {
     return '$ref' in test;
   }
@@ -64,6 +178,18 @@ export abstract class OpenApiParser {
 
   private isNonArraySchemaObject(test: SchemaObject): test is NonArraySchemaObject {
     return !('items' in test);
+  }
+
+  private isAllOf(test: NonArraySchemaObject): test is WithRequired<NonArraySchemaObject, 'allOf'> {
+    return test.allOf !== undefined;
+  }
+
+  private isAnyOf(test: NonArraySchemaObject): test is WithRequired<NonArraySchemaObject, 'anyOf'> {
+    return test.anyOf !== undefined;
+  }
+
+  private isOneOf(test: NonArraySchemaObject): test is WithRequired<NonArraySchemaObject, 'oneOf'> {
+    return test.oneOf !== undefined;
   }
 
   private getExtensions(obj: any): Record<string, string> | undefined {
@@ -112,26 +238,27 @@ export abstract class OpenApiParser {
     };
   }
 
-  parseSchema(schema: SchemaObject | ReferenceObject): ParsedNode {
+  protected parseSchema(schema: SchemaObject | ReferenceObject, type?: NonArraySchemaObjectType): ParsedNode {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
 
+    schema.type ??= type;
     const modifiers = this.getModifiers(schema);
 
     if (this.isArraySchemaObject(schema)) {
-      return this.createArray(modifiers);
+      return this.createArray(schema, modifiers);
     } else if (this.isNonArraySchemaObject(schema)) {
-      if (schema.allOf) {
-        return this.parseAllOf(schema.allOf, modifiers);
+      if (this.isAllOf(schema)) {
+        return this.parseAllOf(schema, modifiers);
       }
 
-      if (schema.anyOf) {
-        return this.parseAnyOf(schema.anyOf, modifiers);
+      if (this.isAnyOf(schema)) {
+        return this.parseAnyOf(schema, modifiers);
       }
 
-      if (schema.oneOf) {
-        return this.parseAnyOf(schema.oneOf, modifiers);
+      if (this.isOneOf(schema)) {
+        return this.parseOneOf(schema, modifiers);
       }
 
       if (schema.not) {
@@ -147,17 +274,19 @@ export abstract class OpenApiParser {
       }
     }
 
+    this._logger.error(schema);
     throw new Error(`Unknown schema`);
   }
 
-  parsePaths(paths: PathsObject): Path[] {
-    const nodes = [];
+  protected parsePaths(paths: PathsObject): Path[] {
+    const nodes: Path[] = [];
     const records = Object.entries(paths);
     for (const record of records) {
       const name = record[0];
       const schema = record[1];
       const definition = schema ? this.parsePathItemObject(schema) : undefined;
       nodes.push({
+        type: 'pathItem',
         name,
         definition,
       });
@@ -176,6 +305,7 @@ export abstract class OpenApiParser {
 
       const definition = this.parseMediaTypeObject(mediaTypeObject);
       content.push({
+        type: 'mediaContent',
         name,
         definition,
       });
@@ -216,6 +346,7 @@ export abstract class OpenApiParser {
 
       const definition = this.parseHeaderObject(header);
       nodes.push({
+        type: 'header',
         name,
         definition,
       });
@@ -234,6 +365,7 @@ export abstract class OpenApiParser {
 
       const definition = this.parseLinkObject(link);
       nodes.push({
+        type: 'link',
         name,
         definition,
       });
@@ -241,7 +373,7 @@ export abstract class OpenApiParser {
     return nodes;
   }
 
-  parseRequestBody(schema: ReferenceObject | RequestBodyObject): RequestBody | Reference {
+  protected parseRequestBody(schema: ReferenceObject | RequestBodyObject): RequestBody | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
@@ -252,6 +384,7 @@ export abstract class OpenApiParser {
     const content = this.parseMediaContent(schema.content);
 
     return {
+      type: 'requestBody',
       description,
       required,
       extensions,
@@ -260,11 +393,12 @@ export abstract class OpenApiParser {
   }
 
   private parseMediaTypeObject(mediaTypeObject: MediaTypeObject): MediaType {
-    const type = mediaTypeObject.schema ? this.parseSchema(mediaTypeObject.schema) : undefined;
+    const definition = mediaTypeObject.schema ? this.parseSchema(mediaTypeObject.schema) : undefined;
     const encodings = this.parseMediaEncoding(mediaTypeObject.encoding);
 
     return {
-      type,
+      type: 'mediaTypeObject',
+      definition,
       encodings,
     };
   }
@@ -277,6 +411,7 @@ export abstract class OpenApiParser {
     const headers = this.parseHeaders(encoding.headers);
 
     return {
+      type: 'encoding',
       contentType,
       style,
       explode,
@@ -285,12 +420,13 @@ export abstract class OpenApiParser {
     };
   }
 
-  parseHeaderObject(header: HeaderObject | ReferenceObject): Header | Reference {
+  protected parseHeaderObject(header: HeaderObject | ReferenceObject): Header | Reference {
     if (this.isReferenceObject(header)) {
       return this.createReference(header);
     }
 
     return {
+      type: 'headerObject',
       ...this.parseParameterBaseObject(header),
     };
   }
@@ -308,6 +444,7 @@ export abstract class OpenApiParser {
     const parameters = link.parameters;
 
     return {
+      type: 'linkObject',
       server,
       operationRef,
       operationId,
@@ -342,7 +479,7 @@ export abstract class OpenApiParser {
     };
   }
 
-  parseResponse(schema: ReferenceObject | ResponseObject): Response | Reference {
+  protected parseResponse(schema: ReferenceObject | ResponseObject): Response | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
@@ -353,6 +490,7 @@ export abstract class OpenApiParser {
     const links = this.parseLinks(schema.links);
 
     return {
+      type: 'response',
       description,
       headers,
       content,
@@ -360,49 +498,57 @@ export abstract class OpenApiParser {
     };
   }
 
-  parseParameter(schema: ReferenceObject | ParameterObject): Parameter | Reference {
+  protected parseParameter(schema: ReferenceObject | ParameterObject): Parameter | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
 
     return {
+      type: 'parameter',
       name: schema.name,
       in: schema.in,
       ...this.parseParameterBaseObject(schema),
     };
   }
 
-  parseSecurityScheme(schema: ReferenceObject | SecuritySchemeObject): SecurityScheme | Reference {
+  protected parseSecurityScheme(schema: ReferenceObject | SecuritySchemeObject): SecurityScheme | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
 
+    const type = 'securityScheme';
     const description = schema.description;
 
     switch (schema.type) {
       case 'http':
-        return <HttpSecurityScheme>{ description, bearerFormat: schema.bearerFormat, scheme: schema.scheme };
+        return <HttpSecurityScheme>{ type, description, bearerFormat: schema.bearerFormat, scheme: schema.scheme };
 
       case 'apiKey':
-        return <ApiKeySecurityScheme>{ description, name: schema.name, in: schema.in };
+        return <ApiKeySecurityScheme>{ type, description, name: schema.name, in: schema.in };
 
       case 'openIdConnect':
-        return <OpenIdConnectSecurityScheme>{ description, openIdConnectUrl: schema.openIdConnectUrl };
+        return <OpenIdConnectSecurityScheme>{ type, description, openIdConnectUrl: schema.openIdConnectUrl };
 
       case 'oauth2':
-        return <OAuth2SecurityScheme>{ description, flows: schema.flows };
+        return <OAuth2SecurityScheme>{ type, description, flows: schema.flows };
 
       default:
         throw new Error(`Unknown security scheme ${schema}`);
     }
   }
 
-  parseCallback(schema: ReferenceObject | CallbackObject): Callback[] | Reference {
+  protected parseCallback(schema: PathItemObject, name: string): Callback {
+    const definition = this.parsePathItemObject(schema);
+
+    return { type: 'callback', name, definition };
+  }
+
+  protected parseCallbackObject(schema: ReferenceObject | CallbackObject): CallbackList | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
 
-    const nodes: Callback[] = [];
+    const callbacks: Callback[] = [];
 
     const records = Object.entries(schema);
     for (const record of records) {
@@ -410,17 +556,13 @@ export abstract class OpenApiParser {
       const schema = record[1];
       const refName = `#/components/callbacks/${name}`;
 
-      const definition = this.parsePathItemObject(schema);
-      nodes.push({
-        name,
-        definition,
-      });
+      callbacks.push(this.parseCallback(schema, name));
     }
 
-    return nodes;
+    return <CallbackList>{ type: 'callbackList', callbacks };
   }
 
-  parsePathItemObject(schema: ReferenceObject | PathItemObject): PathItem | Reference {
+  protected parsePathItemObject(schema: ReferenceObject | PathItemObject): PathItem | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
@@ -447,6 +589,7 @@ export abstract class OpenApiParser {
     }
 
     return {
+      type: 'pathItemObject',
       operations,
       parameters,
     };
@@ -487,6 +630,7 @@ export abstract class OpenApiParser {
 
         const definition = this.parseResponse(schema);
         responses.push({
+          type: 'responseList',
           status: name,
           definition,
         });
@@ -494,23 +638,21 @@ export abstract class OpenApiParser {
     }
 
     if (schema.callbacks) {
-      callbacks = [];
+      const cbs = [];
       const records = Object.entries(schema.callbacks);
       for (const record of records) {
         const name = record[0];
         const schema = record[1];
 
-        const callback = this.parseCallback(schema);
-        callbacks.push({
-          name,
-          callbacks: callback,
-        });
+        cbs.push(this.parseCallback(schema, name));
       }
+      callbacks = { type: 'callbackList', callbacks: cbs };
     }
 
     const security = schema.security;
 
     return {
+      type: 'operation',
       method,
       tags,
       description,
@@ -528,6 +670,7 @@ export abstract class OpenApiParser {
 
   private createReference(schema: ReferenceObject): Reference {
     return {
+      type: 'reference',
       reference: schema.$ref,
       summary: (schema as Record<string, string>).summary,
       description: (schema as Record<string, string>).description,
@@ -544,12 +687,13 @@ export abstract class OpenApiParser {
   private createProperty(name: string, schema: SchemaObject | ReferenceObject, required: boolean): Property {
     return {
       name,
+      type: 'property',
       definition: this.parseSchema(schema),
       required,
     };
   }
 
-  private parseObject(schema: NonArraySchemaObject, modifiers: Modifiers): Object {
+  private parseObject(schema: NonArraySchemaObject, modifiers: Modifiers): ObjectNode {
     const properties: Property[] = [];
     if (schema.properties) {
       const propEntries = Object.entries(schema.properties);
@@ -559,37 +703,58 @@ export abstract class OpenApiParser {
       }
     }
 
-    return { properties, modifiers };
+    return { type: 'object', properties, modifiers };
   }
 
-  private parseAllOf(allOf: (ReferenceObject | SchemaObject)[], modifiers: Modifiers): Composite {
-    const definitions = allOf.map(x => this.parseSchema(x));
+  private parseAllOf(schema: WithRequired<NonArraySchemaObject, 'allOf'>, modifiers: Modifiers): Composite {
+    const allOf: (ReferenceObject | SchemaObject)[] = schema.allOf;
+
+    const definitions = allOf.map(x => this.parseSchema(x, schema.type));
 
     return {
+      type: 'composite',
       modifiers,
       definitions,
     };
   }
 
-  private parseAnyOf(anyOf: (ReferenceObject | SchemaObject)[], modifiers: Modifiers): Union {
-    const definitions = anyOf.map(x => this.parseSchema(x));
+  private parseAnyOf(schema: WithRequired<NonArraySchemaObject, 'anyOf'>, modifiers: Modifiers): Union {
+    const anyOf: (ReferenceObject | SchemaObject)[] = schema.anyOf;
+
+    const definitions = anyOf.map(x => this.parseSchema(x, schema.type));
 
     return {
+      type: 'union',
       modifiers,
       definitions,
     };
   }
 
-  private parseNotObject(not: ReferenceObject | SchemaObject, modifiers: Modifiers): Exclusion {
+  private parseOneOf(schema: WithRequired<NonArraySchemaObject, 'oneOf'>, modifiers: Modifiers): Union {
+    const oneOf: (ReferenceObject | SchemaObject)[] = schema.oneOf;
+
+    const definitions = oneOf.map(x => this.parseSchema(x, schema.type));
+
     return {
+      type: 'union',
       modifiers,
-      definition: this.parseSchema(not),
+      definitions,
     };
   }
 
-  private createArray(modifiers: Modifiers): ArrayNode {
+  private parseNotObject(schema: ReferenceObject | SchemaObject, modifiers: Modifiers): Exclusion {
     return {
+      type: 'exclusion',
       modifiers,
+      definition: this.parseSchema(schema),
+    };
+  }
+
+  private createArray(schema: ArraySchemaObject, modifiers: Modifiers): ArrayNode {
+    return {
+      type: 'array',
+      modifiers,
+      definition: this.parseSchema(schema.items),
     };
   }
 }
