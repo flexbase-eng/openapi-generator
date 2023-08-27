@@ -1,11 +1,22 @@
+import { Logger } from '@flexbase/logger';
 import { ParsedDocument } from '../parser/parsed.document';
-import { Component, Components, Operation, ParsedNode, Path, PathItem, Reference } from '../parser/parsed_nodes';
+import { Component, Components, Operation, Parameter, ParsedNode, Path, PathItem, Reference } from '../parser/parsed_nodes';
 import { Tag } from '../parser/parsed_nodes/tag';
 import '../utilities/array';
 
 export class OpenApiCompiler {
+  constructor(private readonly _logger: Logger) {}
+
   private isReference(value: ParsedNode): value is Reference {
     return value.type === 'reference';
+  }
+
+  private isComponent(value?: Component): value is Component {
+    return value !== undefined;
+  }
+
+  private isPath(value?: Path): value is Path {
+    return value !== undefined;
   }
 
   optimize(document: ParsedDocument): ParsedDocument {
@@ -14,6 +25,25 @@ export class OpenApiCompiler {
     document = this.removeDuplicates(document);
 
     return document;
+  }
+
+  organizeByTags(document: ParsedDocument): ParsedDocument[] {
+    const documents: ParsedDocument[] = document.tags.map(tag => {
+      const doc = {
+        title: tag.name,
+        description: tag.description,
+        version: document.version,
+        tags: [tag],
+        paths: this.organizePathsByTags(document, tag.name),
+        components: {},
+      };
+
+      doc.components = this.organizeComponentsByTags(document, doc.paths);
+
+      return doc;
+    });
+
+    return documents;
   }
 
   private globalize(document: ParsedDocument): ParsedDocument {
@@ -193,5 +223,85 @@ export class OpenApiCompiler {
 
   private removeModelDuplicates(models: Component[]): Component[] {
     return models;
+  }
+
+  private organizePathsByTags(document: ParsedDocument, tag: string): Path[] {
+    const paths = document.paths.map(path => {
+      const definition = path.definition;
+
+      if (definition === undefined) {
+        return undefined;
+      }
+
+      if (this.isReference(definition)) {
+        return path;
+      }
+
+      const operations = definition.operations;
+      if (operations === undefined) {
+        return undefined;
+      }
+
+      if (operations.some(operation => operation.tags?.includes(tag))) return path;
+
+      return undefined;
+    });
+
+    return paths.filter<Path>(this.isPath);
+  }
+
+  private organizeComponentsByTags(document: ParsedDocument, paths: Path[]): Components {
+    const components: Required<Components> = {
+      models: [],
+      requestBodies: [],
+      responses: [],
+      parameters: [],
+      headers: [],
+      securitySchemes: [],
+      callbacks: [],
+      pathItems: [],
+    };
+
+    paths.forEach(path => {
+      const definition = path.definition;
+
+      if (definition === undefined) {
+        return;
+      }
+
+      if (this.isReference(definition)) {
+        return;
+      }
+
+      if (definition.parameters) {
+        components.parameters.push(...this.organizeParametersByTags(document, definition.parameters));
+      }
+
+      definition.operations.forEach(operation => components.parameters.push(...this.organizeParametersByTags(document, operation.parameters)));
+    });
+
+    return components;
+  }
+
+  private organizeParametersByTags(document: ParsedDocument, parameters?: (Parameter | Reference)[]): Component[] {
+    if (parameters === undefined) {
+      return [];
+    }
+
+    return parameters
+      .map(parameter => {
+        if (this.isReference(parameter)) {
+          const found = document.components.parameters?.filter(x => x.referenceName === parameter.reference);
+          if (found === undefined || found.length === 0) {
+            this._logger.warn(`${parameter.reference} not found`);
+          } else {
+            if (found.length > 1) {
+              this._logger.warn(`${parameter.reference} found mulitiple references, using first instance`);
+            }
+            return found[0];
+          }
+        }
+      })
+      .filter<Component>(this.isComponent);
   }
 }

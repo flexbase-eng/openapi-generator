@@ -41,7 +41,7 @@ export const parseSpec = async (
 
   if (config.debug) {
     let output = OpenApiParserFactor.parse(apiDoc, logger);
-    const compiler = new OpenApiCompiler();
+    const compiler = new OpenApiCompiler(logger);
     output = compiler.optimize(output);
 
     await fs.ensureDir(config.debugPath);

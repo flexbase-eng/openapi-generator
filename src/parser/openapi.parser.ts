@@ -595,6 +595,10 @@ export abstract class OpenApiParser {
     const deprecated = schema.deprecated;
     const extensions = this.getExtensions(schema);
 
+    if (tags === undefined || tags.length === 0) {
+      this._logger.warn(`Operation ${operationId} does not have any tags`);
+    }
+
     if (schema.parameters) {
       parameters = [];
       for (const record of schema.parameters) {
