@@ -6,7 +6,3 @@ export interface Callback extends ParsedNode {
   name: string;
   definition: PathItem | Reference;
 }
-
-export interface CallbackList extends ParsedNode {
-  callbacks: Callback[] | Reference;
-}

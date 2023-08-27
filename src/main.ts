@@ -16,7 +16,7 @@ export async function main(
   oasBuilder: IOpenApiSpecBuilder,
   oasConverter: IOpenApiSpecConverter,
   astBuilder: IAstBuilder,
-  logger: Logger
+  logger: Logger,
 ): Promise<void> {
   program.name(pkg.name).description(pkg.description).version(pkg.version);
 

@@ -14,5 +14,6 @@ export interface Components {
 export interface Component {
   name: string;
   referenceName: string;
+  generated?: boolean;
   definition: ParsedNode;
 }

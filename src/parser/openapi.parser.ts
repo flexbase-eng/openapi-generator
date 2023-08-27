@@ -25,16 +25,15 @@ import {
   Property,
   Reference,
   RequestBody,
-  Response,
   SecurityScheme,
   Union,
   ObjectNode,
   Component,
   Components,
+  ResponseBody,
 } from './parsed_nodes';
 import { Header, NamedHeader } from './parsed_nodes/header';
 import { Logger } from '@flexbase/logger';
-import { CallbackList } from './parsed_nodes/callback';
 import { ParsedDocument } from './parsed.document';
 import { Tag } from './parsed_nodes/tag';
 
@@ -487,7 +486,7 @@ export abstract class OpenApiParser {
     };
   }
 
-  protected parseResponse(schema: ReferenceObject | ResponseObject): Response | Reference {
+  protected parseResponse(schema: ReferenceObject | ResponseObject): ResponseBody | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
@@ -498,7 +497,7 @@ export abstract class OpenApiParser {
     const links = this.parseLinks(schema.links);
 
     return {
-      type: 'response',
+      type: 'responseObject',
       description,
       headers,
       content,
@@ -549,25 +548,6 @@ export abstract class OpenApiParser {
     const definition = this.parsePathItemObject(schema);
 
     return { type: 'callback', name, definition };
-  }
-
-  protected parseCallbackObject(schema: ReferenceObject | CallbackObject): CallbackList | Reference {
-    if (this.isReferenceObject(schema)) {
-      return this.createReference(schema);
-    }
-
-    const callbacks: Callback[] = [];
-
-    const records = Object.entries(schema);
-    for (const record of records) {
-      const name = record[0];
-      const schema = record[1];
-      const refName = `#/components/callbacks/${name}`;
-
-      callbacks.push(this.parseCallback(schema, name));
-    }
-
-    return <CallbackList>{ type: 'callbackList', callbacks };
   }
 
   protected parsePathItemObject(schema: ReferenceObject | PathItemObject): PathItem | Reference {
@@ -633,28 +613,27 @@ export abstract class OpenApiParser {
       responses = [];
       const records = Object.entries(schema.responses);
       for (const record of records) {
-        const name = record[0];
+        const status = record[0];
         const schema = record[1];
 
         const definition = this.parseResponse(schema);
         responses.push({
-          type: 'responseList',
-          status: name,
+          type: 'response',
+          status,
           definition,
         });
       }
     }
 
     if (schema.callbacks) {
-      const cbs = [];
+      callbacks = [];
       const records = Object.entries(schema.callbacks);
       for (const record of records) {
         const name = record[0];
         const schema = record[1];
 
-        cbs.push(this.parseCallback(schema, name));
+        callbacks.push(this.parseCallback(schema, name));
       }
-      callbacks = { type: 'callbackList', callbacks: cbs };
     }
 
     const security = schema.security;

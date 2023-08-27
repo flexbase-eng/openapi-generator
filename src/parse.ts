@@ -10,6 +10,7 @@ import { OpenApiGeneratorConfiguation } from './runtime.config';
 import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
 import { runPrettier } from './run.prettier';
 import { OpenApiParserFactor } from './parser/openapi.parser.factory';
+import { OpenApiCompiler } from './compiler/openapi.compiler';
 
 export const parseSpec = async (
   config: OpenApiGeneratorConfiguation,
@@ -39,7 +40,9 @@ export const parseSpec = async (
   }
 
   if (config.debug) {
-    const output = OpenApiParserFactor.parse(apiDoc, logger);
+    let output = OpenApiParserFactor.parse(apiDoc, logger);
+    const compiler = new OpenApiCompiler();
+    output = compiler.optimize(output);
 
     await fs.ensureDir(config.debugPath);
     const name = Path.join(config.debugPath, `ast2.json`);

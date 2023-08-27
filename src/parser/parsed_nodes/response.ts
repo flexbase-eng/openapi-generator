@@ -4,14 +4,14 @@ import { MediaContent } from './media';
 import { ParsedNode } from './parsed.node';
 import { Reference } from './reference';
 
-export interface Response extends ParsedNode {
+export interface ResponseBody extends ParsedNode {
   description: string;
   headers?: NamedHeader[];
   content?: MediaContent[];
   links?: NamedLink[];
 }
 
-export interface NamedResponse extends ParsedNode {
+export interface Response extends ParsedNode {
   status: string;
-  definition: Response | Reference;
+  definition: ResponseBody | Reference;
 }
