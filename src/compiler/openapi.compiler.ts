@@ -1,6 +1,6 @@
 import { Logger } from '@flexbase/logger';
 import { ParsedDocument } from '../parser/parsed.document';
-import { Component, Components, Operation, Parameter, ParsedNode, Path, PathItem, Reference } from '../parser/parsed_nodes';
+import { Callback, Component, Components, Operation, Parameter, ParsedNode, Path, PathItem, Reference, Response } from '../parser/parsed_nodes';
 import { Tag } from '../parser/parsed_nodes/tag';
 import '../utilities/array';
 
@@ -17,6 +17,10 @@ export class OpenApiCompiler {
 
   private isPath(value?: Path): value is Path {
     return value !== undefined;
+  }
+
+  private isResponse(value: ParsedNode): value is Response {
+    return value.type === 'response';
   }
 
   optimize(document: ParsedDocument): ParsedDocument {
@@ -250,7 +254,7 @@ export class OpenApiCompiler {
     return paths.filter<Path>(this.isPath);
   }
 
-  private organizeComponentsByTags(document: ParsedDocument, paths: Path[]): Components {
+  private organizeComponentsByTags(originalDocument: ParsedDocument, paths: Path[]): Components {
     const components: Required<Components> = {
       models: [],
       requestBodies: [],
@@ -262,6 +266,8 @@ export class OpenApiCompiler {
       pathItems: [],
     };
 
+    const referencedComponents = new Map<string, number>();
+
     paths.forEach(path => {
       const definition = path.definition;
 
@@ -270,38 +276,67 @@ export class OpenApiCompiler {
       }
 
       if (this.isReference(definition)) {
+        // TODO handle correctly
         return;
       }
 
       if (definition.parameters) {
-        components.parameters.push(...this.organizeParametersByTags(document, definition.parameters));
+        this.organizeXByTags(originalDocument, definition.parameters, components, 'parameters');
       }
 
-      definition.operations.forEach(operation => components.parameters.push(...this.organizeParametersByTags(document, operation.parameters)));
+      definition.operations.forEach(operation => {
+        this.organizeXByTags(originalDocument, operation.parameters, components, 'parameters');
+        this.organizeXByTags(originalDocument, operation.callbacks, components, 'callbacks');
+        //components.requestBodies.push(...this.organizeXByTags(document, operation.requestBody, 'requestBodies'));
+        this.organizeXByTags(originalDocument, operation.responses, components, 'responses');
+      });
     });
 
     return components;
   }
 
-  private organizeParametersByTags(document: ParsedDocument, parameters?: (Parameter | Reference)[]): Component[] {
-    if (parameters === undefined) {
-      return [];
+  private organizeXByTags<T extends ParsedNode, U extends keyof Components>(
+    originalDocument: ParsedDocument,
+    parsedNodes: (T | Reference)[] | undefined,
+    components: Required<Components>,
+    section: U,
+  ) {
+    if (parsedNodes === undefined) {
+      return;
     }
 
-    return parameters
-      .map(parameter => {
-        if (this.isReference(parameter)) {
-          const found = document.components.parameters?.filter(x => x.referenceName === parameter.reference);
-          if (found === undefined || found.length === 0) {
-            this._logger.warn(`${parameter.reference} not found`);
-          } else {
-            if (found.length > 1) {
-              this._logger.warn(`${parameter.reference} found mulitiple references, using first instance`);
-            }
-            return found[0];
-          }
+    const find = (node: Reference) => {
+      const comps = originalDocument.components[section];
+
+      const found = comps?.filter(x => x.referenceName === node.reference);
+      if (found === undefined || found.length === 0) {
+        this._logger.warn(`${section} ${node.reference} not found`);
+        return undefined;
+      } else {
+        if (found.length > 1) {
+          this._logger.warn(`mulitiple references of ${section} ${node.reference} found, using first instance`);
         }
-      })
-      .filter<Component>(this.isComponent);
+        return found[0];
+      }
+    };
+
+    components[section].push(
+      ...parsedNodes
+        .map(node => {
+          if (this.isReference(node)) {
+            return find(node);
+          } else if (this.isResponse(node) && this.isReference(node.definition)) {
+            return find(node.definition);
+          }
+        })
+        .filter<Component>(this.isComponent),
+    );
+  }
+
+  private traverseReferences<T extends ParsedNode>(originalDocument: ParsedDocument, node: T, referencedComponents: Map<string, number>) {
+    if (this.isReference(node)) {
+      const count = (referencedComponents.get(node.reference) ?? 0) + 1;
+      referencedComponents.set(node.reference, count);
+    }
   }
 }

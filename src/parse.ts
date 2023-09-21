@@ -44,15 +44,20 @@ export const parseSpec = async (
     const compiler = new OpenApiCompiler(logger);
     output = compiler.optimize(output);
 
+    const docsByTag = compiler.organizeByTags(output);
+
     await fs.ensureDir(config.debugPath);
-    const name = Path.join(config.debugPath, `ast2.json`);
-    let json = JSON.stringify(output);
-    try {
-      json = await runPrettier(json, 'json');
-    } catch (e) {
-      logger.info(`Prettier error on ${name}`, e);
+
+    for (const d of docsByTag) {
+      const name = Path.join(config.debugPath, `${d.title}.openapi.json`);
+      let json = JSON.stringify(d);
+      try {
+        json = await runPrettier(json, 'json');
+      } catch (e) {
+        logger.info(`Prettier error on ${name}`, e);
+      }
+      await fs.writeFile(name, json);
     }
-    await fs.writeFile(name, json);
   }
 
   const oasTree = oasBuilder.generateOasTree(apiDoc);
