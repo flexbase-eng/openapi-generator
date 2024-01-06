@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { OpenApiSpecBuilder } from './oas-tree/oas.builder';
 import { OpenApiSpecConverter } from './oas-tree/oas.converter';
 import { ChalkLogger } from './chalk.logger';
