@@ -41,23 +41,30 @@ export const parseSpec = async (
 
   if (config.debug) {
     let output = OpenApiParserFactor.parse(apiDoc, logger);
+
     const compiler = new OpenApiCompiler(logger);
     output = compiler.optimize(output);
-
     const docsByTag = compiler.organizeByTags(output);
 
     await fs.ensureDir(config.debugPath);
 
-    for (const d of docsByTag) {
-      const name = Path.join(config.debugPath, `${d.title}.openapi.json`);
-      let json = JSON.stringify(d);
+    const writeFile = async (title: string, data: object) => {
+      const name = Path.join(config.debugPath, title);
+      let json = JSON.stringify(data);
       try {
         json = await runPrettier(json, 'json');
       } catch (e) {
         logger.info(`Prettier error on ${name}`, e);
       }
       await fs.writeFile(name, json);
+    };
+
+    await writeFile(`${output.title}.compiled.json`, output);
+
+    for (const d of docsByTag) {
+      await writeFile(`${d.title}.openapi.json`, d);
     }
+    throw new Error();
   }
 
   const oasTree = oasBuilder.generateOasTree(apiDoc);

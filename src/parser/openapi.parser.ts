@@ -80,13 +80,13 @@ export abstract class OpenApiParser {
   }
 
   protected parseComponents(components: ComponentsObject): Components {
-    const models: Component[] = [];
-    const requestBodies: Component[] = [];
-    const responses: Component[] = [];
-    const parameters: Component[] = [];
-    const headers: Component[] = [];
-    const securitySchemes: Component[] = [];
-    const callbacks: Component[] = [];
+    let models: Component[] = [];
+    let requestBodies: Component[] = [];
+    let responses: Component[] = [];
+    let parameters: Component[] = [];
+    let headers: Component[] = [];
+    let securitySchemes: Component[] = [];
+    let callbacks: Component[] = [];
 
     if (components.schemas) {
       const records = Object.entries(components.schemas);
@@ -229,7 +229,7 @@ export abstract class OpenApiParser {
     return extensions;
   }
 
-  private getModifiers(schema: any): Modifiers {
+  private getModifiers(schema: SchemaObject): Modifiers {
     return {
       title: schema.title,
       description: schema.description,
@@ -251,7 +251,7 @@ export abstract class OpenApiParser {
       minProperties: schema.minProperties,
       required: schema.required,
       enum: schema.enum,
-      nullable: schema.nullable,
+      nullable: (schema as any).nullable,
       discriminator: schema.discriminator,
       readOnly: schema.readOnly,
       writeOnly: schema.writeOnly,

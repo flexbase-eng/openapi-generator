@@ -3,6 +3,8 @@ import { ParsedDocument } from '../parser/parsed.document';
 import { Callback, Component, Components, Operation, Parameter, ParsedNode, Path, PathItem, Reference, Response } from '../parser/parsed_nodes';
 import { Tag } from '../parser/parsed_nodes/tag';
 import '../utilities/array';
+import { murmurHash } from '../utilities/murmur.hash';
+import { compareParsedNodes } from '../parser/compare.parsed.nodes';
 
 export class OpenApiCompiler {
   constructor(private readonly _logger: Logger) {}
@@ -24,6 +26,8 @@ export class OpenApiCompiler {
   }
 
   optimize(document: ParsedDocument): ParsedDocument {
+    document.paths = document.paths.sort((a, b) => a.name.localeCompare(b.name));
+
     document = this.globalize(document);
 
     document = this.removeDuplicates(document);
@@ -65,35 +69,53 @@ export class OpenApiCompiler {
       if (components.callbacks) {
         document.components.callbacks ??= [];
         document.components.callbacks.push(...components.callbacks);
+        document.components.callbacks = document.components.callbacks.sort((a, b) => a.name.localeCompare(b.name));
       }
 
       if (components.headers) {
         document.components.headers ??= [];
         document.components.headers.push(...components.headers);
+        document.components.headers = document.components.headers.sort((a, b) => a.name.localeCompare(b.name));
       }
 
       if (components.models) {
         document.components.models ??= [];
         document.components.models.push(...components.models);
+        document.components.models = document.components.models.sort((a, b) => a.name.localeCompare(b.name));
       }
 
       if (components.parameters) {
         document.components.parameters ??= [];
         document.components.parameters.push(...components.parameters);
+        document.components.parameters = document.components.parameters.sort((a, b) => a.name.localeCompare(b.name));
       }
 
       if (components.requestBodies) {
         document.components.requestBodies ??= [];
         document.components.requestBodies.push(...components.requestBodies);
+        document.components.requestBodies = document.components.requestBodies.sort((a, b) => a.name.localeCompare(b.name));
       }
 
       if (components.responses) {
         document.components.responses ??= [];
         document.components.responses.push(...components.responses);
+        document.components.responses = document.components.responses.sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      if (components.pathItems) {
+        document.components.pathItems ??= [];
+        document.components.pathItems.push(...components.pathItems);
+        document.components.pathItems = document.components.pathItems.sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      if (components.securitySchemes) {
+        document.components.securitySchemes ??= [];
+        document.components.securitySchemes.push(...components.securitySchemes);
+        document.components.securitySchemes = document.components.securitySchemes.sort((a, b) => a.name.localeCompare(b.name));
       }
     });
 
-    document.tags = allTags.unique(x => x.name);
+    document.tags = allTags.unique(x => x.name).sort((a, b) => a.name.localeCompare(b.name));
 
     return document;
   }
@@ -110,16 +132,17 @@ export class OpenApiCompiler {
     const generatedResponses: Component[] = [];
     const generatedRequests: Component[] = [];
     const generatedParameters: Component[] = [];
+    const pathNameHash = String(murmurHash(path.name, 42));
 
-    generatedParameters.push(...this.globalizePathItemParameters(pathItem));
+    generatedParameters.push(...this.globalizePathItemParameters(pathNameHash, pathItem));
 
     for (const operation of pathItem.operations) {
       if (operation.tags) {
         tags.push(...operation.tags.map(tag => ({ type: 'tag', name: tag })));
       }
-      generatedResponses.push(...this.globalizeOperationResponses(operation));
-      generatedRequests.push(...this.globalizeOperationRequests(operation));
-      generatedParameters.push(...this.globalizeOperationParameters(operation));
+      generatedResponses.push(...this.globalizeOperationResponses(pathNameHash, operation));
+      generatedRequests.push(...this.globalizeOperationRequests(pathNameHash, operation));
+      generatedParameters.push(...this.globalizeOperationParameters(pathNameHash, operation));
     }
 
     components.responses = generatedResponses;
@@ -129,7 +152,7 @@ export class OpenApiCompiler {
     return { components, tags };
   }
 
-  private globalizeOperationResponses(operation: Operation): Component[] {
+  private globalizeOperationResponses(pathNameHash: string, operation: Operation): Component[] {
     let generated: Component[] = [];
 
     if (operation.responses !== undefined) {
@@ -139,7 +162,7 @@ export class OpenApiCompiler {
         }
 
         // make a global response
-        const name = `${operation.operationId}-response`;
+        const name = `${operation.operationId}-response-${pathNameHash}`;
         const referenceName = `#/components/responses/${name}`;
         generated.push({ name, referenceName, generated: true, definition: response.definition });
 
@@ -152,7 +175,7 @@ export class OpenApiCompiler {
     return generated;
   }
 
-  private globalizeOperationRequests(operation: Operation): Component[] {
+  private globalizeOperationRequests(pathNameHash: string, operation: Operation): Component[] {
     let generated: Component[] = [];
 
     if (operation.requestBody !== undefined) {
@@ -161,7 +184,7 @@ export class OpenApiCompiler {
       }
 
       // make a global request
-      const name = `${operation.operationId}-requestBody`;
+      const name = `${operation.operationId}-requestBody-${pathNameHash}`;
       const referenceName = `#/components/requestBody/${name}`;
       generated.push({ name, referenceName, generated: true, definition: operation.requestBody });
 
@@ -171,7 +194,7 @@ export class OpenApiCompiler {
     return generated;
   }
 
-  private globalizeOperationParameters(operation: Operation): Component[] {
+  private globalizeOperationParameters(pathNameHash: string, operation: Operation): Component[] {
     let generated: Component[] = [];
 
     if (operation.parameters !== undefined) {
@@ -181,7 +204,7 @@ export class OpenApiCompiler {
         }
 
         // make a global parameter
-        const name = `${operation.operationId}-${parameter.name}`;
+        const name = `${operation.operationId}-${parameter.name}-${pathNameHash}`;
         const referenceName = `#/components/parameters/${name}`;
         generated.push({ name, referenceName, generated: true, definition: parameter });
 
@@ -194,7 +217,7 @@ export class OpenApiCompiler {
     return generated;
   }
 
-  private globalizePathItemParameters(pathItem: PathItem): Component[] {
+  private globalizePathItemParameters(pathNameHash: string, pathItem: PathItem): Component[] {
     let generated: Component[] = [];
 
     if (pathItem.parameters !== undefined) {
@@ -204,7 +227,7 @@ export class OpenApiCompiler {
         }
 
         // make a global parameter
-        const name = `generated-${parameter.name}`;
+        const name = `generated-${parameter.name}-${pathNameHash}`;
         const referenceName = `#/components/parameters/${name}`;
         generated.push({ name, referenceName, generated: true, definition: parameter });
 
@@ -222,11 +245,33 @@ export class OpenApiCompiler {
       document.components.models = this.removeModelDuplicates(document.components.models);
     }
 
+    if (document.components.parameters) {
+      document.components.parameters = this.removeParameterDuplicates(document.components.parameters);
+    }
+
+    if (document.components.pathItems) {
+      document.components.pathItems = this.removeParameterDuplicates(document.components.pathItems);
+    }
+
     return document;
   }
 
   private removeModelDuplicates(models: Component[]): Component[] {
     return models;
+  }
+
+  private removeParameterDuplicates(parameters: Component[]): Component[] {
+    const dedupped: Component[] = [];
+
+    parameters.forEach(p => {
+      console.log(p.referenceName);
+      const found = dedupped.some(value => value.referenceName === p.referenceName && compareParsedNodes(value.definition, p.definition));
+      if (!found) {
+        dedupped.push(p);
+      }
+    });
+
+    return dedupped;
   }
 
   private organizePathsByTags(document: ParsedDocument, tag: string): Path[] {
@@ -266,7 +311,7 @@ export class OpenApiCompiler {
       pathItems: [],
     };
 
-    const referencedComponents = new Map<string, number>();
+    const referencedComponents = new Map<string, boolean>();
 
     paths.forEach(path => {
       const definition = path.definition;
@@ -287,7 +332,7 @@ export class OpenApiCompiler {
       definition.operations.forEach(operation => {
         this.organizeXByTags(originalDocument, operation.parameters, components, 'parameters');
         this.organizeXByTags(originalDocument, operation.callbacks, components, 'callbacks');
-        //components.requestBodies.push(...this.organizeXByTags(document, operation.requestBody, 'requestBodies'));
+        this.organizeXByTags(originalDocument, operation.requestBody, components, 'requestBodies');
         this.organizeXByTags(originalDocument, operation.responses, components, 'responses');
       });
     });
@@ -297,7 +342,7 @@ export class OpenApiCompiler {
 
   private organizeXByTags<T extends ParsedNode, U extends keyof Components>(
     originalDocument: ParsedDocument,
-    parsedNodes: (T | Reference)[] | undefined,
+    parsedNodes: (T | Reference) | (T | Reference)[] | undefined,
     components: Required<Components>,
     section: U,
   ) {
@@ -320,6 +365,10 @@ export class OpenApiCompiler {
       }
     };
 
+    if (!Array.isArray(parsedNodes)) {
+      parsedNodes = [parsedNodes];
+    }
+
     components[section].push(
       ...parsedNodes
         .map(node => {
@@ -333,10 +382,12 @@ export class OpenApiCompiler {
     );
   }
 
-  private traverseReferences<T extends ParsedNode>(originalDocument: ParsedDocument, node: T, referencedComponents: Map<string, number>) {
-    if (this.isReference(node)) {
-      const count = (referencedComponents.get(node.reference) ?? 0) + 1;
-      referencedComponents.set(node.reference, count);
-    }
-  }
+  // private traverseReferences<T extends ParsedNode>(originalDocument: ParsedDocument, node: T, referencedComponents: Map<string, boolean>) {
+  //   if (this.isReference(node)) {
+
+  //     originalDocument.components.
+
+  //     referencedComponents.set(node.reference, true);
+  //   }
+  // }
 }

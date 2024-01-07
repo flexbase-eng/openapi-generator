@@ -11,7 +11,7 @@ export class OpenApiParser3_1 extends OpenApiParser {
   protected parseComponents(components: OpenAPI.ComponentsObject): Components {
     const { models, requestBodies, responses, parameters, headers, securitySchemes, callbacks } = super.parseComponents(components);
 
-    const pathItems: Component[] = [];
+    let pathItems: Component[] = [];
 
     if (components.pathItems) {
       const records = Object.entries(components.pathItems);

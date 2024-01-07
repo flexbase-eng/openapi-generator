@@ -1,8 +1,16 @@
-import { Modifiers } from './modifiers';
-import { ParsedNode } from './parsed.node';
+import { compareModifiers } from './modifiers';
+import { CompareParsedNodes, ParsedNode } from './parsed.node';
 
 export type PrimativeTypes = 'string' | 'number' | 'boolean' | 'integer' | 'null';
 
 export interface Primative extends ParsedNode {
   type: PrimativeTypes;
 }
+
+export const isPrimative = (value: ParsedNode): value is Primative => {
+  return ['string', 'number', 'boolean', 'integer', 'null'].includes(value.type);
+};
+
+export const comparePrimatives = (a: Primative, b: Primative, _comparer: CompareParsedNodes): boolean => {
+  return a.type === b.type && compareModifiers(a, b);
+};
