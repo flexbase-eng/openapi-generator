@@ -15,3 +15,11 @@ export interface Response extends ParsedNode {
   status: string;
   definition: ResponseBody | Reference;
 }
+
+export const isResponseBody = (value: ParsedNode): value is ResponseBody => {
+  return value.type === 'responseObject';
+};
+
+export const isResponse = (value: ParsedNode): value is Response => {
+  return value.type === 'response';
+};

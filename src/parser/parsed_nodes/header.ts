@@ -17,3 +17,11 @@ export interface NamedHeader extends ParsedNode {
   name: string;
   definition: ParsedNode;
 }
+
+export const isHeader = (value: ParsedNode): value is Header => {
+  return value.type === 'headerObject';
+};
+
+export const isNamedHeader = (value: ParsedNode): value is NamedHeader => {
+  return value.type === 'header';
+};

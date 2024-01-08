@@ -7,3 +7,7 @@ export interface RequestBody extends ParsedNode {
   extensions?: Record<string, string>;
   content?: MediaContent[];
 }
+
+export const isRequestBody = (value: ParsedNode): value is RequestBody => {
+  return value.type === 'requestBody';
+};

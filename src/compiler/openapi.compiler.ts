@@ -1,6 +1,34 @@
 import { Logger } from '@flexbase/logger';
 import { ParsedDocument } from '../parser/parsed.document';
-import { Callback, Component, Components, Operation, Parameter, ParsedNode, Path, PathItem, Reference, Response } from '../parser/parsed_nodes';
+import {
+  Component,
+  Components,
+  Operation,
+  ParsedNode,
+  Path,
+  PathItem,
+  Reference,
+  isArrayNode,
+  isCallback,
+  isComposite,
+  isExclusion,
+  isHeader,
+  isLink,
+  isMediaContent,
+  isMediaType,
+  isNamedHeader,
+  isNamedLink,
+  isObjectNode,
+  isOperation,
+  isParameter,
+  isPathItem,
+  isProperty,
+  isReference,
+  isRequestBody,
+  isResponse,
+  isResponseBody,
+  isUnion,
+} from '../parser/parsed_nodes';
 import { Tag } from '../parser/parsed_nodes/tag';
 import '../utilities/array';
 import { murmurHash } from '../utilities/murmur.hash';
@@ -9,20 +37,8 @@ import { compareParsedNodes } from '../parser/compare.parsed.nodes';
 export class OpenApiCompiler {
   constructor(private readonly _logger: Logger) {}
 
-  private isReference(value: ParsedNode): value is Reference {
-    return value.type === 'reference';
-  }
-
-  private isComponent(value?: Component): value is Component {
-    return value !== undefined;
-  }
-
   private isPath(value?: Path): value is Path {
     return value !== undefined;
-  }
-
-  private isResponse(value: ParsedNode): value is Response {
-    return value.type === 'response';
   }
 
   optimize(document: ParsedDocument): ParsedDocument {
@@ -124,7 +140,7 @@ export class OpenApiCompiler {
     const components: Components = {};
     const tags: Tag[] = [];
 
-    if (path.definition === undefined || this.isReference(path.definition)) {
+    if (path.definition === undefined || isReference(path.definition)) {
       return { components, tags };
     }
 
@@ -157,7 +173,7 @@ export class OpenApiCompiler {
 
     if (operation.responses !== undefined) {
       const responses = operation.responses.map(response => {
-        if (this.isReference(response) || this.isReference(response.definition)) {
+        if (isReference(response) || isReference(response.definition)) {
           return response;
         }
 
@@ -179,7 +195,7 @@ export class OpenApiCompiler {
     let generated: Component[] = [];
 
     if (operation.requestBody !== undefined) {
-      if (this.isReference(operation.requestBody) || operation.requestBody.content === undefined) {
+      if (isReference(operation.requestBody) || operation.requestBody.content === undefined) {
         return generated;
       }
 
@@ -199,7 +215,7 @@ export class OpenApiCompiler {
 
     if (operation.parameters !== undefined) {
       const parameters = operation.parameters.map(parameter => {
-        if (this.isReference(parameter)) {
+        if (isReference(parameter)) {
           return parameter;
         }
 
@@ -222,7 +238,7 @@ export class OpenApiCompiler {
 
     if (pathItem.parameters !== undefined) {
       const parameters = pathItem.parameters.map(parameter => {
-        if (this.isReference(parameter)) {
+        if (isReference(parameter)) {
           return parameter;
         }
 
@@ -264,7 +280,6 @@ export class OpenApiCompiler {
     const dedupped: Component[] = [];
 
     parameters.forEach(p => {
-      console.log(p.referenceName);
       const found = dedupped.some(value => value.referenceName === p.referenceName && compareParsedNodes(value.definition, p.definition));
       if (!found) {
         dedupped.push(p);
@@ -282,7 +297,7 @@ export class OpenApiCompiler {
         return undefined;
       }
 
-      if (this.isReference(definition)) {
+      if (isReference(definition)) {
         return path;
       }
 
@@ -311,8 +326,6 @@ export class OpenApiCompiler {
       pathItems: [],
     };
 
-    const referencedComponents = new Map<string, boolean>();
-
     paths.forEach(path => {
       const definition = path.definition;
 
@@ -320,74 +333,157 @@ export class OpenApiCompiler {
         return;
       }
 
-      if (this.isReference(definition)) {
-        // TODO handle correctly
-        return;
-      }
-
-      if (definition.parameters) {
-        this.organizeXByTags(originalDocument, definition.parameters, components, 'parameters');
-      }
-
-      definition.operations.forEach(operation => {
-        this.organizeXByTags(originalDocument, operation.parameters, components, 'parameters');
-        this.organizeXByTags(originalDocument, operation.callbacks, components, 'callbacks');
-        this.organizeXByTags(originalDocument, operation.requestBody, components, 'requestBodies');
-        this.organizeXByTags(originalDocument, operation.responses, components, 'responses');
-      });
+      this.traverseReferences(originalDocument, components, definition);
     });
+
+    components.models = components.models.sort((a, b) => a.name.localeCompare(b.name));
+    components.requestBodies = components.requestBodies.sort((a, b) => a.name.localeCompare(b.name));
+    components.responses = components.responses.sort((a, b) => a.name.localeCompare(b.name));
+    components.parameters = components.parameters.sort((a, b) => a.name.localeCompare(b.name));
+    components.headers = components.headers.sort((a, b) => a.name.localeCompare(b.name));
+    components.securitySchemes = components.securitySchemes.sort((a, b) => a.name.localeCompare(b.name));
+    components.callbacks = components.callbacks.sort((a, b) => a.name.localeCompare(b.name));
+    components.pathItems = components.pathItems.sort((a, b) => a.name.localeCompare(b.name));
 
     return components;
   }
 
-  private organizeXByTags<T extends ParsedNode, U extends keyof Components>(
-    originalDocument: ParsedDocument,
-    parsedNodes: (T | Reference) | (T | Reference)[] | undefined,
-    components: Required<Components>,
-    section: U,
-  ) {
-    if (parsedNodes === undefined) {
-      return;
+  private findInSection<U extends keyof Components>(components: Components, node: Reference, section: U): Component | undefined {
+    const comps = components[section];
+
+    if (!comps) {
+      return undefined;
     }
 
-    const find = (node: Reference) => {
-      const comps = originalDocument.components[section];
-
-      const found = comps?.filter(x => x.referenceName === node.reference);
-      if (found === undefined || found.length === 0) {
-        this._logger.warn(`${section} ${node.reference} not found`);
-        return undefined;
-      } else {
-        if (found.length > 1) {
-          this._logger.warn(`mulitiple references of ${section} ${node.reference} found, using first instance`);
-        }
-        return found[0];
+    const found = comps.filter(x => x.referenceName === node.reference);
+    if (found === undefined || found.length === 0) {
+      return undefined;
+    } else {
+      if (found.length > 1) {
+        this._logger.warn(`mulitiple references of ${section} ${node.reference} found, using first instance`);
       }
-    };
-
-    if (!Array.isArray(parsedNodes)) {
-      parsedNodes = [parsedNodes];
+      return found[0];
     }
-
-    components[section].push(
-      ...parsedNodes
-        .map(node => {
-          if (this.isReference(node)) {
-            return find(node);
-          } else if (this.isResponse(node) && this.isReference(node.definition)) {
-            return find(node.definition);
-          }
-        })
-        .filter<Component>(this.isComponent),
-    );
   }
 
-  // private traverseReferences<T extends ParsedNode>(originalDocument: ParsedDocument, node: T, referencedComponents: Map<string, boolean>) {
-  //   if (this.isReference(node)) {
+  private find(components: Components, node: Reference): { component?: Component; section?: keyof Components } {
+    for (let section of Object.keys(components)) {
+      const component = this.findInSection(components, node, section as keyof Components);
+      if (component) {
+        return { component, section: section as keyof Components };
+      }
+    }
+    return {};
+  }
 
-  //     originalDocument.components.
+  private addIfMissing(component: Component, components: Required<Components>, section: keyof Components) {
+    const existingComponents = components[section];
+    const found = existingComponents.find(x => x.referenceName === component.referenceName);
+    if (!found) {
+      existingComponents.push(component);
+      return component;
+    }
+    return undefined;
+  }
 
-  //     referencedComponents.set(node.reference, true);
-  //   }
-  // }
+  private traverseReferences(originalDocument: ParsedDocument, components: Required<Components>, node: ParsedNode) {
+    if (isReference(node)) {
+      const { component, section } = this.find(originalDocument.components, node);
+      if (!component) {
+        this._logger.warn(`${node.reference} not found`);
+        return;
+      }
+
+      const added = this.addIfMissing(component, components, section!);
+      if (added) {
+        this.traverseReferences(originalDocument, components, added.definition);
+      }
+    } else if (isPathItem(node)) {
+      if (node.parameters) {
+        node.parameters.forEach(x => this.traverseReferences(originalDocument, components, x));
+      }
+      node.operations.forEach(x => this.traverseReferences(originalDocument, components, x));
+    } else if (isOperation(node)) {
+      if (node.parameters) {
+        node.parameters.forEach(x => this.traverseReferences(originalDocument, components, x));
+      }
+      if (node.requestBody) {
+        this.traverseReferences(originalDocument, components, node.requestBody);
+      }
+      if (node.responses) {
+        node.responses.forEach(x => this.traverseReferences(originalDocument, components, x));
+      }
+      if (node.callbacks) {
+        node.callbacks.forEach(x => this.traverseReferences(originalDocument, components, x));
+      }
+    } else if (isRequestBody(node) && node.content) {
+      node.content.forEach(x => {
+        this.traverseReferences(originalDocument, components, x.definition);
+      });
+    } else if (isMediaContent(node)) {
+      this.traverseReferences(originalDocument, components, node.definition);
+    } else if (isMediaType(node) && node.definition) {
+      this.traverseReferences(originalDocument, components, node.definition);
+    } else if (isObjectNode(node)) {
+      node.properties.forEach(x => this.traverseReferences(originalDocument, components, x));
+    } else if (isProperty(node)) {
+      this.traverseReferences(originalDocument, components, node.definition);
+    } else if (isResponse(node)) {
+      this.traverseReferences(originalDocument, components, node.definition);
+    } else if (isResponseBody(node)) {
+      if (node.content) {
+        node.content.forEach(x => {
+          this.traverseReferences(originalDocument, components, x.definition);
+        });
+      }
+      if (node.headers) {
+        node.headers.forEach(x => {
+          this.traverseReferences(originalDocument, components, x.definition);
+        });
+      }
+      if (node.links) {
+        node.links.forEach(x => {
+          this.traverseReferences(originalDocument, components, x.definition);
+        });
+      }
+    } else if (isNamedHeader(node)) {
+      this.traverseReferences(originalDocument, components, node.definition);
+    } else if (isHeader(node)) {
+      if (node.definition) {
+        this.traverseReferences(originalDocument, components, node.definition);
+      }
+      if (node.content) {
+        node.content.forEach(x => {
+          this.traverseReferences(originalDocument, components, x.definition);
+        });
+      }
+    } else if (isCallback(node)) {
+      this.traverseReferences(originalDocument, components, node.definition);
+    } else if (isArrayNode(node)) {
+      this.traverseReferences(originalDocument, components, node.definition);
+    } else if (isComposite(node)) {
+      node.definitions.forEach(x => {
+        this.traverseReferences(originalDocument, components, x);
+      });
+    } else if (isExclusion(node)) {
+      this.traverseReferences(originalDocument, components, node.definition);
+    } else if (isNamedLink(node)) {
+      this.traverseReferences(originalDocument, components, node.definition);
+    } else if (isLink(node)) {
+      // TODO
+    } else if (isParameter(node)) {
+      if (node.definition) {
+        this.traverseReferences(originalDocument, components, node.definition);
+      }
+      if (node.content) {
+        node.content.forEach(x => {
+          this.traverseReferences(originalDocument, components, x.definition);
+        });
+      }
+    } else if (isUnion(node)) {
+      node.definitions.forEach(x => {
+        this.traverseReferences(originalDocument, components, x);
+      });
+    }
+  }
 }

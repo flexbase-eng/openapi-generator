@@ -12,3 +12,11 @@ export interface PathItem extends ParsedNode {
   operations: Operation[];
   parameters?: (Parameter | Reference)[];
 }
+
+export const isPath = (value: ParsedNode): value is Path => {
+  return value.type === 'pathItem';
+};
+
+export const isPathItem = (value: ParsedNode): value is PathItem => {
+  return value.type === 'pathItemObject';
+};

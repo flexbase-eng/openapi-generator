@@ -19,3 +19,7 @@ export interface Operation extends ParsedNode {
   security?: Record<string, string[]>[];
   extensions?: Record<string, string>;
 }
+
+export const isOperation = (value: ParsedNode): value is Operation => {
+  return value.type === 'operation';
+};

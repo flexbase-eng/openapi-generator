@@ -5,3 +5,7 @@ export interface Reference extends ParsedNode {
   summary?: string;
   description?: string;
 }
+
+export const isReference = (value: ParsedNode): value is Reference => {
+  return value.type === 'reference';
+};

@@ -14,3 +14,11 @@ export interface NamedLink extends ParsedNode {
   name: string;
   definition: Link | Reference;
 }
+
+export const isLink = (value: ParsedNode): value is Link => {
+  return value.type === 'linkObject';
+};
+
+export const isNamedLink = (value: ParsedNode): value is NamedLink => {
+  return value.type === 'link';
+};
