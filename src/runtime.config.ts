@@ -1,6 +1,7 @@
 export interface OpenApiGeneratorConfiguationGenerate {
   target: string;
   template: string;
+  script?: string;
   additionalTemplates?: string[];
   tags?: boolean;
   flatten?: boolean;

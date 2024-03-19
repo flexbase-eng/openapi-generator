@@ -10,7 +10,48 @@ import { OpenApiGeneratorConfiguation } from './runtime.config';
 import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
 import { runPrettier } from './run.prettier';
 import { OpenApiParserFactor } from './parser/openapi.parser.factory';
-import { OpenApiCompiler } from './compiler/openapi.compiler';
+import { ParsedDocument } from './parser/parsed.document';
+
+export const parseSpec2 = async (config: OpenApiGeneratorConfiguation, specPath: string, logger: Logger): Promise<ParsedDocument> => {
+  const apiDoc = await $RefParser.bundle(specPath, {
+    bundle: {
+      generateKey: (value: unknown, file: string, hash: string | null): string | null => {
+        const fileName = Path.basename(file);
+        const ext = Path.extname(file);
+
+        const path = Path.join(hash ?? '#', '/components/schemas', fileName.slice(0, fileName.length - ext.length));
+        return path;
+      },
+    },
+    resolve: {
+      stoplight: new StoplightResolver(),
+    },
+  });
+
+  if (!IsDocument(apiDoc)) {
+    throw new Error(`${specPath} is not an open api v3 spec`);
+  }
+
+  const output = OpenApiParserFactor.parse(apiDoc, logger);
+
+  if (config.debug) {
+    const writeFile = async (title: string, data: object) => {
+      const name = Path.join(config.debugPath, title);
+      let json = JSON.stringify(data);
+      try {
+        json = await runPrettier(json, 'json');
+      } catch (e) {
+        logger.info(`Prettier error on ${name}`, e);
+      }
+      await fs.writeFile(name, json);
+    };
+
+    await fs.ensureDir(config.debugPath);
+    await writeFile(`${output.title}.parsed.json`, output);
+  }
+
+  return output;
+};
 
 export const parseSpec = async (
   config: OpenApiGeneratorConfiguation,
@@ -37,34 +78,6 @@ export const parseSpec = async (
 
   if (!IsDocument(apiDoc)) {
     throw new Error(`${specPath} is not an open api v3 spec`);
-  }
-
-  if (config.debug) {
-    let output = OpenApiParserFactor.parse(apiDoc, logger);
-
-    const compiler = new OpenApiCompiler(logger);
-    output = compiler.optimize(output);
-    const docsByTag = compiler.organizeByTags(output);
-
-    await fs.ensureDir(config.debugPath);
-
-    const writeFile = async (title: string, data: object) => {
-      const name = Path.join(config.debugPath, title);
-      let json = JSON.stringify(data);
-      try {
-        json = await runPrettier(json, 'json');
-      } catch (e) {
-        logger.info(`Prettier error on ${name}`, e);
-      }
-      await fs.writeFile(name, json);
-    };
-
-    await writeFile(`${output.title}.compiled.json`, output);
-
-    for (const d of docsByTag) {
-      await writeFile(`${d.title}.openapi.json`, d);
-    }
-    throw new Error();
   }
 
   const oasTree = oasBuilder.generateOasTree(apiDoc);

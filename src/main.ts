@@ -9,8 +9,8 @@ import { IAstBuilder } from './ast/ast.builder.interface';
 import { AstDocument } from './ast/nodes/ast.document';
 import pkg from '../package.json' assert { type: 'json' };
 import { OpenApiGeneratorConfiguation } from './runtime.config';
-import { build } from './build';
-import { parseSpec } from './parse';
+import { build, build2 } from './build';
+import { parseSpec, parseSpec2 } from './parse';
 
 export async function main(
   oasBuilder: IOpenApiSpecBuilder,
@@ -68,21 +68,33 @@ export async function main(
   try {
     program.parse(process.argv);
 
-    const astList: AstDocument[] = [];
-
     const globInput = glob.sync(config.include);
+
+    /** v1 */
+    // const astList: AstDocument[] = [];
+
+    // for (const specPath of globInput) {
+    //   try {
+    //     const ast = await parseSpec(config, specPath, oasBuilder, oasConverter, astBuilder, logger);
+    //     astList.push(ast);
+    //   } catch (e) {
+    //     logger.error(e);
+    //   }
+    // }
+
+    // for (const ast of astList) {
+    //   try {
+    //     await build(config, ast, astBuilder, logger);
+    //   } catch (e) {
+    //     logger.error(e);
+    //   }
+    // }
+
+    /** vNext */
     for (const specPath of globInput) {
       try {
-        const ast = await parseSpec(config, specPath, oasBuilder, oasConverter, astBuilder, logger);
-        astList.push(ast);
-      } catch (e) {
-        logger.error(e);
-      }
-    }
-
-    for (const ast of astList) {
-      try {
-        await build(config, ast, astBuilder, logger);
+        const parsedDocument = await parseSpec2(config, specPath, logger);
+        await build2(config, parsedDocument, logger);
       } catch (e) {
         logger.error(e);
       }

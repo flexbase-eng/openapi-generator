@@ -1,0 +1,16 @@
+/* eslint-disable */
+/* ------------------------------------------------------------
+ File auto-generated
+
+ @summary {{astDocument.title}}
+ @description {{astDocument.description}}
+ @version {{astDocument.version}}
+------------------------------------------------------------ */
+
+{{#astDocument}}
+
+export * from './{{lowercase (replace title (toRegex '(-|\.| )+' 'g') '_')}}.models.js'; 
+export * from './{{lowercase (replace title (toRegex '(-|\.| )+' 'g') '_')}}.routes.js'; 
+export * from './{{lowercase (replace title (toRegex '(-|\.| )+' 'g') '_')}}.validations.js';
+
+{{/astDocument}}

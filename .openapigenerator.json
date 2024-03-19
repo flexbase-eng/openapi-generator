@@ -1,19 +1,31 @@
 {
   "include": ["../platform/openapi/Identity.yaml"],
-  "sharedTemplates": ["./templates/client/typescript/**/*.hbs"],
+  "sharedTemplates": ["./templates/vnext/*.hbs"],
   "generate": {
+    "router.ts": {
+      "target": "./output/{api}/router.ts",
+      "template": "./templates/vnext/router.hbs"
+    },
+    "index": {
+      "target": "./output/{api}/{name}/generated/{name}.ts",
+      "template": "./templates/vnext/index.hbs"
+    },
     "routes": {
-      "target": "./output/{api}/routes/{name}.ts",
-      "template": "./templates/client/typescript/routes.hbs"
+      "target": "./output/{api}/{name}/generated/{name}.routes.ts",
+      "template": "./templates/vnext/routes.hbs"
     },
     "models": {
-      "target": "./output/{api}/models/{name}.ts",
-      "template": "./templates/client/typescript/models.hbs"
+      "target": "./output/{api}/{name}/generated/{name}.models.ts",
+      "template": "./templates/vnext/model2.hbs"
+    },
+    "validations": {
+      "target": "./output/{api}/{name}/generated/{name}.validations.ts",
+      "template": "./templates/vnext/validations.hbs"
     }
   },
   "prettier": true,
   "tags": true,
   "flatten": true,
   "references": true,
-  "debugPath": "./output/{api}/ast/"
+  "debugPath": "./output/debug/"
 }

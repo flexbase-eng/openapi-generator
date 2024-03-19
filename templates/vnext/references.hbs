@@ -1,0 +1,15 @@
+{{!-- first pass register all references --}}
+{{#*inline "reference"}}
+{{#compare type "===" "ModelDeclaration"}}
+{{#registerReference .}}{{>expression id suffix=./modelSuffix prefix=./modelPrefix}}{{/registerReference}}
+{{#registerValidator .}}{{>validation.expression id suffix=./validatorSuffix prefix=./validatorPrefix}}{{/registerValidator}}
+{{/compare}}
+{{/inline}}
+
+{{#each models}}{{>reference modelSuffix="Model" validatorSuffix="ModelValidator"}}{{/each}}
+{{#each responses}}{{>reference modelSuffix="Response" validatorSuffix="ResponseValidator"}}{{/each}}
+{{#each requests}}{{>reference modelSuffix="Requests" validatorSuffix="RequestsValidator"}}{{/each}}
+{{#each pathParameters}}{{>reference modelSuffix="PathParameter" validatorSuffix="PathParameterValidator"}}{{/each}}
+{{#each headerParameters}}{{>reference modelSuffix="HeaderParameter" validatorSuffix="HeaderParameterValidator"}}{{/each}}
+{{#each queryParameters}}{{>reference modelSuffix="QueryParameter" validatorSuffix="QueryParameterValidator"}}{{/each}}
+{{#each cookieParameters}}{{>reference modelSuffix="CookieParameter" validatorSuffix="CookieParameterValidator"}}{{/each}}

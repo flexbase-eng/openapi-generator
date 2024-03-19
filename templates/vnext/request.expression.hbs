@@ -1,0 +1,11 @@
+{{~#compare type "===" "requestBody"}}
+    {{#each content}} {{>request.expression .}}{{/each}}
+{{/compare~}}
+
+{{~#compare type "===" "mediaContent"}}
+    {{>request.expression definition}}
+{{/compare~}}
+
+{{~#compare type "===" "mediaTypeObject"}}
+    {{>model.expression definition}}
+{{/compare~}}

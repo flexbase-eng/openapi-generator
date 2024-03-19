@@ -1,0 +1,3 @@
+{{>comments}}
+
+export type {{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}} = {{>model.expression definition}} ;

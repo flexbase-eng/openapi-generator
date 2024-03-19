@@ -7,6 +7,9 @@ import fs from 'fs-extra';
 import { Logger } from '@flexbase/logger';
 import { runPrettier } from './run.prettier';
 import * as glob from 'glob';
+import { ParsedDocument } from './parser/parsed.document';
+import { OpenApiCompiler } from './compiler/openapi.compiler';
+import { LuaEngine, LuaFactory } from 'wasmoon';
 
 export const build = async (config: OpenApiGeneratorConfiguation, astDocument: AstDocument, astBuilder: IAstBuilder, logger: Logger) => {
   if (config.generate === undefined) {
@@ -119,6 +122,129 @@ const render = async (
   logger: Logger,
 ) => {
   const context = { astDocument };
+
+  const ext = Path.extname(fileName);
+
+  await fs.ensureDir(Path.dirname(fileName));
+
+  try {
+    let rendered = handlebarTemplate(context);
+
+    if (config.prettier) {
+      try {
+        rendered = await runPrettier(rendered, ext === '.ts' ? 'typescript' : 'babel');
+      } catch (e) {
+        logger.info(`Prettier error on ${fileName}`, e);
+      }
+    }
+
+    await fs.writeFile(fileName, rendered, 'utf8');
+  } catch (e) {
+    logger.error(`Error generating ${fileName}`, e);
+  }
+};
+
+export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocument: ParsedDocument, logger: Logger) => {
+  if (config.generate === undefined) {
+    logger.info('No generate config settings found');
+    return;
+  }
+
+  const compiler = new OpenApiCompiler(logger);
+
+  // const factory = new LuaFactory();
+  // const templatePath = Path.join(process.cwd(), 'scripts/template.lua');
+
+  // await factory.mountFile('template.lua', fs.readFileSync(templatePath));
+
+  // const luaEngine = await factory.createEngine();
+
+  parsedDocument = compiler.optimize(parsedDocument);
+
+  for (const entry of Object.entries(config.generate)) {
+    const generateConfig = entry[1];
+
+    const organizeByTags: boolean = generateConfig.tags ?? config.tags;
+    const shouldFlatten: boolean = generateConfig.flatten ?? config.flatten;
+    const resolveReferences: boolean = generateConfig.references ?? config.references;
+    const skipEmpty: boolean = generateConfig.skipEmpty ?? config.skipEmpty;
+
+    const documents = organizeByTags ? compiler.organizeByTags(parsedDocument) : [parsedDocument];
+
+    const apiName = parsedDocument.title.trim();
+
+    const variables = new Map<string, string>();
+
+    const regex = /([^a-zA-Z0-9])+/g;
+    const variableApi = apiName.replace(regex, '-').toLocaleLowerCase();
+    variables.set('{api}', variableApi);
+
+    for (const doc of documents) {
+      // if (shouldFlatten) {
+      //   astBuilder.flattenReferences(doc, !resolveReferences);
+      // }
+      // astBuilder.removeUnreferencedModels(doc);
+
+      const variableName = doc.title.trim().replace(regex, '-').toLocaleLowerCase();
+      variables.set('{name}', variableName);
+
+      // if (skipEmpty && astBuilder.isEmpty(doc)) {
+      //   continue;
+      // }
+
+      await generate2(config, generateConfig, variables, doc, logger);
+    }
+  }
+
+  // output = compiler.optimize(output);
+  // const docsByTag = compiler.organizeByTags(output);
+};
+
+const generate2 = async (
+  config: OpenApiGeneratorConfiguation,
+  generateConfig: OpenApiGeneratorConfiguationGenerate,
+  variables: Map<string, string>,
+  parsedDocument: ParsedDocument,
+  logger: Logger,
+) => {
+  if (config.debug) {
+    const variableName = variables.get('{name}');
+
+    await fs.ensureDir(config.debugPath);
+    const name = Path.join(config.debugPath, `${variableName}.parsed.json`);
+    let json = JSON.stringify(parsedDocument);
+    try {
+      json = await runPrettier(json, 'json');
+    } catch (e) {
+      logger.info(`Prettier error on ${name}`, e);
+    }
+    await fs.writeFile(name, json);
+  }
+
+  if (generateConfig.script) {
+    const scriptContents = await fs.readFile(generateConfig.script);
+  } else {
+    const templates: string[] = [...(config.sharedTemplates ?? []), ...(generateConfig.additionalTemplates ?? [])];
+
+    const handlebars = createHandlebars();
+    registerPartials(handlebars, templates);
+
+    referenceRegistrations.clear();
+    const templateFile = await fs.readFile(generateConfig.template, 'utf8');
+    const handlebarTemplate = handlebars.compile(templateFile);
+    const fileName = substituteParams(generateConfig.target, variables);
+    await render2(config, fileName, parsedDocument, handlebarTemplate, logger);
+  }
+};
+
+const render2 = async (
+  config: OpenApiGeneratorConfiguation,
+  fileName: string,
+  document: ParsedDocument,
+  handlebarTemplate: HandlebarsTemplateDelegate<any>,
+  logger: Logger,
+) => {
+  const context = { document };
 
   const ext = Path.extname(fileName);
 

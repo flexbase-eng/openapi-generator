@@ -67,7 +67,8 @@
     "path": "^0.12.7",
     "prettier": "^3.1.1",
     "useful-handlebars-helpers": "^0.12.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "wasmoon": "^1.16.0"
   },
   "devDependencies": {
     "@flexbase/packr": "^1.2.0",

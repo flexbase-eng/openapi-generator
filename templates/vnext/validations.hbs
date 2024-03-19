@@ -1,0 +1,73 @@
+/* eslint-disable */
+/* ------------------------------------------------------------
+ File auto-generated
+
+ @summary {{astDocument.title}}
+ @description {{astDocument.description}}
+ @version {{astDocument.version}}
+------------------------------------------------------------ */
+
+{{#astDocument}}
+
+import { DateTime, Duration } from "luxon";
+import { addOrSet, stringToBoolean, stringToNumber, handleValidation, handleRequestValidatorErrors, ValidatorFn, ValidatorResponse} from '@shared/utilities/openapi.utilities.js';
+
+{{>references}}
+
+{{#if models}}
+//#region Models
+{{#each models}}
+{{>validation.declaration suffix="ModelValidator"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if responses}}
+//#region Responses
+{{#each responses}}
+{{!-- {{>validation.declaration suffix="ResponseValidator"}} --}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if requests}}
+//#region Requests
+{{#each requests}}
+{{>validation.declaration suffix="RequestsValidator"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if pathParameters}}
+//#region Path Parameters
+{{#each pathParameters}}
+{{>validation.declaration suffix="PathParameterValidator"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if headerParameters}}
+//#region Header Parameters
+{{#each headerParameters}}
+{{>validation.declaration suffix="HeaderParameterValidator"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if queryParameters}}
+//#region Query Parameters
+{{#each queryParameters}}
+{{>validation.declaration suffix="QueryParameterValidator"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{#if cookieParameters}}
+//#region Cookie Parameters
+{{#each cookieParameters}}
+{{>validation.declaration suffix="CookieParameterValidator"}}
+{{/each}}
+//#endregion
+{{/if}}
+
+{{/astDocument}}

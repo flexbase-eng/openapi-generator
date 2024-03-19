@@ -1,0 +1,11 @@
+{{~#compare type "===" "responseObject"}}
+    {{#if definitions}}{{#each content}} {{>response.expression .}}{{/each}}{{else}}void{{/if}}
+{{/compare~}}
+
+{{~#compare type "===" "mediaContent"}}
+    {{>response.expression definition}}
+{{/compare~}}
+
+{{~#compare type "===" "mediaTypeObject"}}
+    {{>model.expression definition}}
+{{/compare~}}
