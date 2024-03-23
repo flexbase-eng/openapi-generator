@@ -7,20 +7,17 @@
  @version {{document.version}}
 ------------------------------------------------------------ */
 
-{{#*inline "reference"}}
-{{#registerReference2 .}}{{& prefix}}{{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}}{{/registerReference2}}
-{{/inline}}
-
 {{#document.components}}
 
-{{#each models}}{{>reference suffix="Model"}}{{/each}}
-{{#each parameters}}{{>reference modelSuffix="Parameter"}}{{/each}}
-{{#each requestBodies}}{{>reference suffix="Request"}}{{/each}}
-{{#each responses}}{{>reference suffix="Response"}}{{/each}}
+{{>references}}
 
 {{#each models}}{{>model.declaration suffix="Model"}}{{/each}}
-{{#each parameters}}{{>parameter.declaration modelSuffix="Parameter"}}{{/each}}
-{{#each requestBodies}}{{>request.declaration suffix="Request"}}{{/each}}
+{{#each parameters}}{{>parameter.declaration suffix="Parameter"}}{{/each}}
+{{#each pathParameters}}{{>parameter.declaration suffix="Parameter"}}{{/each}}
+{{#each headerParameters}}{{>parameter.declaration suffix="PathParameter"}}{{/each}}
+{{#each queryParameters}}{{>parameter.declaration suffix="QueryParameter"}}{{/each}}
+{{#each cookieParameters}}{{>parameter.declaration suffix="CookieParameter"}}{{/each}}
+{{#each requests}}{{>request.declaration suffix="Request"}}{{/each}}
 {{#each responses}}{{>response.declaration suffix="Response"}}{{/each}}
 
 

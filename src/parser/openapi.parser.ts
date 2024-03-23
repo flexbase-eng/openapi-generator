@@ -31,6 +31,9 @@ import {
   Component,
   Components,
   ResponseBody,
+  isReference,
+  isObjectNode,
+  isComposite,
 } from './parsed_nodes';
 import { Header, NamedHeader } from './parsed_nodes/header';
 import { Logger } from '@flexbase/logger';
@@ -68,120 +71,122 @@ export abstract class OpenApiParser {
 
   parse(document: Document): ParsedDocument {
     const title = document.info.title;
+    const apiName = document.info.title;
     const description = document.info.description;
     const version = document.info.version;
     const tags = document.tags ? document.tags.map(tag => this.parseTag(tag)) : [];
 
     const components = document.components ? this.parseComponents(document.components) : {};
 
-    const paths = document.paths ? this.parsePaths(document.paths) : [];
+    const paths = (document.paths ? this.parsePaths(document.paths, components) : []).sort((a, b) => a.name.localeCompare(b.name));
 
-    return { title, description, version, components, paths, tags };
+    return { title, apiName, description, version, components, paths, tags };
   }
 
-  protected parseComponents(components: ComponentsObject): Components {
-    let models: Component[] = [];
-    let requestBodies: Component[] = [];
-    let responses: Component[] = [];
-    let parameters: Component[] = [];
-    let headers: Component[] = [];
-    let securitySchemes: Component[] = [];
-    let callbacks: Component[] = [];
+  protected parseComponents(componentsObject: ComponentsObject): Components {
+    const components: Components = {};
 
-    if (components.schemas) {
-      const records = Object.entries(components.schemas);
+    if (componentsObject.schemas) {
+      const records = Object.entries(componentsObject.schemas);
       for (const record of records) {
         const name = record[0];
         const schema = record[1];
         const referenceName = `#/components/schemas/${name}`;
 
         const definition = this.parseSchema(schema);
-        models.push({ name, referenceName, definition });
+        components.models ??= [];
+        components.models.push({ name, referenceName, definition });
       }
     }
 
-    if (components.requestBodies) {
-      const records = Object.entries(components.requestBodies);
-      for (const record of records) {
-        const name = record[0];
-        const schema = record[1];
-        const referenceName = `#/components/requestBodies/${name}`;
-
-        const definition = this.parseRequestBody(schema);
-        requestBodies.push({ name, referenceName, definition });
-      }
-    }
-
-    if (components.responses) {
-      const records = Object.entries(components.responses);
-      for (const record of records) {
-        const name = record[0];
-        const schema = record[1];
-        const referenceName = `#/components/responses/${name}`;
-
-        const definition = this.parseResponse(schema);
-        responses.push({ name, referenceName, definition });
-      }
-    }
-
-    if (components.parameters) {
-      const records = Object.entries(components.parameters);
-      for (const record of records) {
-        const name = record[0];
-        const schema = record[1];
-        const referenceName = `#/components/parameters/${name}`;
-
-        const definition = this.parseParameter(schema);
-        parameters.push({ name, referenceName, definition });
-      }
-    }
-
-    if (components.headers) {
-      const records = Object.entries(components.headers);
-      for (const record of records) {
-        const name = record[0];
-        const schema = record[1];
-        const referenceName = `#/components/headers/${name}`;
-
-        const definition = this.parseHeaderObject(schema);
-        headers.push({ name, referenceName, definition });
-      }
-    }
-
-    if (components.securitySchemes) {
-      const records = Object.entries(components.securitySchemes);
+    if (componentsObject.securitySchemes) {
+      const records = Object.entries(componentsObject.securitySchemes);
       for (const record of records) {
         const name = record[0];
         const schema = record[1];
         const referenceName = `#/components/securitySchemes/${name}`;
 
         const definition = this.parseSecurityScheme(schema);
-        securitySchemes.push({ name, referenceName, definition });
+        components.securitySchemes ??= [];
+        components.securitySchemes.push({ name, referenceName, definition });
       }
     }
 
-    if (components.callbacks) {
-      const records = Object.entries(components.callbacks);
+    if (componentsObject.parameters) {
+      const records = Object.entries(componentsObject.parameters);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/parameters/${name}`;
+
+        const definition = this.parseParameter(schema, components);
+        components.parameters ??= [];
+        components.parameters.push({ name, referenceName, definition });
+      }
+    }
+
+    if (componentsObject.headers) {
+      const records = Object.entries(componentsObject.headers);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/headers/${name}`;
+
+        const definition = this.parseHeaderObject(schema, components);
+        components.headers ??= [];
+        components.headers.push({ name, referenceName, definition });
+      }
+    }
+
+    if (componentsObject.requestBodies) {
+      const records = Object.entries(componentsObject.requestBodies);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/requestBodies/${name}`;
+
+        const definition = this.parseRequestBody(schema, components);
+        components.requests ??= [];
+        components.requests.push({ name, referenceName, definition });
+      }
+    }
+
+    if (componentsObject.responses) {
+      const records = Object.entries(componentsObject.responses);
+      for (const record of records) {
+        const name = record[0];
+        const schema = record[1];
+        const referenceName = `#/components/responses/${name}`;
+
+        const definition = this.parseResponse(schema, components);
+        components.responses ??= [];
+        components.responses.push({ name, referenceName, definition });
+      }
+    }
+
+    if (componentsObject.callbacks) {
+      const records = Object.entries(componentsObject.callbacks);
       for (const record of records) {
         const name = record[0];
         const schema = record[1];
         const referenceName = `#/components/callbacks/${name}`;
 
-        const definition = this.parseCallback(schema, name);
-        callbacks.push({ name, referenceName, definition });
+        const definition = this.parseCallback(schema, name, components);
+        components.callbacks ??= [];
+        components.callbacks.push({ name, referenceName, definition });
       }
     }
 
-    return { models, requestBodies, responses, parameters, headers, securitySchemes, callbacks };
+    return components;
   }
 
-  protected parsePaths(paths: PathsObject): Path[] {
+  protected parsePaths(paths: PathsObject, components: Components): Path[] {
     const nodes: Path[] = [];
     const records = Object.entries(paths);
     for (const record of records) {
       const name = record[0];
       const schema = record[1];
-      const definition = schema ? this.parsePathItemObject(schema) : undefined;
+      const definition = schema ? this.parsePathItemObject(schema, components) : undefined;
       nodes.push({
         type: 'pathItem',
         name,
@@ -213,6 +218,15 @@ export abstract class OpenApiParser {
 
   private isOneOf(test: NonArraySchemaObject): test is WithRequired<NonArraySchemaObject, 'oneOf'> {
     return test.oneOf !== undefined;
+  }
+
+  private lookupReference<T extends ParsedNode = ParsedNode>(node: Reference, components: Components, type: keyof Components) {
+    const found = components[type]?.find(x => x.referenceName === node.reference);
+    if (!found) {
+      this._logger.warn(`Unable to find ${type}: ${node.reference}`);
+      return undefined;
+    }
+    return found as Component<T>;
   }
 
   private getExtensions(obj: any): Record<string, string> | undefined {
@@ -301,7 +315,11 @@ export abstract class OpenApiParser {
     throw new Error(`Unknown schema`);
   }
 
-  private parseMediaContent(mediaContent?: { [media: string]: MediaTypeObject }): MediaContent[] | undefined {
+  private parseMediaContent(
+    mediaContent: { [media: string]: MediaTypeObject } | undefined,
+    omitType: 'readOnly' | 'writeOnly',
+    components: Components,
+  ): MediaContent[] | undefined {
     if (!mediaContent) return undefined;
 
     const content: MediaContent[] = [];
@@ -310,7 +328,7 @@ export abstract class OpenApiParser {
       const name = record[0];
       const mediaTypeObject = record[1];
 
-      const definition = this.parseMediaTypeObject(mediaTypeObject);
+      const definition = this.parseMediaTypeObject(mediaTypeObject, omitType, components);
       content.push({
         type: 'mediaContent',
         name,
@@ -321,7 +339,7 @@ export abstract class OpenApiParser {
     return content;
   }
 
-  private parseMediaEncoding(encoding?: { [media: string]: EncodingObject }): MediaEncoding[] | undefined {
+  private parseMediaEncoding(encoding: { [media: string]: EncodingObject } | undefined, components: Components): MediaEncoding[] | undefined {
     if (!encoding) return undefined;
     const encodings: MediaEncoding[] = [];
 
@@ -331,7 +349,7 @@ export abstract class OpenApiParser {
         const name = record[0];
         const encoding = record[1];
 
-        const nodeType = this.parseEncodingObject(encoding);
+        const nodeType = this.parseEncodingObject(encoding, components);
         encodings.push({
           name,
           ...nodeType,
@@ -342,7 +360,7 @@ export abstract class OpenApiParser {
     return encodings;
   }
 
-  private parseHeaders(headers?: { [header: string]: ReferenceObject | HeaderObject }): NamedHeader[] | undefined {
+  private parseHeaders(headers: { [header: string]: ReferenceObject | HeaderObject } | undefined, components: Components): NamedHeader[] | undefined {
     if (!headers) return undefined;
     const nodes: NamedHeader[] = [];
 
@@ -351,7 +369,7 @@ export abstract class OpenApiParser {
       const name = record[0];
       const header = record[1];
 
-      const definition = this.parseHeaderObject(header);
+      const definition = this.parseHeaderObject(header, components);
       nodes.push({
         type: 'header',
         name,
@@ -380,7 +398,7 @@ export abstract class OpenApiParser {
     return nodes;
   }
 
-  protected parseRequestBody(schema: ReferenceObject | RequestBodyObject): RequestBody | Reference {
+  protected parseRequestBody(schema: ReferenceObject | RequestBodyObject, components: Components): RequestBody | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
@@ -388,7 +406,7 @@ export abstract class OpenApiParser {
     const description = schema.description;
     const required = schema.required;
     const extensions = this.getExtensions(schema);
-    const content = this.parseMediaContent(schema.content);
+    const content = this.parseMediaContent(schema.content, 'readOnly', components);
 
     return {
       type: 'requestBody',
@@ -399,23 +417,55 @@ export abstract class OpenApiParser {
     };
   }
 
-  private parseMediaTypeObject(mediaTypeObject: MediaTypeObject): MediaType {
+  private createOmitDefinition(parsedNode: ParsedNode, omitType: 'readOnly' | 'writeOnly', components: Components): ParsedNode | undefined {
+    if (isReference(parsedNode)) {
+      const found = this.lookupReference(parsedNode, components, 'models');
+      if (found) {
+        return this.createOmitDefinition(found.definition, omitType, components);
+      }
+    } else if (isObjectNode(parsedNode)) {
+      const properties = parsedNode.properties.filter(x => x.definition[omitType] !== true);
+      if (properties.length !== parsedNode.properties.length) {
+        return <ObjectNode>{
+          ...parsedNode,
+          properties,
+        };
+      }
+    } else if (isComposite(parsedNode)) {
+      for (let i = 0; i < parsedNode.definitions.length; ++i) {
+        const omitDef = this.createOmitDefinition(parsedNode.definitions[i], omitType, components);
+        if (omitDef) {
+          parsedNode.definitions[i] = omitDef;
+        }
+      }
+    }
+  }
+
+  private parseMediaTypeObject(mediaTypeObject: MediaTypeObject, omitType: 'readOnly' | 'writeOnly', components: Components): MediaType {
     const definition = mediaTypeObject.schema ? this.parseSchema(mediaTypeObject.schema) : undefined;
-    const encodings = this.parseMediaEncoding(mediaTypeObject.encoding);
+    const encodings = this.parseMediaEncoding(mediaTypeObject.encoding, components);
+    let omitDefinition;
+
+    if (definition && isReference(definition)) {
+      const found = this.lookupReference(definition, components, 'models');
+      if (found) {
+        omitDefinition = this.createOmitDefinition(found.definition, omitType, components);
+      }
+    }
 
     return {
       type: 'mediaTypeObject',
-      definition,
+      definition: omitDefinition ?? definition,
       encodings,
     };
   }
 
-  private parseEncodingObject(encoding: EncodingObject): Encoding {
+  private parseEncodingObject(encoding: EncodingObject, components: Components): Encoding {
     const contentType = encoding.contentType;
     const style = encoding.style;
     const explode = encoding.explode;
     const allowReserved = encoding.allowReserved;
-    const headers = this.parseHeaders(encoding.headers);
+    const headers = this.parseHeaders(encoding.headers, components);
 
     return {
       type: 'encoding',
@@ -427,14 +477,14 @@ export abstract class OpenApiParser {
     };
   }
 
-  protected parseHeaderObject(header: HeaderObject | ReferenceObject): Header | Reference {
+  protected parseHeaderObject(header: HeaderObject | ReferenceObject, components: Components): Header | Reference {
     if (this.isReferenceObject(header)) {
       return this.createReference(header);
     }
 
     return {
       type: 'headerObject',
-      ...this.parseParameterBaseObject(header),
+      ...this.parseParameterBaseObject(header, components),
     };
   }
 
@@ -461,7 +511,7 @@ export abstract class OpenApiParser {
     };
   }
 
-  private parseParameterBaseObject(parameterBaseObject: ParameterBaseObject) {
+  private parseParameterBaseObject(parameterBaseObject: ParameterBaseObject, components: Components) {
     const description = parameterBaseObject.description;
     const required = parameterBaseObject.required;
     const deprecated = parameterBaseObject.deprecated;
@@ -471,7 +521,7 @@ export abstract class OpenApiParser {
     const allowReserved = parameterBaseObject.allowReserved;
 
     const definition = parameterBaseObject.schema ? this.parseSchema(parameterBaseObject.schema) : undefined;
-    const content = this.parseMediaContent(parameterBaseObject.content);
+    const content = this.parseMediaContent(parameterBaseObject.content, 'readOnly', components);
 
     return {
       description,
@@ -486,14 +536,14 @@ export abstract class OpenApiParser {
     };
   }
 
-  protected parseResponse(schema: ReferenceObject | ResponseObject): ResponseBody | Reference {
+  protected parseResponse(schema: ReferenceObject | ResponseObject, components: Components): ResponseBody | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
 
     const description = schema.description;
-    const headers = this.parseHeaders(schema.headers);
-    const content = this.parseMediaContent(schema.content);
+    const headers = this.parseHeaders(schema.headers, components);
+    const content = this.parseMediaContent(schema.content, 'writeOnly', components);
     const links = this.parseLinks(schema.links);
 
     return {
@@ -505,7 +555,7 @@ export abstract class OpenApiParser {
     };
   }
 
-  protected parseParameter(schema: ReferenceObject | ParameterObject): Parameter | Reference {
+  protected parseParameter(schema: ReferenceObject | ParameterObject, components: Components): Parameter | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
@@ -514,7 +564,7 @@ export abstract class OpenApiParser {
       type: 'parameter',
       name: schema.name,
       in: schema.in,
-      ...this.parseParameterBaseObject(schema),
+      ...this.parseParameterBaseObject(schema, components),
     };
   }
 
@@ -544,13 +594,13 @@ export abstract class OpenApiParser {
     }
   }
 
-  protected parseCallback(schema: PathItemObject, name: string): Callback {
-    const definition = this.parsePathItemObject(schema);
+  protected parseCallback(schema: PathItemObject, name: string, components: Components): Callback {
+    const definition = this.parsePathItemObject(schema, components);
 
     return { type: 'callback', name, definition };
   }
 
-  protected parsePathItemObject(schema: ReferenceObject | PathItemObject): PathItem | Reference {
+  protected parsePathItemObject(schema: ReferenceObject | PathItemObject, components: Components): PathItem | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
@@ -564,17 +614,17 @@ export abstract class OpenApiParser {
         continue;
       }
 
-      const nodeType = this.parseOperationObject(operationObject, method.toLowerCase());
+      const nodeType = this.parseOperationObject(operationObject, method.toLowerCase(), schema.parameters, components);
       operations.push(nodeType);
     }
 
-    if (schema.parameters) {
-      parameters = [];
-      for (const record of schema.parameters) {
-        const nodeType = this.parseParameter(record);
-        parameters.push(nodeType);
-      }
-    }
+    // if (schema.parameters) {
+    //   parameters = [];
+    //   for (const record of schema.parameters) {
+    //     const nodeType = this.parseParameter(record, components);
+    //     parameters.push(nodeType);
+    //   }
+    // }
 
     return {
       type: 'pathItemObject',
@@ -583,7 +633,12 @@ export abstract class OpenApiParser {
     };
   }
 
-  private parseOperationObject(schema: OperationObject, method: string): Operation {
+  private parseOperationObject(
+    schema: OperationObject,
+    method: string,
+    pathItemParameters: (ReferenceObject | ParameterObject)[] | undefined,
+    components: Components,
+  ): Operation {
     let parameters;
     let responses;
     let callbacks;
@@ -599,19 +654,16 @@ export abstract class OpenApiParser {
       this._logger.warn(`Operation ${operationId} does not have any tags`);
     }
 
-    if (schema.parameters) {
-      parameters = [];
-      for (const record of schema.parameters) {
-        if (!schema) {
-          continue;
-        }
+    const combinedParameters = [...(pathItemParameters ?? []), ...(schema.parameters ?? [])];
 
-        const nodeType = this.parseParameter(record);
-        parameters.push(nodeType);
-      }
+    for (const record of combinedParameters) {
+      const nodeType = this.parseParameter(record, components);
+
+      parameters ??= [];
+      parameters.push(nodeType);
     }
 
-    const requestBody = schema.requestBody ? this.parseRequestBody(schema.requestBody) : undefined;
+    const requestBody = schema.requestBody ? this.parseRequestBody(schema.requestBody, components) : undefined;
 
     if (schema.responses) {
       responses = [];
@@ -620,7 +672,7 @@ export abstract class OpenApiParser {
         const status = record[0];
         const schema = record[1];
 
-        const definition = this.parseResponse(schema);
+        const definition = this.parseResponse(schema, components);
         responses.push({
           type: 'response',
           status,
@@ -636,7 +688,7 @@ export abstract class OpenApiParser {
         const name = record[0];
         const schema = record[1];
 
-        callbacks.push(this.parseCallback(schema, name));
+        callbacks.push(this.parseCallback(schema, name, components));
       }
     }
 

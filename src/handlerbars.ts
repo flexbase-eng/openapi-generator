@@ -79,6 +79,20 @@ export const createHandlebars = (): typeof Handlebars => {
     return;
   });
 
+  handlebars.registerHelper('registerValidator2', function (context, options: Handlebars.HelperOptions) {
+    const referenceName = context.referenceName + '/validator';
+
+    const name = options.fn(context);
+
+    if (referenceRegistrations.has(referenceName)) {
+      handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
+    }
+
+    referenceRegistrations.set(referenceName, name);
+
+    return;
+  });
+
   handlebars.registerHelper('resolveReference', function (context) {
     if (!IsReferenceExpression(context) || context.key === undefined) {
       throw Error('Expected a reference expression with a reference key');
@@ -105,6 +119,16 @@ export const createHandlebars = (): typeof Handlebars => {
     }
 
     const referenceKey = context.key + '/validator';
+
+    const ref = referenceRegistrations.get(referenceKey);
+    if (!ref) {
+      handlebars.log(2, `Reference ${referenceKey} not registered`);
+    }
+    return ref;
+  });
+
+  handlebars.registerHelper('resolveValidator2', function (context) {
+    const referenceKey = context.reference + '/validator';
 
     const ref = referenceRegistrations.get(referenceKey);
     if (!ref) {
@@ -150,9 +174,21 @@ export const createHandlebars = (): typeof Handlebars => {
 
     if (!_isString(rendered)) return '';
     if (!_isString(a) && !_isRegex(a)) return rendered;
-    if (!_isString(b)) b = '';
+    if (!_isString(b) && !_isRegex(b) && typeof b !== 'function') b = '';
 
     return rendered.replace(a, b);
+  });
+
+  handlebars.registerHelper('function', function (str, options: Handlebars.HelperOptions) {
+    const _isString = (val: unknown): val is string => {
+      return typeof val === 'string' && val !== '';
+    };
+
+    const rendered = typeof str === 'object' && options ? options.fn(str) : str;
+
+    if (!_isString(rendered)) return '';
+
+    return eval(rendered);
   });
 
   handlebars.registerHelper('extendProperty', function (context, name, options: Handlebars.HelperOptions) {

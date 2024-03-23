@@ -20,7 +20,8 @@
     },
     "validations": {
       "target": "./output/{api}/{name}/generated/{name}.validations.ts",
-      "template": "./templates/vnext/validations.hbs"
+      "template": "./templates/vnext/validations.hbs",
+      "script": "./scripts/test.lua"
     }
   },
   "prettier": true,

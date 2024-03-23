@@ -8,8 +8,9 @@ import { Logger } from '@flexbase/logger';
 import { runPrettier } from './run.prettier';
 import * as glob from 'glob';
 import { ParsedDocument } from './parser/parsed.document';
-import { OpenApiCompiler } from './compiler/openapi.compiler';
+import { OpenApiOptimizer } from './optimizer/openapi.optimizer';
 import { LuaEngine, LuaFactory } from 'wasmoon';
+import { Globalizer } from './parser/globalizer';
 
 export const build = async (config: OpenApiGeneratorConfiguation, astDocument: AstDocument, astBuilder: IAstBuilder, logger: Logger) => {
   if (config.generate === undefined) {
@@ -150,16 +151,36 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
     return;
   }
 
-  const compiler = new OpenApiCompiler(logger);
+  const globalizer = new Globalizer();
+  parsedDocument = globalizer.globalize(parsedDocument);
+
+  const compiler = new OpenApiOptimizer(logger);
+  const document = compiler.optimize(parsedDocument);
 
   // const factory = new LuaFactory();
   // const templatePath = Path.join(process.cwd(), 'scripts/template.lua');
+  // const testPath = Path.join(process.cwd(), 'scripts/template.txt');
 
   // await factory.mountFile('template.lua', fs.readFileSync(templatePath));
+  // await factory.mountFile('template.txt', fs.readFileSync(testPath));
 
   // const luaEngine = await factory.createEngine();
 
-  parsedDocument = compiler.optimize(parsedDocument);
+  if (config.debug) {
+    const writeFile = async (title: string, data: object) => {
+      const name = Path.join(config.debugPath, title);
+      let json = JSON.stringify(data);
+      try {
+        json = await runPrettier(json, 'json');
+      } catch (e) {
+        logger.info(`Prettier error on ${name}`, e);
+      }
+      await fs.writeFile(name, json);
+    };
+
+    await fs.ensureDir(config.debugPath);
+    await writeFile(`${document.title}.optimized.json`, document);
+  }
 
   for (const entry of Object.entries(config.generate)) {
     const generateConfig = entry[1];
@@ -206,6 +227,7 @@ const generate2 = async (
   variables: Map<string, string>,
   parsedDocument: ParsedDocument,
   logger: Logger,
+  //luaEngine: LuaEngine,
 ) => {
   if (config.debug) {
     const variableName = variables.get('{name}');
@@ -222,7 +244,8 @@ const generate2 = async (
   }
 
   if (generateConfig.script) {
-    const scriptContents = await fs.readFile(generateConfig.script);
+    // const scriptContents = await fs.readFile(generateConfig.script);
+    // luaEngine.doStringSync(scriptContents.toString());
   } else {
     const templates: string[] = [...(config.sharedTemplates ?? []), ...(generateConfig.additionalTemplates ?? [])];
 

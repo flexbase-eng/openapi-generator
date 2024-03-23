@@ -47,6 +47,7 @@ export const parseSpec2 = async (config: OpenApiGeneratorConfiguation, specPath:
     };
 
     await fs.ensureDir(config.debugPath);
+    //await writeFile(`${output.title}.schema.json`, apiDoc);
     await writeFile(`${output.title}.parsed.json`, output);
   }
 

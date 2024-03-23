@@ -10,6 +10,7 @@ const resolvePath = (str: string) => path.resolve(__dirname, str);
 
 export default defineConfig({
   build: {
+    sourcemap: true,
     target: 'esnext',
     outDir: 'dist',
     lib: {
@@ -22,6 +23,7 @@ export default defineConfig({
       output: {
         banner: '#!/usr/bin/env node',
       },
+
       plugins: [typescript()],
       external: [...Object.keys(pkg.dependencies || {})],
     },

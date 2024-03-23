@@ -2,7 +2,7 @@ import { ParsedNode } from './parsed.node';
 
 export interface Components {
   models?: Component[];
-  requestBodies?: Component[];
+  requests?: Component[];
   responses?: Component[];
   parameters?: Component[];
   headers?: Component[];
@@ -11,9 +11,9 @@ export interface Components {
   pathItems?: Component[];
 }
 
-export interface Component {
+export interface Component<T extends ParsedNode = ParsedNode> {
   name: string;
   referenceName: string;
   generated?: boolean;
-  definition: ParsedNode;
+  definition: T;
 }

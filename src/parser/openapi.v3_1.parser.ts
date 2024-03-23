@@ -9,7 +9,7 @@ export class OpenApiParser3_1 extends OpenApiParser {
   }
 
   protected parseComponents(components: OpenAPI.ComponentsObject): Components {
-    const { models, requestBodies, responses, parameters, headers, securitySchemes, callbacks } = super.parseComponents(components);
+    const { models, requests, responses, parameters, headers, securitySchemes, callbacks } = super.parseComponents(components);
 
     let pathItems: Component[] = [];
 
@@ -20,11 +20,11 @@ export class OpenApiParser3_1 extends OpenApiParser {
         const schema = record[1];
         const referenceName = `#/components/pathItems/${name}`;
 
-        const definition = this.parsePathItemObject(schema);
+        const definition = this.parsePathItemObject(schema, { models, requests, responses, parameters, headers, securitySchemes, callbacks });
         pathItems.push({ name, referenceName, definition });
       }
     }
 
-    return { models, requestBodies, responses, parameters, headers, securitySchemes, callbacks, pathItems };
+    return { models, requests, responses, parameters, headers, securitySchemes, callbacks, pathItems };
   }
 }

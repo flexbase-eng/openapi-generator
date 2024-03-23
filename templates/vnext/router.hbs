@@ -2,16 +2,16 @@
 /* ------------------------------------------------------------
  File auto-generated
 
- @summary {{astDocument.apiName}}
- @description {{astDocument.apiDescription}}
- @version {{astDocument.version}}
+ @summary {{document.apiName}}
+ @description {{document.apiDescription}}
+ @version {{document.version}}
 ------------------------------------------------------------ */
 
-{{#astDocument}}
+{{#document}}
 
 import Router from '@koa/router';
 import { FlexbaseContext } from '@shared/models/index.js';
 
 export const {{replace apiName (toRegex "(-|\.| )+" "g") "_"}}Router = new Router<{}, FlexbaseContext>();
 
-{{/astDocument}}
+{{/document}}

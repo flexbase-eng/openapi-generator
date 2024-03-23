@@ -44,7 +44,7 @@
     "format": "prettier --write 'src/**/*.{ts,tsx,css,md,json}'",
     "test": "vitest run --coverage",
     "test:ci": "vitest run --coverage --config vitest.ci.config.ts",
-    "start": "node --inspect ./dist/index.js",
+    "start": "node --inspect --enable-source-maps ./dist/index.js",
     "packr": "packr",
     "generate": "yarn start -o ./output/nestjs -t ./templates/nestjs/document.hbs -p ./templates/nestjs/**/*.hbs -d -i",
     "generate:express": "yarn start -o ./output/express -t ./templates/express/document.hbs -p ./templates/express/**/*.hbs -e .js -i",

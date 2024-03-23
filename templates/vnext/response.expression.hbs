@@ -1,5 +1,5 @@
 {{~#compare type "===" "responseObject"}}
-    {{#if definitions}}{{#each content}} {{>response.expression .}}{{/each}}{{else}}void{{/if}}
+    {{#if content}}{{#each content}} {{>response.expression .}}{{/each}}{{else}}void{{/if}}
 {{/compare~}}
 
 {{~#compare type "===" "mediaContent"}}
@@ -7,5 +7,9 @@
 {{/compare~}}
 
 {{~#compare type "===" "mediaTypeObject"}}
+    {{>model.expression definition}}
+{{/compare~}}
+
+{{~#compare type "===" "response"}}
     {{>model.expression definition}}
 {{/compare~}}

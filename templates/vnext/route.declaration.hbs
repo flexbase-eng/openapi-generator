@@ -1,0 +1,78 @@
+{{~#*inline "validator"}}
+{{~#compare validation "!==" false}}
+{{#compare type "===" "reference"}}
+    handleValidation<{{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}}>({{input}}, {{& prefix}}{{& resolveValidator2 .}}{{& suffix}}, handleRequestValidatorErrors);
+{{else}}
+    {{log "Only references are support for validation currently" level="warn"}}
+{{/compare}}
+{{else}}
+{{input}} as {{>expression . prefix=./modelPrefix suffix=./modelSuffix}};
+{{/compare~}}
+{{/inline~}}
+
+{{~#compare type "===" "pathItem"}}
+{{>route.declaration definition prefix=./prefix path=name}}
+{{/compare~}}
+
+{{~#compare type "===" "pathItemObject"}}
+{{#each operations}}
+{{>route.declaration . prefix=../prefix path=../path}}
+{{/each}}
+{{/compare~}}
+
+{{~#compare type "===" "operation"}}
+{{prefix}}Router.{{lowercase method}}<object, object, {{#requests}}{{>expression prefix="models."}},{{/requests}}>('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}', 
+    {{~#if (isArray security)}}
+    {{^isEmpty security}}routerAuthMiddleware([{{#each security}}{{#each names}}'{{.}}', {{/each}}{{/each}}]),
+    {{else}} /* anonymous */
+    {{/isEmpty}}
+    {{else}}
+    routerAuthMiddleware({{extensions.x-mfa}}),
+    {{/if~}}
+
+    async (ctx, next) => {
+
+    {{#if requests}}
+    const body = {{#requests}}{{>validator . input="ctx.request.body" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}}{{/requests}};   
+    {{/if}}
+    {{#if pathParameter}}
+    const params = {{>validator pathParameter input="ctx.params" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}}
+    {{/if}}    
+    {{#if queryParameter}}
+    const query = {{>validator queryParameter input="ctx.request.query" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}}
+    {{/if}}
+    {{#if headerParameter}}
+    const headers = {{>validator headerParameter input="ctx.request.headers" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}};
+    {{/if}}
+    {{#if cookieParameter}}
+    {{log "Cookie parameters not supported yet" level="warn"}}
+    /*
+    * not supported yet
+    * const cookies = {{>validator cookieParameter input="ctx.cookies" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}};
+    */
+    {{/if}}
+
+    {{#if responses}}
+    const response: 
+    {{#forEach responses}}
+    {{>model.expression . prefix="models."}} {{#unless isLast}}|{{/unless}}
+    {{/forEach}}
+    =
+    {{else}}
+    const response = {};
+    {{/if}}
+
+    await handlers.{{& replace operationId (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}
+    (ctx,
+        {{~#if requests}}body,{{/if~}}
+        {{~#if pathParameter}}params,{{/if~}}
+        {{~#if queryParameter}}query,{{/if~}}
+        {{~#if headerParameter}}headers,{{/if~}}
+    );
+
+    serializeResponse(ctx, response);
+
+    await next();
+});
+
+{{/compare~}}

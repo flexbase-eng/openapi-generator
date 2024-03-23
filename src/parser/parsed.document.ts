@@ -3,6 +3,7 @@ import { Tag } from './parsed_nodes/tag';
 
 export interface ParsedDocument {
   title: string;
+  apiName: string;
   description?: string;
   version: string;
   components: Components;

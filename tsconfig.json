@@ -13,7 +13,10 @@
     "stripInternal": true,
     "resolveJsonModule": true,
     "experimentalDecorators": true,
-    "noEmit": true,
+    "noEmit": true,   
+    "sourceMap": true,
+    "inlineSources": true,
+    "sourceRoot": "/"
   },
   "include": ["src/**/*"]
 }
