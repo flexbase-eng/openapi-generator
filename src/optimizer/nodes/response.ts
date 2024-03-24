@@ -1,3 +1,4 @@
+import { HeaderObject } from './header';
 import { OptimizedNode } from './optimized.node';
 import { Reference } from './reference';
 
@@ -8,8 +9,9 @@ export interface ResponseContent extends OptimizedNode {
 
 export interface ResponseObject extends OptimizedNode {
   description: string;
-  //headers?: NamedHeader[];
-  'content-type': Record<string, ResponseContent>;
+  //headers?: Record<string, OptimizedNode>;
+  headers?: HeaderObject;
+  'content-type': Record<string, OptimizedNode>;
   //links?: NamedLink[];
 }
 

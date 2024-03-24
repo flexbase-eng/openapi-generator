@@ -7,3 +7,5 @@ export * from './response';
 export * from './object';
 export * from './parameter';
 export * from './primative';
+export * from './header';
+export * from './array';

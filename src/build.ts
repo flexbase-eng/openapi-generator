@@ -152,7 +152,7 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
   }
 
   const globalizer = new Globalizer();
-  parsedDocument = globalizer.globalize(parsedDocument);
+  //parsedDocument = globalizer.globalize(parsedDocument);
 
   const compiler = new OpenApiOptimizer(logger);
   const document = compiler.optimize(parsedDocument);
@@ -256,7 +256,8 @@ const generate2 = async (
     const templateFile = await fs.readFile(generateConfig.template, 'utf8');
     const handlebarTemplate = handlebars.compile(templateFile);
     const fileName = substituteParams(generateConfig.target, variables);
-    await render2(config, fileName, parsedDocument, handlebarTemplate, logger);
+    // disable for testing
+    // await render2(config, fileName, parsedDocument, handlebarTemplate, logger);
   }
 };
 

@@ -55,6 +55,16 @@ export class Converter {
       return this.convertPrimative(parsedNode);
     } else if (parsed.isParameter(parsedNode)) {
       return this.convertParameter(parsedNode, parsedComponents, components);
+    } else if (parsed.isResponseBody(parsedNode)) {
+      return this.convertResponseObject(parsedNode, parsedComponents, components);
+    } else if (parsed.isHeader(parsedNode)) {
+      return this.convertHeader(parsedNode, parsedComponents, components);
+    } else if (parsed.isMediaType(parsedNode)) {
+      return this.convertMediaType(parsedNode, parsedComponents, components);
+    } else if (parsed.isObjectNode(parsedNode)) {
+      return this.convertObject(parsedNode, parsedComponents, components);
+    } else if (parsed.isArrayNode(parsedNode)) {
+      return this.convertArray(parsedNode, parsedComponents, components);
     }
 
     return {
@@ -74,6 +84,20 @@ export class Converter {
   private convertPrimative(parsedNode: parsed.Primative): optimized.Primative {
     return {
       ...parsedNode,
+    };
+  }
+
+  private convertObject(parsedNode: parsed.ObjectNode, parsedComponents: parsed.Components, components: optimized.Components): optimized.ObjectNode {
+    return {
+      ...parsedNode,
+      properties: parsedNode.properties.map(p => ({ ...p, definition: this.convertParsedNode(p.definition, parsedComponents, components) })),
+    };
+  }
+
+  private convertArray(parsedNode: parsed.ArrayNode, parsedComponents: parsed.Components, components: optimized.Components): optimized.ArrayNode {
+    return {
+      ...parsedNode,
+      definition: this.convertParsedNode(parsedNode.definition, parsedComponents, components),
     };
   }
 
@@ -99,5 +123,65 @@ export class Converter {
       extensions: parsedNode.extensions,
       definition,
     };
+  }
+
+  private convertResponseObject(
+    parsedNode: parsed.ResponseBody,
+    parsedComponents: parsed.Components,
+    components: optimized.Components,
+  ): optimized.ResponseObject {
+    const contentType: Record<string, optimized.OptimizedNode> = {};
+
+    let headers: optimized.HeaderObject | undefined;
+
+    if (parsedNode.headers) {
+      const properties: optimized.Header[] = [];
+      parsedNode.headers?.forEach(header => {
+        const headerDefinition = this.convertParsedNode(header.definition, parsedComponents, components);
+        properties.push(<optimized.Header>{
+          ...headerDefinition,
+          name: header.name,
+        });
+      });
+      headers = { type: 'headerObject', properties };
+    }
+
+    if (parsedNode.links) {
+      this._logger.warn('Response links not supported yet');
+    }
+
+    parsedNode.content?.forEach(responseContent => {
+      contentType[responseContent.name] = this.convertParsedNode(responseContent.definition, parsedComponents, components);
+    });
+
+    return { type: 'responseObject', description: parsedNode.description, headers: headers, 'content-type': contentType };
+  }
+
+  private convertHeader(parsedNode: parsed.Header, parsedComponents: parsed.Components, components: optimized.Components): optimized.Header {
+    let definition: optimized.OptimizedNode = { type: 'error' };
+
+    if (parsedNode.definition) {
+      definition = this.convertParsedNode(parsedNode.definition, parsedComponents, components);
+    } else if (parsedNode.content) {
+      definition = this.convertParsedNode(parsedNode.content[0], parsedComponents, components);
+    }
+
+    return {
+      name: '',
+      type: 'header',
+      description: parsedNode.description,
+      required: parsedNode.required,
+      deprecated: parsedNode.deprecated,
+      allowEmptyValue: parsedNode.allowEmptyValue,
+      style: parsedNode.style,
+      explode: parsedNode.explode,
+      allowReserved: parsedNode.allowReserved,
+      extensions: parsedNode.extensions,
+      definition,
+    };
+  }
+
+  private convertMediaType(parsedNode: parsed.MediaType, parsedComponents: parsed.Components, components: optimized.Components) {
+    return parsedNode.definition ? this.convertParsedNode(parsedNode.definition, parsedComponents, components) : { type: 'null' };
   }
 }

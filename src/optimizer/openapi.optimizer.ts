@@ -207,52 +207,6 @@ export class OpenApiOptimizer {
     return { pathParameter, headerParameter, queryParameter, cookieParameter };
   }
 
-  // private createResponseObject(response: parsed.Response, components: parsed.Components): optimized.ResponseObject {
-  //   let content: MediaContent[] | undefined;
-
-  //   if (isReference(response.definition)) {
-  //     const found = this.lookupReference<ResponseBody>(response.definition, components, 'responses');
-  //     if (found) {
-  //       content = found.definition.content;
-  //     }
-  //   } else {
-  //     content = response.definition.content;
-  //   }
-
-  //   if (content) {
-  //     content.map(c => {
-  //       if (c.definition.encodings) {
-  //         this._logger.warn('mediaTypeObject encodings not implemented');
-  //       }
-  //       return <optimized.ResponseContent>{
-  //         contentType: c.name,
-  //       };
-  //     });
-  //   }
-
-  //   if (!content) {
-  //     return { description: response.definition.description };
-  //   }
-  // }
-
-  // private optimizeResponses(responses: (parsed.Response | parsed.Reference)[], components: parsed.Components) {
-  //   const definitions: optimized.OptimizedNode[] = [];
-
-  //   responses.forEach(r => {
-  //     if (isReference(r)) {
-  //       const found = this.lookupReference<parsed.Response>(r, components, 'responses');
-  //       if (found) {
-  //         this.createResponseObject(found.definition, components);
-  //         definitions.push(found.definition);
-  //       }
-  //     } else {
-  //       definitions.push(r);
-  //     }
-  //   });
-
-  //   return { type: 'union', definitions };
-  // }
-
   private optimizeOperationResponses(document: ParsedDocument, components: optimized.Components, operation: parsed.Operation) {
     let responseReference: Record<number, optimized.Reference> | undefined;
 
@@ -261,6 +215,7 @@ export class OpenApiOptimizer {
       const referenceName = `#/components/responses/${name}`;
 
       const response: optimized.Response = { type: 'response', name };
+      this._converter.addComponent(name, response, components, 'responses');
 
       operation.responses.forEach(parsedResponse => {
         const nodeResponse = parsed.isReference(parsedResponse)
@@ -274,48 +229,11 @@ export class OpenApiOptimizer {
             $ref: `${referenceName}/${nodeResponse.status}`,
           };
 
-          const contentType: Record<string, optimized.ResponseContent> = {};
+          const responseObject = this._converter.convertParsedNode(nodeResponse.definition, document.components, components);
 
-          {
-            const responseObject = parsed.isReference(nodeResponse.definition)
-              ? this.lookupReference<parsed.ResponseBody>(nodeResponse.definition, document.components, 'responses')?.definition
-              : nodeResponse.definition;
-
-            responseObject?.content?.forEach(responseContent => {
-              contentType[responseContent.name] = {
-                type: 'responseContent',
-                contentType: responseContent.name,
-                definition: responseContent.definition,
-              };
-            });
-          }
-
-          response[Number(nodeResponse.status)] = { type: 'responseObject', description: 'todo', 'content-type': contentType };
-
-          this._converter.addComponent(name, response, components, 'responses');
-
-          //parsedResponse = this.createReference(components, name, referenceName, parsedResponse, 'responses');
+          response[Number(nodeResponse.status)] = responseObject as any;
         }
-        // response = {
-        //   type: 'reference',
-        //   $ref: referenceName,
-        // };
       });
-
-      // if (operation.responses.length === 1) {
-      //   response = operation.responses[0];
-      //   if (!isReference(response)) {
-      //     response = this.createReference(components, name, referenceName, response, 'responses');
-      //   }
-      // } else {
-      //   response = this.createReference(
-      //     components,
-      //     name,
-      //     referenceName,
-      //     this.optimizeResponses(operation.responses, document.components),
-      //     'responses',
-      //   );
-      // }
     }
 
     return responseReference;

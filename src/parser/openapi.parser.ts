@@ -201,7 +201,7 @@ export abstract class OpenApiParser {
   }
 
   private isArraySchemaObject(test: SchemaObject): test is ArraySchemaObject {
-    return 'items' in test && test.type === 'array';
+    return test.type === 'array'; // && 'items' in test;
   }
 
   private isNonArraySchemaObject(test: SchemaObject): test is NonArraySchemaObject {
@@ -280,7 +280,7 @@ export abstract class OpenApiParser {
       return this.createReference(schema);
     }
 
-    schema.type ??= type;
+    schema.type ??= type ?? 'object';
     const modifiers = this.getModifiers(schema);
 
     if (this.isArraySchemaObject(schema)) {
@@ -750,7 +750,7 @@ export abstract class OpenApiParser {
       }
     }
 
-    return { type: 'object', properties, ...modifiers };
+    return { type: 'object', properties, ...modifiers, required: undefined };
   }
 
   private parseAllOf(schema: WithRequired<NonArraySchemaObject, 'allOf'>, modifiers: Modifiers): Composite {
@@ -798,10 +798,18 @@ export abstract class OpenApiParser {
   }
 
   private createArray(schema: ArraySchemaObject, modifiers: Modifiers): ArrayNode {
+    const hasItems = schema.items !== undefined;
+    const hasEnum = schema.enum !== undefined;
+
     return {
       type: 'array',
       ...modifiers,
-      definition: this.parseSchema(schema.items),
+      enum: undefined,
+      definition: hasItems
+        ? this.parseSchema(schema.items)
+        : hasEnum
+          ? { type: 'string', enum: schema.enum }
+          : <ObjectNode>{ type: 'object', properties: [] },
     };
   }
 }
