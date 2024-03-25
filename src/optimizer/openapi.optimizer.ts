@@ -1,31 +1,5 @@
 import { Logger } from '@flexbase/logger';
 import { ParsedDocument } from '../parser/parsed.document';
-import {
-  Component,
-  Components,
-  ParsedNode,
-  Reference,
-  isArrayNode,
-  isCallback,
-  isComposite,
-  isExclusion,
-  isHeader,
-  isLink,
-  isMediaContent,
-  isMediaType,
-  isNamedHeader,
-  isNamedLink,
-  isObjectNode,
-  isOperation,
-  isParameter,
-  isPathItem,
-  isProperty,
-  isReference,
-  isRequestBody,
-  isResponse,
-  isResponseBody,
-  isUnion,
-} from '../parser/parsed_nodes';
 import * as parsed from '../parser/parsed_nodes';
 import '../utilities/array';
 import { compareParsedNodes } from '../parser/compare.parsed.nodes';
@@ -50,33 +24,17 @@ export class OpenApiOptimizer {
     return optimizedDocument;
   }
 
-  organizeByTags(document: ParsedDocument): ParsedDocument[] {
-    const documents: ParsedDocument[] = document.tags.map(tag => {
-      const doc = {
-        title: tag.name,
-        apiName: document.apiName,
-        description: tag.description,
-        version: document.version,
-        tags: [tag],
-        paths: this.organizePathsByTags(document, tag.name),
-        components: {},
-      };
-
-      doc.components = this.organizeComponentsByTags(document, doc.paths);
-
-      return doc;
-    });
-
-    return documents;
-  }
-
-  private lookupReference<T extends ParsedNode = ParsedNode>(node: Reference, components: Components, type: keyof Components) {
+  private lookupReference<T extends parsed.ParsedNode = parsed.ParsedNode>(
+    node: parsed.Reference,
+    components: parsed.Components,
+    type: keyof parsed.Components,
+  ) {
     const found = components[type]?.find(x => x.referenceName === node.reference);
     if (!found) {
       this._logger.warn(`Unable to find ${type}: ${node.reference}`);
       return undefined;
     }
-    return found as Component<T>;
+    return found as parsed.Component<T>;
   }
 
   private createParameterObject(
@@ -87,7 +45,7 @@ export class OpenApiOptimizer {
     const definitions: optimized.OptimizedNode[] = [];
 
     parameters.forEach(p => {
-      if (isReference(p)) {
+      if (parsed.isReference(p)) {
         const found = this.lookupReference<parsed.Parameter>(p, parsedComponents, 'parameters');
         if (found) {
           definitions.push(<optimized.Reference>{
@@ -239,8 +197,32 @@ export class OpenApiOptimizer {
     return responseReference;
   }
 
+  private optimizeOperationRequest(document: ParsedDocument, components: optimized.Components, operation: parsed.Operation) {
+    let requestReference: optimized.Reference | undefined;
+
+    if (operation.requestBody) {
+      const name = `${operation.operationId}`;
+      const referenceName = `#/components/requests/${name}`;
+
+      const nodeRequest = parsed.isReference(operation.requestBody)
+        ? this.lookupReference<parsed.RequestBody>(operation.requestBody, document.components, 'requests')?.definition
+        : operation.requestBody;
+
+      if (nodeRequest) {
+        const request = { ...this._converter.convertParsedNode(nodeRequest, document.components, components), name, content: undefined };
+        this._converter.addComponent(name, request, components, 'requests');
+      }
+
+      requestReference = { type: 'reference', $ref: referenceName };
+    }
+
+    return requestReference;
+  }
+
   private optimizeOperation(document: ParsedDocument, components: optimized.Components, operation: parsed.Operation): optimized.Operation {
     const response = this.optimizeOperationResponses(document, components, operation);
+
+    const request = this.optimizeOperationRequest(document, components, operation);
 
     const { pathParameter, headerParameter, queryParameter, cookieParameter } = this.optimizeOperationParameters(document, components, operation);
 
@@ -256,6 +238,7 @@ export class OpenApiOptimizer {
       security: operation.security,
       extensions: operation.extensions,
       response,
+      request,
       pathParameter,
       headerParameter,
       queryParameter,
@@ -276,7 +259,7 @@ export class OpenApiOptimizer {
 
     document.paths.forEach(path => {
       if (path.definition) {
-        if (isReference(path.definition)) {
+        if (parsed.isReference(path.definition)) {
           this._logger.warn('Path references not supported');
         } else {
           paths.push({ type: 'path', name: path.name, operations: this.optimizePathItem(document, components, path.definition) });
@@ -322,12 +305,12 @@ export class OpenApiOptimizer {
     return document;
   }
 
-  private removeModelDuplicates(models: Component[]): Component[] {
+  private removeModelDuplicates(models: parsed.Component[]): parsed.Component[] {
     return models;
   }
 
-  private removeParameterDuplicates(parameters: Component[]): Component[] {
-    const dedupped: Component[] = [];
+  private removeParameterDuplicates(parameters: parsed.Component[]): parsed.Component[] {
+    const dedupped: parsed.Component[] = [];
 
     parameters.forEach(p => {
       const found = dedupped.some(value => value.referenceName === p.referenceName && compareParsedNodes(value.definition, p.definition));
@@ -337,229 +320,5 @@ export class OpenApiOptimizer {
     });
 
     return dedupped;
-  }
-
-  private organizePathsByTags(document: ParsedDocument, tag: string): parsed.Path[] {
-    const paths = document.paths.map(path => {
-      const definition = path.definition;
-
-      if (definition === undefined) {
-        return undefined;
-      }
-
-      if (isReference(definition)) {
-        return path;
-      }
-
-      const operations = definition.operations;
-      if (operations === undefined) {
-        return undefined;
-      }
-
-      if (operations.some(operation => operation.tags?.includes(tag))) return path;
-
-      return undefined;
-    });
-
-    const isPath = (value?: parsed.Path): value is parsed.Path => {
-      return value !== undefined;
-    };
-
-    return paths.filter<parsed.Path>(isPath);
-  }
-
-  private organizeComponentsByTags(originalDocument: ParsedDocument, paths: parsed.Path[]): Components {
-    const components: Required<Components> = {
-      models: [],
-      requests: [],
-      responses: [],
-      parameters: [],
-      headers: [],
-      securitySchemes: [],
-      callbacks: [],
-      pathItems: [],
-    };
-
-    paths.forEach(path => {
-      const definition = path.definition;
-
-      if (definition === undefined) {
-        return;
-      }
-
-      this.traverseReferences(originalDocument, components, definition);
-    });
-
-    components.models = components.models.sort((a, b) => a.name.localeCompare(b.name));
-    components.requests = components.requests.sort((a, b) => a.name.localeCompare(b.name));
-    components.responses = components.responses.sort((a, b) => a.name.localeCompare(b.name));
-    components.parameters = components.parameters.sort((a, b) => a.name.localeCompare(b.name));
-    components.headers = components.headers.sort((a, b) => a.name.localeCompare(b.name));
-    components.securitySchemes = components.securitySchemes.sort((a, b) => a.name.localeCompare(b.name));
-    components.callbacks = components.callbacks.sort((a, b) => a.name.localeCompare(b.name));
-    components.pathItems = components.pathItems.sort((a, b) => a.name.localeCompare(b.name));
-    // components.pathParameters = components.pathParameters.sort((a, b) => a.name.localeCompare(b.name));
-    // components.headerParameters = components.headerParameters.sort((a, b) => a.name.localeCompare(b.name));
-    // components.queryParameters = components.queryParameters.sort((a, b) => a.name.localeCompare(b.name));
-    // components.cookieParameters = components.cookieParameters.sort((a, b) => a.name.localeCompare(b.name));
-
-    return components;
-  }
-
-  private findInSection<U extends keyof Components>(components: Components, node: Reference, section: U): Component | undefined {
-    const comps = components[section];
-
-    if (!comps) {
-      return undefined;
-    }
-
-    const found = comps.filter(x => x.referenceName === node.reference);
-    if (found === undefined || found.length === 0) {
-      return undefined;
-    } else {
-      if (found.length > 1) {
-        this._logger.warn(`mulitiple references of ${section} ${node.reference} found, using first instance`);
-      }
-      return found[0];
-    }
-  }
-
-  private find(components: Components, node: Reference): { component?: Component; section?: keyof Components } {
-    for (let section of Object.keys(components)) {
-      const component = this.findInSection(components, node, section as keyof Components);
-      if (component) {
-        return { component, section: section as keyof Components };
-      }
-    }
-    return {};
-  }
-
-  private addIfMissing(component: Component, components: Required<Components>, section: keyof Components) {
-    const existingComponents = components[section];
-    const found = existingComponents.find(x => x.referenceName === component.referenceName);
-    if (!found) {
-      existingComponents.push(component);
-      return component;
-    }
-    return undefined;
-  }
-
-  private traverseReferences(originalDocument: ParsedDocument, components: Required<Components>, node: ParsedNode) {
-    if (isReference(node)) {
-      const { component, section } = this.find(originalDocument.components, node);
-      if (!component) {
-        this._logger.warn(`${node.reference} not found`);
-        return;
-      }
-
-      const added = this.addIfMissing(component, components, section!);
-      if (added) {
-        this.traverseReferences(originalDocument, components, added.definition);
-      }
-    } else if (isPathItem(node)) {
-      if (node.parameters) {
-        node.parameters.forEach(x => this.traverseReferences(originalDocument, components, x));
-      }
-      node.operations.forEach(x => this.traverseReferences(originalDocument, components, x));
-    } else if (isOperation(node)) {
-      if (node.parameters) {
-        node.parameters.forEach(x => this.traverseReferences(originalDocument, components, x));
-      }
-      // if (node.pathParameter) {
-      //   this.traverseReferences(originalDocument, components, node.pathParameter);
-      // }
-      // if (node.headerParameter) {
-      //   this.traverseReferences(originalDocument, components, node.headerParameter);
-      // }
-      // if (node.queryParameter) {
-      //   this.traverseReferences(originalDocument, components, node.queryParameter);
-      // }
-      // if (node.cookieParameter) {
-      //   this.traverseReferences(originalDocument, components, node.cookieParameter);
-      // }
-      if (node.requestBody) {
-        this.traverseReferences(originalDocument, components, node.requestBody);
-      }
-      if (node.responses) {
-        node.responses.forEach(x => this.traverseReferences(originalDocument, components, x));
-      }
-      // if (node.request) {
-      //   this.traverseReferences(originalDocument, components, node.request);
-      // }
-      // if (node.response) {
-      //   this.traverseReferences(originalDocument, components, node.response);
-      // }
-      if (node.callbacks) {
-        node.callbacks.forEach(x => this.traverseReferences(originalDocument, components, x));
-      }
-    } else if (isRequestBody(node) && node.content) {
-      node.content.forEach(x => {
-        this.traverseReferences(originalDocument, components, x.definition);
-      });
-    } else if (isMediaContent(node)) {
-      this.traverseReferences(originalDocument, components, node.definition);
-    } else if (isMediaType(node) && node.definition) {
-      this.traverseReferences(originalDocument, components, node.definition);
-    } else if (isObjectNode(node)) {
-      node.properties.forEach(x => this.traverseReferences(originalDocument, components, x));
-    } else if (isProperty(node)) {
-      this.traverseReferences(originalDocument, components, node.definition);
-    } else if (isResponse(node)) {
-      this.traverseReferences(originalDocument, components, node.definition);
-    } else if (isResponseBody(node)) {
-      if (node.content) {
-        node.content.forEach(x => {
-          this.traverseReferences(originalDocument, components, x.definition);
-        });
-      }
-      if (node.headers) {
-        node.headers.forEach(x => {
-          this.traverseReferences(originalDocument, components, x.definition);
-        });
-      }
-      if (node.links) {
-        node.links.forEach(x => {
-          this.traverseReferences(originalDocument, components, x.definition);
-        });
-      }
-    } else if (isNamedHeader(node)) {
-      this.traverseReferences(originalDocument, components, node.definition);
-    } else if (isHeader(node)) {
-      if (node.definition) {
-        this.traverseReferences(originalDocument, components, node.definition);
-      }
-      if (node.content) {
-        node.content.forEach(x => {
-          this.traverseReferences(originalDocument, components, x.definition);
-        });
-      }
-    } else if (isCallback(node)) {
-      this.traverseReferences(originalDocument, components, node.definition);
-    } else if (isArrayNode(node)) {
-      this.traverseReferences(originalDocument, components, node.definition);
-    } else if (isComposite(node)) {
-      node.definitions.forEach(x => {
-        this.traverseReferences(originalDocument, components, x);
-      });
-    } else if (isExclusion(node)) {
-      this.traverseReferences(originalDocument, components, node.definition);
-    } else if (isNamedLink(node)) {
-      this.traverseReferences(originalDocument, components, node.definition);
-    } else if (isLink(node)) {
-      // TODO
-    } else if (isParameter(node)) {
-      if (node.definition) {
-        this.traverseReferences(originalDocument, components, node.definition);
-      }
-      if (node.content) {
-        node.content.forEach(x => {
-          this.traverseReferences(originalDocument, components, x.definition);
-        });
-      }
-    } else if (isUnion(node)) {
-      node.definitions.forEach(x => {
-        this.traverseReferences(originalDocument, components, x);
-      });
-    }
   }
 }

@@ -61,7 +61,10 @@ type PathsObject = OpenAPIV3.PathsObject | OpenAPIV3_1.PathsObject;
 type Document = OpenAPIV3.Document | OpenAPIV3_1.Document;
 type ComponentsObject = OpenAPIV3.ComponentsObject | OpenAPIV3_1.ComponentsObject;
 type TagObject = OpenAPIV3.TagObject | OpenAPIV3_1.TagObject;
-
+interface MixedSchemaObject extends OpenAPIV3_1.BaseSchemaObject {
+  type?: (OpenAPIV3_1.ArraySchemaObjectType | NonArraySchemaObjectType)[];
+  items?: ReferenceObject | SchemaObject;
+}
 const nonArraySchemaObjectType: string[] = ['string', 'number', 'boolean', 'integer', 'null'];
 
 type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
@@ -208,6 +211,10 @@ export abstract class OpenApiParser {
     return !('items' in test);
   }
 
+  private isMixedSchemaObject(test: SchemaObject): test is MixedSchemaObject {
+    return Array.isArray(test.type);
+  }
+
   private isAllOf(test: NonArraySchemaObject): test is WithRequired<NonArraySchemaObject, 'allOf'> {
     return test.allOf !== undefined;
   }
@@ -284,7 +291,9 @@ export abstract class OpenApiParser {
     const modifiers = this.getModifiers(schema);
 
     if (this.isArraySchemaObject(schema)) {
-      return this.createArray(schema, modifiers);
+      return this.parseArray(schema, modifiers);
+    } else if (this.isMixedSchemaObject(schema)) {
+      return this.parseMixedSchemaObject(schema, modifiers);
     } else if (this.isNonArraySchemaObject(schema)) {
       if (this.isAllOf(schema)) {
         return this.parseAllOf(schema, modifiers);
@@ -797,7 +806,7 @@ export abstract class OpenApiParser {
     };
   }
 
-  private createArray(schema: ArraySchemaObject, modifiers: Modifiers): ArrayNode {
+  private parseArray(schema: ArraySchemaObject, modifiers: Modifiers): ArrayNode {
     const hasItems = schema.items !== undefined;
     const hasEnum = schema.enum !== undefined;
 
@@ -810,6 +819,37 @@ export abstract class OpenApiParser {
         : hasEnum
           ? { type: 'string', enum: schema.enum }
           : <ObjectNode>{ type: 'object', properties: [] },
+    };
+  }
+
+  private parseMixedSchemaObject(schema: MixedSchemaObject, modifiers: Modifiers): Union {
+    const hasItems = schema.items !== undefined;
+    const hasEnum = schema.enum !== undefined;
+
+    if (!schema.type) {
+      this._logger.warn('Mixed schema missing type array');
+      return <Union>{
+        type: 'error',
+      };
+    }
+
+    const definitions: ParsedNode[] = schema.type.map(type => {
+      if (type === 'object') {
+        return this.parseObject({ ...schema, type }, modifiers);
+      } else if (type === 'array') {
+        return this.parseArray(<ArraySchemaObject>{ ...schema, type }, modifiers);
+      } else if (nonArraySchemaObjectType.includes(type)) {
+        return this.createLiteral({ ...schema, type }, modifiers);
+      } else {
+        return { type: 'error' };
+      }
+    });
+
+    return {
+      type: 'union',
+      ...modifiers,
+      enum: undefined,
+      definitions,
     };
   }
 }

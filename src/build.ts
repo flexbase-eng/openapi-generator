@@ -11,6 +11,8 @@ import { ParsedDocument } from './parser/parsed.document';
 import { OpenApiOptimizer } from './optimizer/openapi.optimizer';
 import { LuaEngine, LuaFactory } from 'wasmoon';
 import { Globalizer } from './parser/globalizer';
+import { Organizer } from './parser/organizer';
+import { OptimizedDocument } from './optimizer/optimized.document';
 
 export const build = async (config: OpenApiGeneratorConfiguation, astDocument: AstDocument, astBuilder: IAstBuilder, logger: Logger) => {
   if (config.generate === undefined) {
@@ -152,10 +154,11 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
   }
 
   const globalizer = new Globalizer();
+  const organizer = new Organizer(logger);
+
   //parsedDocument = globalizer.globalize(parsedDocument);
 
   const compiler = new OpenApiOptimizer(logger);
-  const document = compiler.optimize(parsedDocument);
 
   // const factory = new LuaFactory();
   // const templatePath = Path.join(process.cwd(), 'scripts/template.lua');
@@ -179,7 +182,7 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
     };
 
     await fs.ensureDir(config.debugPath);
-    await writeFile(`${document.title}.optimized.json`, document);
+    await writeFile(`${parsedDocument.title}.optimized.json`, compiler.optimize(parsedDocument));
   }
 
   for (const entry of Object.entries(config.generate)) {
@@ -190,7 +193,7 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
     const resolveReferences: boolean = generateConfig.references ?? config.references;
     const skipEmpty: boolean = generateConfig.skipEmpty ?? config.skipEmpty;
 
-    const documents = organizeByTags ? compiler.organizeByTags(parsedDocument) : [parsedDocument];
+    const documents = organizeByTags ? organizer.organizeByTags(parsedDocument) : [parsedDocument];
 
     const apiName = parsedDocument.title.trim();
 
@@ -213,7 +216,7 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
       //   continue;
       // }
 
-      await generate2(config, generateConfig, variables, doc, logger);
+      await generate2(config, generateConfig, variables, compiler.optimize(doc), logger);
     }
   }
 
@@ -225,7 +228,7 @@ const generate2 = async (
   config: OpenApiGeneratorConfiguation,
   generateConfig: OpenApiGeneratorConfiguationGenerate,
   variables: Map<string, string>,
-  parsedDocument: ParsedDocument,
+  document: OptimizedDocument,
   logger: Logger,
   //luaEngine: LuaEngine,
 ) => {
@@ -233,8 +236,8 @@ const generate2 = async (
     const variableName = variables.get('{name}');
 
     await fs.ensureDir(config.debugPath);
-    const name = Path.join(config.debugPath, `${variableName}.parsed.json`);
-    let json = JSON.stringify(parsedDocument);
+    const name = Path.join(config.debugPath, `${variableName}.json`);
+    let json = JSON.stringify(document);
     try {
       json = await runPrettier(json, 'json');
     } catch (e) {
@@ -256,15 +259,14 @@ const generate2 = async (
     const templateFile = await fs.readFile(generateConfig.template, 'utf8');
     const handlebarTemplate = handlebars.compile(templateFile);
     const fileName = substituteParams(generateConfig.target, variables);
-    // disable for testing
-    // await render2(config, fileName, parsedDocument, handlebarTemplate, logger);
+    await render2(config, fileName, document, handlebarTemplate, logger);
   }
 };
 
 const render2 = async (
   config: OpenApiGeneratorConfiguation,
   fileName: string,
-  document: ParsedDocument,
+  document: OptimizedDocument,
   handlebarTemplate: HandlebarsTemplateDelegate<any>,
   logger: Logger,
 ) => {

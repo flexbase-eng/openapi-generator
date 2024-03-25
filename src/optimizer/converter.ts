@@ -65,6 +65,14 @@ export class Converter {
       return this.convertObject(parsedNode, parsedComponents, components);
     } else if (parsed.isArrayNode(parsedNode)) {
       return this.convertArray(parsedNode, parsedComponents, components);
+    } else if (parsed.isUnion(parsedNode)) {
+      return this.convertUnion(parsedNode, parsedComponents, components);
+    } else if (parsed.isComposite(parsedNode)) {
+      return this.convertComposite(parsedNode, parsedComponents, components);
+    } else if (parsed.isExclusion(parsedNode)) {
+      return this.convertExclusion(parsedNode, parsedComponents, components);
+    } else if (parsed.isRequestBody(parsedNode)) {
+      return this.convertRequestBody(parsedNode, parsedComponents, components);
     }
 
     return {
@@ -75,7 +83,7 @@ export class Converter {
   private convertReference(parsedNode: parsed.Reference): optimized.Reference {
     return {
       type: 'reference',
-      $ref: parsedNode.reference,
+      $ref: parsedNode.reference.replace('#/components/schemas/', '#/components/models/'),
       summary: parsedNode.summary,
       description: parsedNode.description,
     };
@@ -91,6 +99,27 @@ export class Converter {
     return {
       ...parsedNode,
       properties: parsedNode.properties.map(p => ({ ...p, definition: this.convertParsedNode(p.definition, parsedComponents, components) })),
+    };
+  }
+
+  private convertUnion(parsedNode: parsed.Union, parsedComponents: parsed.Components, components: optimized.Components): optimized.Union {
+    return {
+      ...parsedNode,
+      definitions: parsedNode.definitions.map(p => this.convertParsedNode(p, parsedComponents, components)),
+    };
+  }
+
+  private convertComposite(parsedNode: parsed.Composite, parsedComponents: parsed.Components, components: optimized.Components): optimized.Composite {
+    return {
+      ...parsedNode,
+      definitions: parsedNode.definitions.map(p => this.convertParsedNode(p, parsedComponents, components)),
+    };
+  }
+
+  private convertExclusion(parsedNode: parsed.Exclusion, parsedComponents: parsed.Components, components: optimized.Components): optimized.Exclusion {
+    return {
+      ...parsedNode,
+      definition: this.convertParsedNode(parsedNode.definition, parsedComponents, components),
     };
   }
 
@@ -155,6 +184,20 @@ export class Converter {
     });
 
     return { type: 'responseObject', description: parsedNode.description, headers: headers, 'content-type': contentType };
+  }
+
+  private convertRequestBody(
+    parsedNode: parsed.RequestBody,
+    parsedComponents: parsed.Components,
+    components: optimized.Components,
+  ): optimized.Request {
+    const contentType: Record<string, optimized.OptimizedNode> = {};
+
+    parsedNode.content?.forEach(requestContent => {
+      contentType[requestContent.name] = this.convertParsedNode(requestContent.definition, parsedComponents, components);
+    });
+
+    return { ...parsedNode, type: 'request', 'content-type': contentType };
   }
 
   private convertHeader(parsedNode: parsed.Header, parsedComponents: parsed.Components, components: optimized.Components): optimized.Header {

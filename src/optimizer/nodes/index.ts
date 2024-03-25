@@ -9,3 +9,8 @@ export * from './parameter';
 export * from './primative';
 export * from './header';
 export * from './array';
+export * from './union';
+export * from './composite';
+export * from './exclusion';
+export * from './request';
+export * from './tag';
