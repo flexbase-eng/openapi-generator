@@ -1,6 +1,7 @@
 {{>comments2}}
 
-export type {{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}} = {{>model.expression definition}} ;
+export type {{& replace title (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}} = {{>model.expression}} ;
+
 
 
 

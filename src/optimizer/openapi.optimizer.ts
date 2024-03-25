@@ -2,7 +2,6 @@ import { Logger } from '@flexbase/logger';
 import { ParsedDocument } from '../parser/parsed.document';
 import * as parsed from '../parser/parsed_nodes';
 import '../utilities/array';
-import { compareParsedNodes } from '../parser/compare.parsed.nodes';
 import { OptimizedDocument } from './optimized.document';
 import * as optimized from './nodes';
 import { Converter } from './converter';
@@ -17,9 +16,7 @@ export class OpenApiOptimizer {
   optimize(document: ParsedDocument): OptimizedDocument {
     let optimizedDocument = this.optimizePaths(document);
 
-    document = this.optimizeComposites(document);
-
-    document = this.removeDuplicates(document);
+    this.optimizeComponents(optimizedDocument.components);
 
     return optimizedDocument;
   }
@@ -166,14 +163,14 @@ export class OpenApiOptimizer {
   }
 
   private optimizeOperationResponses(document: ParsedDocument, components: optimized.Components, operation: parsed.Operation) {
-    let responseReference: Record<number, optimized.Reference> | undefined;
+    let responseReference: optimized.Reference | undefined;
 
     if (operation.responses) {
-      const name = `${operation.operationId}`;
-      const referenceName = `#/components/responses/${name}`;
+      const title = `${operation.operationId}`;
+      const referenceName = `#/components/responses/${title}`;
 
-      const response: optimized.Response = { type: 'response', name };
-      this._converter.addComponent(name, response, components, 'responses');
+      const response: optimized.Response = { type: 'response', title, status: {} };
+      this._converter.addComponent(title, response, components, 'responses');
 
       operation.responses.forEach(parsedResponse => {
         const nodeResponse = parsed.isReference(parsedResponse)
@@ -181,17 +178,13 @@ export class OpenApiOptimizer {
           : parsedResponse;
 
         if (nodeResponse) {
-          responseReference ??= {};
-          responseReference[Number(nodeResponse.status)] = {
-            type: 'reference',
-            $ref: `${referenceName}/${nodeResponse.status}`,
-          };
-
           const responseObject = this._converter.convertParsedNode(nodeResponse.definition, document.components, components);
 
-          response[Number(nodeResponse.status)] = responseObject as any;
+          response.status[Number(nodeResponse.status)] = responseObject as any;
         }
       });
+
+      responseReference = { type: 'reference', $ref: referenceName };
     }
 
     return responseReference;
@@ -209,7 +202,7 @@ export class OpenApiOptimizer {
         : operation.requestBody;
 
       if (nodeRequest) {
-        const request = { ...this._converter.convertParsedNode(nodeRequest, document.components, components), name, content: undefined };
+        const request = { ...this._converter.convertParsedNode(nodeRequest, document.components, components), title: name, content: undefined };
         this._converter.addComponent(name, request, components, 'requests');
       }
 
@@ -270,55 +263,43 @@ export class OpenApiOptimizer {
     return { ...document, paths, components };
   }
 
-  private optimizeComposites(document: ParsedDocument): ParsedDocument {
-    // document.paths.forEach(path => {
-    //   if (path.definition !== undefined && !isReference(path.definition!)) {
-    //     path.definition.operations.forEach(op => {
-    //       if (op.requestBody) {
-    //         if (isReference(op.requestBody)) {
-    //           const found = this.getReferenceComponent(document, op.requestBody.reference);
-    //           if(found) {
-    //             found.definition remove readonly
-    //           }
-    //         }
-    //       }
-    //     });
-    //   }
-    // });
+  private compactComposite(composite: optimized.Composite) {
+    const mergeNodes: optimized.ObjectNode[] = [];
+    const otherNodes: optimized.OptimizedNode[] = [];
 
-    return document;
-  }
-
-  private removeDuplicates(document: ParsedDocument): ParsedDocument {
-    if (document.components.models) {
-      document.components.models = this.removeModelDuplicates(document.components.models);
-    }
-
-    if (document.components.parameters) {
-      document.components.parameters = this.removeParameterDuplicates(document.components.parameters);
-    }
-
-    if (document.components.pathItems) {
-      document.components.pathItems = this.removeParameterDuplicates(document.components.pathItems);
-    }
-
-    return document;
-  }
-
-  private removeModelDuplicates(models: parsed.Component[]): parsed.Component[] {
-    return models;
-  }
-
-  private removeParameterDuplicates(parameters: parsed.Component[]): parsed.Component[] {
-    const dedupped: parsed.Component[] = [];
-
-    parameters.forEach(p => {
-      const found = dedupped.some(value => value.referenceName === p.referenceName && compareParsedNodes(value.definition, p.definition));
-      if (!found) {
-        dedupped.push(p);
+    for (const node of composite.definitions) {
+      if (optimized.isObjectNode(node)) {
+        mergeNodes.push(node);
+      } else {
+        otherNodes.push(node);
       }
-    });
+    }
 
-    return dedupped;
+    const properties: optimized.Property[] = [];
+    mergeNodes.forEach(x => properties.push(...x.properties));
+    if (properties.length > 0) {
+      otherNodes.push(<optimized.ObjectNode>{ type: 'object', properties });
+    }
+
+    return otherNodes.length > 1
+      ? <optimized.Composite>{ ...composite, definitions: otherNodes }
+      : { ...composite, definitions: undefined, ...otherNodes[0] };
+  }
+
+  private optimizeComponentRecord(components: Record<string, optimized.OptimizedNode>): Record<string, optimized.OptimizedNode> {
+    const entries = Object.entries(components);
+    for (let i = 0; i < entries.length; ++i) {
+      const component = entries[i][1];
+      if (optimized.isComposite(component)) {
+        const composite = this.compactComposite(component);
+        components[entries[i][0]] = composite;
+      }
+    }
+
+    return components;
+  }
+
+  private optimizeComponents(components: optimized.Components) {
+    if (components.models) components.models = this.optimizeComponentRecord(components.models);
   }
 }

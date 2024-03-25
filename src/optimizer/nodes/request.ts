@@ -1,7 +1,6 @@
 import { OptimizedNode } from './optimized.node';
 
 export interface Request extends OptimizedNode {
-  name?: string;
   'content-type': Record<string, OptimizedNode>;
 }
 

@@ -37,6 +37,7 @@ export class Converter {
   addComponent(referenceName: string, definition: optimized.OptimizedNode, components: optimized.Components, type: keyof optimized.Components) {
     components[type] ??= {};
     components[type]![referenceName] = definition;
+    components[type]![referenceName].title = referenceName;
   }
 
   convertParsedNode(parsedNode: parsed.ParsedNode, parsedComponents: parsed.Components, components: optimized.Components): optimized.OptimizedNode {
@@ -141,7 +142,7 @@ export class Converter {
 
     return {
       type: 'parameter',
-      name: parsedNode.name,
+      title: parsedNode.name,
       description: parsedNode.description,
       required: parsedNode.required,
       deprecated: parsedNode.deprecated,
@@ -169,7 +170,7 @@ export class Converter {
         const headerDefinition = this.convertParsedNode(header.definition, parsedComponents, components);
         properties.push(<optimized.Header>{
           ...headerDefinition,
-          name: header.name,
+          title: header.name,
         });
       });
       headers = { type: 'headerObject', properties };
@@ -210,7 +211,7 @@ export class Converter {
     }
 
     return {
-      name: '',
+      title: '',
       type: 'header',
       description: parsedNode.description,
       required: parsedNode.required,

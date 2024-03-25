@@ -13,7 +13,7 @@ export interface Operation extends OptimizedNode {
   queryParameter?: Reference;
   cookieParameter?: Reference;
   request?: Reference;
-  response?: Record<number, Reference>;
+  response?: Reference;
   callbacks?: Reference;
   security?: Record<string, string[]>[];
   extensions?: Record<string, string>;

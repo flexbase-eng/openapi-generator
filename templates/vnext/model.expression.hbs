@@ -38,13 +38,14 @@
 {{/compare~}}
 
 {{~#compare type "===" "responseObject"}}
-    {{#if content}}{{#each content}} {{>model.expression .}}{{/each}}{{else}}void{{/if}}
+    {{#if headers}}headers: {{>model.expression .}}{{/if}}
+    {{#each content-type}}'{{@key}}': {{>model.expression .}} ; {{/each}}{{/if}}
 {{/compare~}}
 
-{{~#compare type "===" "mediaContent"}}
+{{!-- {{~#compare type "===" "mediaContent"}}
     {{>model.expression definition}}
 {{/compare~}}
 
 {{~#compare type "===" "mediaTypeObject"}}
     {{>model.expression definition}}
-{{/compare~}}
+{{/compare~}} --}}

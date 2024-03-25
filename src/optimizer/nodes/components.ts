@@ -1,21 +1,21 @@
 import { OptimizedNode } from './optimized.node';
 
 export interface Components {
-  models?: Record<string, Component>;
-  requests?: Record<string, Component>;
-  responses?: Record<string, Component>;
+  models?: Record<string, OptimizedNode>;
+  requests?: Record<string, OptimizedNode>;
+  responses?: Record<string, OptimizedNode>;
   parameters?: Record<string, OptimizedNode>;
-  headers?: Record<string, Component>;
-  securitySchemes?: Record<string, Component>;
-  callbacks?: Record<string, Component>;
-  pathItems?: Record<string, Component>;
-  pathParameters?: Record<string, Component>;
-  headerParameters?: Record<string, Component>;
-  queryParameters?: Record<string, Component>;
-  cookieParameters?: Record<string, Component>;
+  headers?: Record<string, OptimizedNode>;
+  securitySchemes?: Record<string, OptimizedNode>;
+  callbacks?: Record<string, OptimizedNode>;
+  pathItems?: Record<string, OptimizedNode>;
+  pathParameters?: Record<string, OptimizedNode>;
+  headerParameters?: Record<string, OptimizedNode>;
+  queryParameters?: Record<string, OptimizedNode>;
+  cookieParameters?: Record<string, OptimizedNode>;
 }
 
-export interface Component<T extends OptimizedNode = OptimizedNode> {
-  generated?: boolean;
-  definition: T;
+export interface Component {
+  referenceName: string;
+  definition: OptimizedNode;
 }

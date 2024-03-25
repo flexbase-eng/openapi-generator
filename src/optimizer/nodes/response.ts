@@ -9,15 +9,14 @@ export interface ResponseContent extends OptimizedNode {
 
 export interface ResponseObject extends OptimizedNode {
   description: string;
-  //headers?: Record<string, OptimizedNode>;
   headers?: HeaderObject;
   'content-type': Record<string, OptimizedNode>;
   //links?: NamedLink[];
 }
 
-export interface Response extends OptimizedNode, Record<number, ResponseObject | Reference> {
-  name: string;
-  //status: Record<number, ResponseObject | Reference>;
+export interface Response extends OptimizedNode {
+  title: string;
+  status: Record<number, ResponseObject | Reference>;
   //definition: ResponseObject | Reference;
 }
 

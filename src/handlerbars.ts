@@ -49,18 +49,6 @@ export const createHandlebars = (): typeof Handlebars => {
     return;
   });
 
-  handlebars.registerHelper('registerReference2', function (context, options: Handlebars.HelperOptions) {
-    const name = options.fn(context);
-
-    if (referenceRegistrations.has(context.referenceName)) {
-      handlebars.log(2, `Multiple references ${context.referenceName} registered, last one wins!`);
-    }
-
-    referenceRegistrations.set(context.referenceName, name);
-
-    return;
-  });
-
   handlebars.registerHelper('registerValidator', function (context, options: Handlebars.HelperOptions) {
     if (!IsModelDeclaration(context) || context.referenceName === undefined) {
       throw Error('Expected a model declaration with a reference name for validator');
@@ -79,10 +67,24 @@ export const createHandlebars = (): typeof Handlebars => {
     return;
   });
 
-  handlebars.registerHelper('registerValidator2', function (context, options: Handlebars.HelperOptions) {
-    const referenceName = context.referenceName + '/validator';
-
+  handlebars.registerHelper('registerReference2', function (context, location, options: Handlebars.HelperOptions) {
     const name = options.fn(context);
+
+    const referenceName = location + context.title;
+
+    if (referenceRegistrations.has(referenceName)) {
+      handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
+    }
+
+    referenceRegistrations.set(referenceName, name);
+
+    return;
+  });
+
+  handlebars.registerHelper('registerValidator2', function (context, location, options: Handlebars.HelperOptions) {
+    const name = options.fn(context);
+
+    const referenceName = location + context.title + '/validator';
 
     if (referenceRegistrations.has(referenceName)) {
       handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
@@ -106,9 +108,9 @@ export const createHandlebars = (): typeof Handlebars => {
   });
 
   handlebars.registerHelper('resolveReference2', function (context) {
-    const ref = referenceRegistrations.get(context.reference);
+    const ref = referenceRegistrations.get(context.$ref);
     if (!ref) {
-      handlebars.log(2, `Reference ${context.reference} not registered`);
+      handlebars.log(2, `Reference ${context.$ref} not registered`);
     }
     return ref;
   });

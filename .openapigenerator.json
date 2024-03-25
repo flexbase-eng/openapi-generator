@@ -12,7 +12,8 @@
     },
     "routes": {
       "target": "./output/{api}/{name}/generated/{name}.routes.ts",
-      "template": "./templates/vnext/routes.hbs"
+      "template": "./templates/vnext/routes.hbs",
+      "script": "./scripts/test.lua"
     },
     "models": {
       "target": "./output/{api}/{name}/generated/{name}.models.ts",

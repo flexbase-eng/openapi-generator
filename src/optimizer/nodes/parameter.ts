@@ -1,7 +1,7 @@
 import { OptimizedNode } from './optimized.node';
 
 export interface Parameter extends OptimizedNode {
-  name: string;
+  title: string;
   description?: string;
   required?: boolean;
   deprecated?: boolean;

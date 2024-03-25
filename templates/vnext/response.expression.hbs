@@ -1,15 +1,5 @@
-{{~#compare type "===" "responseObject"}}
-    {{#if content}}{{#each content}} {{>response.expression .}}{{/each}}{{else}}void{{/if}}
-{{/compare~}}
-
-{{~#compare type "===" "mediaContent"}}
-    {{>response.expression definition}}
-{{/compare~}}
-
-{{~#compare type "===" "mediaTypeObject"}}
-    {{>model.expression definition}}
-{{/compare~}}
-
 {{~#compare type "===" "response"}}
-    {{>model.expression definition}}
+{ 
+    {{#each status}}'{{@key}}': {{>model.expression .}} ; {{/each}}
+}
 {{/compare~}}
