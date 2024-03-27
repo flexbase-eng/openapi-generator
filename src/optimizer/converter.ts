@@ -1,7 +1,7 @@
 import { Logger } from '@flexbase/logger';
 import * as parsed from '../parser/parsed_nodes';
 import * as optimized from './nodes';
-
+import { murmurHash } from '../utilities/murmur.hash';
 export class Converter {
   constructor(private readonly _logger: Logger) {}
 
@@ -198,9 +198,9 @@ export class Converter {
     parsedNode.content?.forEach(requestContent => {
       let node = this.convertParsedNode(requestContent.definition, parsedComponents, components);
       if (!optimized.isReference(node)) {
-        const name = `${node.name}RequestModel`;
-        const referenceName = `#/components/requests/${name}`;
-        this.addComponent(name, node, components, 'requests');
+        const name = `${node.name ?? '_' + String(murmurHash(JSON.stringify(node), 42))}RequestObject`;
+        const referenceName = `#/components/models/${name}`;
+        this.addComponent(name, node, components, 'models');
 
         node = <optimized.Reference>{ type: 'reference', $ref: referenceName };
       }

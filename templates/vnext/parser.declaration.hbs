@@ -19,8 +19,9 @@ export const {{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& modelSuffix}}Pa
       const body= await utilities.bodyParser("{{@key}}", ctx);
       ctx.body = {{>validator . input="body" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}};   
       }
+      else
       {{/each}}
-      else {
+      {
         throw new UnsupportedMediaTypeError();
       }
 
