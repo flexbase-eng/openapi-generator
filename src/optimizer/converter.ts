@@ -196,7 +196,15 @@ export class Converter {
     const contentType: Record<string, optimized.OptimizedNode> = {};
 
     parsedNode.content?.forEach(requestContent => {
-      contentType[requestContent.name] = this.convertParsedNode(requestContent.definition, parsedComponents, components);
+      let node = this.convertParsedNode(requestContent.definition, parsedComponents, components);
+      if (!optimized.isReference(node)) {
+        const name = `${node.name}RequestModel`;
+        const referenceName = `#/components/requests/${name}`;
+        this.addComponent(name, node, components, 'requests');
+
+        node = <optimized.Reference>{ type: 'reference', $ref: referenceName };
+      }
+      contentType[requestContent.name] = node;
     });
 
     return { ...parsedNode, name: parsedNode.name ?? '', type: 'request', 'content-type': contentType };

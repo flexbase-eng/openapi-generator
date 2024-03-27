@@ -1,8 +1,7 @@
-{{>comments2}}
 {{~#*inline "validator"}}
 {{~#compare validation "!==" false}}
 {{#compare type "===" "reference"}}
-    handleValidation<{{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}}>({{input}}, {{& prefix}}{{& resolveValidator2 .}}{{& suffix}}, handleRequestValidatorErrors);
+    utilities.handleValidation<{{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}}>({{input}}, {{& prefix}}{{& resolveValidator2 .}}{{& suffix}}, utilities.handleRequestValidatorErrors);
 {{else}}
     {{log "Only references are support for validation currently" level="warn"}}
 {{/compare}}
@@ -12,19 +11,19 @@
 {{/inline~}}
 
 {{~#compare type "===" "operation"}}
+{{>comments2}}
 {{prefix}}Router.{{lowercase method}}<object, object, {{#if request}}{{>model.expression request prefix="models."}},{{/if}}>('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}', 
     {{~#if (isArray security)}}
     {{^isEmpty security}}routerAuthMiddleware([{{#each security}}{{#each names}}'{{.}}', {{/each}}{{/each}}]),
     {{else}} /* anonymous */
     {{/isEmpty}}
-    {{else}}
-    routerAuthMiddleware({{extensions.x-mfa}}),
-    {{/if~}}
-
+    {{else}}routerAuthMiddleware({{extensions.x-mfa}}),{{/if~}}
+    {{~#if request}}{{>model.expression request prefix="parsers."}}Parser(),{{else}}ensureNoContentMiddleware(),{{/if~}}
+    
     async (ctx, next) => {
 
     {{#if request}}
-    const body = {{>validator request input="ctx.request.body" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}};   
+    const body = ctx.body; {{!-- {{>validator request input="ctx.request.body" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}};    --}}
     {{/if}}
     {{#if pathParameter}}
     const params = {{>validator pathParameter input="ctx.params" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}}
@@ -59,7 +58,7 @@
         {{~#if headerParameter}}headers,{{/if~}}
     );
 
-    serializeResponse(ctx, response);
+    utilities.serializeResponse(ctx, response);
 
     await next();
 });

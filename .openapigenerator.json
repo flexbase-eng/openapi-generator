@@ -21,6 +21,10 @@
     "validations": {
       "target": "./output/{api}/{name}/generated/{name}.validations.ts",
       "template": "./templates/vnext/validations.hbs"
+    },
+    "parsers": {
+      "target": "./output/{api}/{name}/generated/{name}.parsers.ts",
+      "template": "./templates/vnext/parsers.hbs"
     }
   },
   "prettier": true,

@@ -1,3 +1,4 @@
+{{#extendProperty . "safeName"}}${{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{/extendProperty}}
 {{#*inline "format" }}
     {{!-- formats: date-time, date, time, duration, email, idn-email, hostname, idn-hostname, ipv4, ipv6, uri, 
         uri-reference, iri, iri-reference, uuid, uri-template, json-pointer, relative-json-pointer, regex, binary, 
@@ -5,41 +6,41 @@
     --}}   
     {{#if format}}
          {{#compare format "===" "uuid"}}
-            if(!utilities.isUuid({{name}})) {
+            if(!utilities.isUuid({{safeName}})) {
                 utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a valid UUID');
             }
         {{else or (compare format "===" "date-time") (compare format "===" "date") (compare format "===" "time") }}
-            const {{name}}dtTest = DateTime.fromISO({{name}}, {zone: 'utc'});
-            if(!{{name}}dtTest.isValid) {
-                utilities.addOrSet({{errorsName}}, '{{name}}', `is not valid: ${ {{name}}dtTest.invalidExplanation }`);
+            const {{safeName}}dtTest = DateTime.fromISO({{safeName}}, {zone: 'utc'});
+            if(!{{safeName}}dtTest.isValid) {
+                utilities.addOrSet({{errorsName}}, '{{name}}', `is not valid: ${ {{safeName}}dtTest.invalidExplanation }`);
             }
         {{else compare format "===" "duration"}}
-            if(Number.isNaN(Number({{name}}))) {
-                const {{name}}dtTest = Duration.fromISO({{name}}, {zone: 'utc'});
-                if(!{{name}}dtTest.isValid) {
-                    utilities.addOrSet({{errorsName}}, '{{name}}', `is not valid: ${ {{name}}dtTest.invalidExplanation }`);
+            if(Number.isNaN(Number({{safeName}}))) {
+                const {{safeName}}dtTest = Duration.fromISO({{safeName}}, {zone: 'utc'});
+                if(!{{safeName}}dtTest.isValid) {
+                    utilities.addOrSet({{errorsName}}, '{{name}}', `is not valid: ${ {{safeName}}dtTest.invalidExplanation }`);
                 }
             } else {
-                const {{name}}dtTest = Duration.fromMillis(Number({{name}}));
-                if(!{{name}}dtTest.isValid) {
-                    utilities.addOrSet({{errorsName}}, '{{name}}', `is not valid: ${ {{name}}dtTest.invalidExplanation }`);
+                const {{safeName}}dtTest = Duration.fromMillis(Number({{safeName}}));
+                if(!{{safeName}}dtTest.isValid) {
+                    utilities.addOrSet({{errorsName}}, '{{name}}', `is not valid: ${ {{safeName}}dtTest.invalidExplanation }`);
                 }
             }
         {{else or (compare format "===" "email") (compare format "===" "idn-email")}}
-            if(!utilities.isEmail({{name}})) {
+            if(!utilities.isEmail({{safeName}})) {
                 utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a valid email');
             }
         {{else compare format "===" "ipv4"}}
-            if(!utilities.isIpv4({{name}})) {
+            if(!utilities.isIpv4({{safeName}})) {
                 utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a valid ipv4 address');
             }
         {{else compare format "===" "ipv6"}}
-            if(!utilities.isIpv6({{name}})) {
+            if(!utilities.isIpv6({{safeName}})) {
                 utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a valid ipv6 address');
             }
         {{else or (compare format "===" "uri") (compare format "===" "uri-reference") (compare format "===" "iri") (compare format "===" "iri-reference") }}
             try {
-                const {{name}}URL = new URL({{name}});
+                const {{safeName}}URL = new URL({{safeName}});
             }
             catch {
                 utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a valid url');
@@ -51,63 +52,63 @@
         {{/compare}}
     {{/if}}
     {{#if multipleOf includeZero=true}}
-        if(Number.isSafeInteger({{name}} / {{multipleOf}})) {
+        if(Number.isSafeInteger({{safeName}} / {{multipleOf}})) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a multiple of {{multipleOf}}');
         }
     {{/if}}
     {{#if maximum includeZero=true}}
-        if(typeof {{name}} === 'number' && {{name}} >{{#isTruthy exclusiveMaximum}}={{/isTruthy}} {{maximum}}) {
+        if(typeof {{safeName}} === 'number' && {{safeName}} >{{#isTruthy exclusiveMaximum}}={{/isTruthy}} {{maximum}}) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'must be less than {{#not exclusiveMaximum}}or equal to {{/not}}{{maximum}}');
         }
     {{/if}}
     {{#if minimum includeZero=true}}
-        if(typeof {{name}} === 'number' && {{name}} <{{#isTruthy exclusiveMinimum}}={{/isTruthy}} {{minimum}}) {
+        if(typeof {{safeName}} === 'number' && {{safeName}} <{{#isTruthy exclusiveMinimum}}={{/isTruthy}} {{minimum}}) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'must be greater than {{#not exclusiveMinimum}}or equal to {{/not}}{{minimum}}');
         }
     {{/if}}    
     {{#if maxLength includeZero=true}}
-        if({{name}}.length > {{maxLength}}) {
+        if({{safeName}}.length > {{maxLength}}) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'has maximum length of {{maxLength}}');
         }
     {{/if}}    
     {{#if minLength includeZero=true}}
-        if({{name}}.length < {{minLength}}) {
+        if({{safeName}}.length < {{minLength}}) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'has minimum length of {{minLength}}');
         }
     {{/if}}        
     {{#if pattern}}
-        if(!{{pattern}}.test({{name}})) {
+        if(!{{pattern}}.test({{safeName}})) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'is invalid');
         }
     {{/if}}   
     {{#if maxItems includeZero=true}}
-        if({{name}}.length > {{maxItems}}) {
+        if({{safeName}}.length > {{maxItems}}) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'should have no more than {{maxItems}} items');
         }
     {{/if}}    
     {{#if minItems includeZero=true}}
-        if({{name}}.length < {{minItems}}) {
+        if({{safeName}}.length < {{minItems}}) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'should have at least {{minItems}} items');
         }
     {{/if}} 
     {{#if uniqueItems}}
-        const {{name}}UniqueTest = [...new Set({{name}})];
-        if({{name}}UniqueTest.length != {{name}}.length) {
+        const {{safeName}}UniqueTest = [...new Set({{safeName}})];
+        if({{safeName}}UniqueTest.length != {{safeName}}.length) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'should have not have duplicate items');
         }
     {{/if}}
     {{#if maxProperties includeZero=true}}
-        if(Object.keys({{name}}).length > {{maxProperties}}) {
+        if(Object.keys({{safeName}}).length > {{maxProperties}}) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'should have no more than {{maxProperties}} properties');
         }
     {{/if}}    
     {{#if minProperties includeZero=true}}
-        if(Object.keys({{name}}).length < {{minProperties}}) {
+        if(Object.keys({{safeName}}).length < {{minProperties}}) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'should have at least {{minProperties}} properties');
         }
     {{/if}}
     {{#if enum}}
-        if(!["{{& join enum "\",\""}}"].includes({{name}})) {
+        if(!["{{& join enum "\",\""}}"].includes({{safeName}})) {
             utilities.addOrSet({{errorsName}}, '{{name}}', 'must be one of: {{& join enum ", "}}');
         }
     {{/if}}    
@@ -118,7 +119,7 @@
 
 {{else or (compare type "===" "property") (compare type "===" "parameter") (compare type "===" "header")}}
 {{^readOnly}}
-const {{name}} = {{inputName}}['{{name}}']
+const {{safeName}} = {{inputName}}['{{name}}']
     {{#if (compare (replace definition.type "integer" "number") "===" "number")}}
         = utilities.stringToNumber({{inputName}}['{{name}}'], {{& defaultValue}})
     {{else if (compare definition.type "===" "boolean")}}
@@ -128,11 +129,11 @@ const {{name}} = {{inputName}}['{{name}}']
     {{/if}}    
 allowedProperties.push('{{name}}');
 {{#if required}}
-if({{name}} === undefined) {
+if({{safeName}} === undefined) {
     utilities.addOrSet({{errorsName}}, '{{name}}', 'required field is missing');
 } else 
 {{/if}}
-if({{name}} !== undefined) {
+if({{safeName}} !== undefined) {
     {{>validation.expression definition inputName=./inputName errorsName=./errorsName name=./name ~}}
 }
 
@@ -140,15 +141,15 @@ if({{name}} !== undefined) {
 
 {{else or (compare type "===" "string") (compare type "===" "boolean") (compare type "===" "number") (compare type "===" "integer") (compare type "===" "null")}}
     {{#compare type "===" "number"}}
-    if(Number.isNaN({{name}})) {
+    if(Number.isNaN({{safeName}})) {
         utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a {{type}}');
     }
     {{else compare type "===" "integer"}}
-    if(!Number.isInteger({{name}})) {
+    if(!Number.isInteger({{safeName}})) {
         utilities.addOrSet({{errorsName}}, '{{name}}', 'is not an integer')
     }    
     {{else}}
-    if(typeof {{name}} !== '{{type}}') {
+    if(typeof {{safeName}} !== '{{type}}') {
         utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a {{type}}');
     }
     {{/compare}}
@@ -159,13 +160,13 @@ if({{name}} !== undefined) {
 {{/if~}}
 
 {{~#compare type "===" "array"}}
-    if(!Array.isArray({{name}})) {
+    if(!Array.isArray({{safeName}})) {
         utilities.addOrSet({{errorsName}}, '{{name}}', 'is not an array');
     }else {
         {{>format}}    
         {{#if definition}}    
-        for(let {{name}}_idx=0; {{name}}_idx<{{name}}.length; ++{{name}}_idx) {
-            {{~>validation.expression definition name=(append (append name "[") (append name "_idx]")) inputName=./inputName errorsName=./errorsName}}
+        for(let {{safeName}}_idx=0; {{safeName}}_idx<{{safeName}}.length; ++{{safeName}}_idx) {
+            {{~>validation.expression definition name=(append (append name "[") (append safeName "_idx]")) inputName=./inputName errorsName=./errorsName}}
         }
         {{/if}}        
     }   
@@ -179,11 +180,15 @@ if({{name}} !== undefined) {
     }
 {{/compare~}}
 
-{{~#compare node "===" "ObjectExpression"}}
-    {{#properties}} {{>validation.declaration . modelName=../name name=./name}}{{/properties}}
+{{~#compare type "===" "request"}}
+   
 {{/compare~}}
 
 
+
+{{~#compare node "===" "ObjectExpression"}}
+    {{#properties}} {{>validation.declaration . modelName=../name name=./name}}{{/properties}}
+{{/compare~}}
 
 {{~#compare node "===" "OmitExpression"}}
     {{#extendProperty . "propertiesToOmit"}}{{#each omit}}{{>expression . prefix="'" suffix="'"}},{{/each}}{{/extendProperty}}

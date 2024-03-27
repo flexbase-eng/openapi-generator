@@ -1,0 +1,31 @@
+{{~#*inline "validator"}}
+{{~#compare validation "!==" false}}
+{{#compare type "===" "reference"}}
+    utilities.handleValidation<{{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}}>({{input}}, {{& prefix}}{{& resolveValidator2 .}}{{& suffix}}, utilities.handleRequestValidatorErrors);
+{{else}}
+    {{log "Only references are support for validation currently" level="warn"}}
+{{/compare}}
+{{else}}
+{{input}} as {{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}};
+{{/compare~}}
+{{/inline~}}
+
+{{~#compare type "===" "request"}}
+export const {{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& modelSuffix}}Parser = (): Koa.Middleware<object, FlexbaseContext> => {
+    return async (ctx, next) => {
+    
+      {{#each content-type}}
+      if("{{@key}}" === ctx.request.type) {
+      const body= await utilities.bodyParser("{{@key}}", ctx);
+      ctx.body = {{>validator . input="body" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}};   
+      }
+      {{/each}}
+      else {
+        throw new UnsupportedMediaTypeError();
+      }
+
+    await next();
+  };
+}
+{{/compare}}
+

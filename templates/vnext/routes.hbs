@@ -8,14 +8,16 @@
 ------------------------------------------------------------ */
 
 {{#document}}
-
 {{#if paths}}
-import { handleRequestValidatorErrors, handleValidation, serializeResponse } from '@shared/utilities/openapi.utilities.js';
 import { routerAuthMiddleware } from '@middleware/router.auth.middleware.js';
+import { ensureNoContentMiddleware } from '@middleware/ensure.no.content.middleware.js';
+import * as utilities from '@shared/utilities/openapi.utilities.js';
 import * as models from './{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}.models.js';
 import * as validators from './{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}.validations.js';
+import * as parsers from './{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}.parsers.js';
 import * as handlers from '@modules/{{lowercase (replace apiName (toRegex "(-|\.| )+" "g") "-")}}/routes/{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}/{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}.handlers.js';
 import { {{replace apiName (toRegex "(-|\.| )+" "g") "_"}}Router } from '@modules/{{lowercase (replace apiName (toRegex "(-|\.| )+" "g") "-")}}/routes/router.js'
+
 
 {{#components}}{{>references}}{{/components}}
 
@@ -24,5 +26,4 @@ import { {{replace apiName (toRegex "(-|\.| )+" "g") "_"}}Router } from '@module
 {{/each}}
 
 {{/if}}
-
 {{/document}}
