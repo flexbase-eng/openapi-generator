@@ -70,7 +70,7 @@ export const createHandlebars = (): typeof Handlebars => {
   handlebars.registerHelper('registerReference2', function (context, location, options: Handlebars.HelperOptions) {
     const name = options.fn(context);
 
-    const referenceName = location + context.title;
+    const referenceName = location + context.name;
 
     if (referenceRegistrations.has(referenceName)) {
       handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
@@ -84,7 +84,7 @@ export const createHandlebars = (): typeof Handlebars => {
   handlebars.registerHelper('registerValidator2', function (context, location, options: Handlebars.HelperOptions) {
     const name = options.fn(context);
 
-    const referenceName = location + context.title + '/validator';
+    const referenceName = location + context.name + '/validator';
 
     if (referenceRegistrations.has(referenceName)) {
       handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
@@ -130,7 +130,7 @@ export const createHandlebars = (): typeof Handlebars => {
   });
 
   handlebars.registerHelper('resolveValidator2', function (context) {
-    const referenceKey = context.reference + '/validator';
+    const referenceKey = context.$ref + '/validator';
 
     const ref = referenceRegistrations.get(referenceKey);
     if (!ref) {

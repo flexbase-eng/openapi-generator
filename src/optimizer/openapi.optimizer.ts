@@ -1,7 +1,7 @@
 import { Logger } from '@flexbase/logger';
 import { ParsedDocument } from '../parser/parsed.document';
 import * as parsed from '../parser/parsed_nodes';
-import '../utilities/array';
+//import '../utilities/array';
 import { OptimizedDocument } from './optimized.document';
 import * as optimized from './nodes';
 import { Converter } from './converter';
@@ -166,11 +166,11 @@ export class OpenApiOptimizer {
     let responseReference: optimized.Reference | undefined;
 
     if (operation.responses) {
-      const title = `${operation.operationId}`;
-      const referenceName = `#/components/responses/${title}`;
+      const name = `${operation.operationId}`;
+      const referenceName = `#/components/responses/${name}`;
 
-      const response: optimized.Response = { type: 'response', title, status: {} };
-      this._converter.addComponent(title, response, components, 'responses');
+      const response: optimized.Response = { type: 'response', name, status: {} };
+      this._converter.addComponent(name, response, components, 'responses');
 
       operation.responses.forEach(parsedResponse => {
         const nodeResponse = parsed.isReference(parsedResponse)

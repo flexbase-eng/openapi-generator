@@ -6,7 +6,7 @@ export type ReferenceObject = OpenAPIV3.ReferenceObject | OpenAPIV3_1.ReferenceO
 export type DiscriminatorObject = OpenAPIV3.DiscriminatorObject | OpenAPIV3_1.DiscriminatorObject;
 
 export interface Modifiers {
-  title?: string;
+  name?: string;
   description?: string;
   format?: string;
   default?: any;
@@ -41,7 +41,7 @@ function isReferenceObject(test: object): test is ReferenceObject {
 
 export const compareModifiers = (a: Modifiers, b: Modifiers): boolean => {
   let same =
-    a.title === b.title &&
+    a.name === b.name &&
     a.description === b.description &&
     a.format === b.format &&
     a.default === b.default &&

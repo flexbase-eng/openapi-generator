@@ -2,72 +2,30 @@
 /* ------------------------------------------------------------
  File auto-generated
 
- @summary {{astDocument.title}}
- @description {{astDocument.description}}
- @version {{astDocument.version}}
+ @summary {{document.title}}
+ @description {{document.description}}
+ @version {{document.version}}
 ------------------------------------------------------------ */
 
-{{#astDocument}}
+{{#document}}
 
 import { DateTime, Duration } from "luxon";
-import { addOrSet, stringToBoolean, stringToNumber, handleValidation, handleRequestValidatorErrors, ValidatorFn, ValidatorResponse} from '@shared/utilities/openapi.utilities.js';
+import * as utilities from '@shared/utilities/openapi.utilities.js';
 
+{{#components}}
 {{>references}}
 
-{{#if models}}
-//#region Models
-{{#each models}}
-{{>validation.declaration suffix="ModelValidator"}}
-{{/each}}
-//#endregion
-{{/if}}
+{{#each models}}{{>validation.declaration . suffix="ModelValidator" inputName="inputToValidate" errorsName="validationErrors"}}{{/each}}
+{{#each parameters}}{{>validation.declaration suffix="ParameterValidator" inputName="inputToValidate" errorsName="validationErrors"}}{{/each}}
+{{#each pathParameters}}{{>validation.declaration suffix="PathParameterValidator" inputName="inputToValidate" errorsName="validationErrors"}}{{/each}}
+{{#each headerParameters}}{{>validation.declaration suffix="HeaderParameterValidator" inputName="inputToValidate" errorsName="validationErrors"}}{{/each}}
+{{#each queryParameters}}{{>validation.declaration suffix="QueryParameterValidator" inputName="inputToValidate" errorsName="validationErrors"}}{{/each}}
+{{#each cookieParameters}}{{>validation.declaration suffix="CookieParameterValidator" inputName="inputToValidate" errorsName="validationErrors"}}{{/each}}
+{{#each requests}}{{>validation.declaration suffix="RequestValidator" inputName="inputToValidate" errorsName="validationErrors"}}{{/each}}
 
-{{#if responses}}
-//#region Responses
-{{#each responses}}
-{{!-- {{>validation.declaration suffix="ResponseValidator"}} --}}
+{{#each response}}
+{{!-- {{>validation.declaration suffix="ResponseValidator" inputName="inputToValidate" errorsName="validationErrors"}} --}}
 {{/each}}
-//#endregion
-{{/if}}
 
-{{#if requests}}
-//#region Requests
-{{#each requests}}
-{{>validation.declaration suffix="RequestsValidator"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{#if pathParameters}}
-//#region Path Parameters
-{{#each pathParameters}}
-{{>validation.declaration suffix="PathParameterValidator"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{#if headerParameters}}
-//#region Header Parameters
-{{#each headerParameters}}
-{{>validation.declaration suffix="HeaderParameterValidator"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{#if queryParameters}}
-//#region Query Parameters
-{{#each queryParameters}}
-{{>validation.declaration suffix="QueryParameterValidator"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{#if cookieParameters}}
-//#region Cookie Parameters
-{{#each cookieParameters}}
-{{>validation.declaration suffix="CookieParameterValidator"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{/astDocument}}
+{{/components}}
+{{/document}}

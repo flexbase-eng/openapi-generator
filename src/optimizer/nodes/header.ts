@@ -1,7 +1,7 @@
 import { OptimizedNode } from './optimized.node';
 
 export interface Header extends OptimizedNode {
-  title: string;
+  name: string;
   description?: string;
   required?: boolean;
   deprecated?: boolean;

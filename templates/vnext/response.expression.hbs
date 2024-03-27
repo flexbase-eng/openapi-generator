@@ -1,5 +1,13 @@
+{{>comments2}}
 {{~#compare type "===" "response"}}
 { 
-    {{#each status}}'{{@key}}': {{>model.expression .}} ; {{/each}}
+    {{#each status}}'{{@key}}': {{>response.expression .}} ; {{/each}}
 }
 {{/compare~}}
+{{~#compare type "===" "responseObject"}}
+{
+    {{#if headers}}headers: {{>model.expression headers}} ; {{/if}}
+    {{#if content-type}}{{#each content-type}}'{{@key}}': {{>model.expression .}} ; {{/each}}{{/if}}
+}
+{{/compare~}}
+{{~#compare type "===" "reference"}}{{& prefix}}{{& resolveReference2 .}}{{& suffix}}{{/compare~}}

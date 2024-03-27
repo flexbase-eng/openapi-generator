@@ -37,7 +37,7 @@ export class Converter {
   addComponent(referenceName: string, definition: optimized.OptimizedNode, components: optimized.Components, type: keyof optimized.Components) {
     components[type] ??= {};
     components[type]![referenceName] = definition;
-    components[type]![referenceName].title = referenceName;
+    components[type]![referenceName].name = referenceName;
   }
 
   convertParsedNode(parsedNode: parsed.ParsedNode, parsedComponents: parsed.Components, components: optimized.Components): optimized.OptimizedNode {
@@ -142,7 +142,7 @@ export class Converter {
 
     return {
       type: 'parameter',
-      title: parsedNode.name,
+      name: parsedNode.name,
       description: parsedNode.description,
       required: parsedNode.required,
       deprecated: parsedNode.deprecated,
@@ -160,7 +160,7 @@ export class Converter {
     parsedComponents: parsed.Components,
     components: optimized.Components,
   ): optimized.ResponseObject {
-    const contentType: Record<string, optimized.OptimizedNode> = {};
+    let contentType: Record<string, optimized.OptimizedNode> | undefined;
 
     let headers: optimized.HeaderObject | undefined;
 
@@ -170,7 +170,7 @@ export class Converter {
         const headerDefinition = this.convertParsedNode(header.definition, parsedComponents, components);
         properties.push(<optimized.Header>{
           ...headerDefinition,
-          title: header.name,
+          name: header.name,
         });
       });
       headers = { type: 'headerObject', properties };
@@ -181,6 +181,7 @@ export class Converter {
     }
 
     parsedNode.content?.forEach(responseContent => {
+      contentType ??= {};
       contentType[responseContent.name] = this.convertParsedNode(responseContent.definition, parsedComponents, components);
     });
 
@@ -198,7 +199,7 @@ export class Converter {
       contentType[requestContent.name] = this.convertParsedNode(requestContent.definition, parsedComponents, components);
     });
 
-    return { ...parsedNode, type: 'request', 'content-type': contentType };
+    return { ...parsedNode, name: parsedNode.name ?? '', type: 'request', 'content-type': contentType };
   }
 
   private convertHeader(parsedNode: parsed.Header, parsedComponents: parsed.Components, components: optimized.Components): optimized.Header {
@@ -211,7 +212,7 @@ export class Converter {
     }
 
     return {
-      title: '',
+      name: parsedNode.name ?? '',
       type: 'header',
       description: parsedNode.description,
       required: parsedNode.required,

@@ -101,9 +101,9 @@ export class Organizer {
         this.traverseReferences(originalDocument, components, added.definition);
       }
     } else if (parsed.isPathItem(node)) {
-      if (node.parameters) {
-        node.parameters.forEach(x => this.traverseReferences(originalDocument, components, x));
-      }
+      // if (node.parameters) {
+      //   node.parameters.forEach(x => this.traverseReferences(originalDocument, components, x));
+      // }
       node.operations.forEach(x => this.traverseReferences(originalDocument, components, x));
     } else if (parsed.isOperation(node)) {
       if (node.parameters) {

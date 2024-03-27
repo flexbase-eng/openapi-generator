@@ -1,51 +1,27 @@
-{{>comments2}}
-
+{{>comments2 definition}}
 {{~#compare type "===" "object"}}
     {
     {{#each properties}}{{>model.expression}}{{/each}}
     }
 {{/compare~}}
-
-{{~#compare type "===" "property"}}
-    {{name}}{{^required}}{{^defaultValue}}?{{/defaultValue}}{{/required}}: {{>model.expression definition}};
+{{~#compare type "===" "property"}}'{{name}}'{{^required}}{{^defaultValue}}?{{/defaultValue}}{{/required}}: {{>model.expression definition}};
 {{/compare~}}
-
-{{~#compare type "===" "array"}}
-    {{>model.expression definition}}[]
-{{/compare~}}
-
+{{~#compare type "===" "array"}}({{>model.expression definition}})[]{{/compare~}}
 {{~#compare type "===" "string"}}{{#if enum}}"{{& join enum "\"|\""}}"{{else}}string{{/if}}{{/compare~}}
 {{~#compare type "===" "boolean"}}boolean{{/compare~}}
 {{~#compare type "===" "number"}}number{{/compare~}}
-{{~#compare type "===" "integer"}}number{{/compare~}}
-
+{{~#compare type "===" "integer"}}number /*integer*/{{/compare~}}
+{{~#compare type "===" "null"}}null{{/compare~}}
 {{~#compare type "===" "reference"}}{{& prefix}}{{& resolveReference2 .}}{{& suffix}}{{/compare~}}
-
-{{~#compare type "===" "composite"}}
-    {{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}&{{/unless}}{{/forEach}}{{/if}}
+{{~#compare type "===" "composite"}}{{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}&{{/unless}}{{/forEach}}{{/if}}{{/compare~}}
+{{~#compare type "===" "union"}}{{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}{{/compare~}}
+{{~#compare type "===" "parameter"}}{'{{name}}'{{^required}}{{^defaultValue}}?{{/defaultValue}}{{/required}}: {{>model.expression definition}} } {{/compare~}}
+{{~#compare type "===" "headerObject"}}
+    {
+    {{#each properties}}{{>model.expression}}{{/each}}
+    }
 {{/compare~}}
-
-{{~#compare type "===" "union"}}
-    {{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}
-{{/compare~}}
-
-{{~#compare type "===" "parameter"}}
-    {{>model.expression definition}}
-{{/compare~}}
-
-{{~#compare type "===" "response"}}
+{{~#compare type "===" "header"}}'{{name}}'{{^required}}{{^defaultValue}}?{{/defaultValue}}{{/required}}: {{>model.expression definition}};{{/compare~}}
+{{!-- {{~#compare type "===" "response"}}
     {$status: {{status}}; $body: {{>model.expression definition}} }
-{{/compare~}}
-
-{{~#compare type "===" "responseObject"}}
-    {{#if headers}}headers: {{>model.expression .}}{{/if}}
-    {{#each content-type}}'{{@key}}': {{>model.expression .}} ; {{/each}}{{/if}}
-{{/compare~}}
-
-{{!-- {{~#compare type "===" "mediaContent"}}
-    {{>model.expression definition}}
-{{/compare~}}
-
-{{~#compare type "===" "mediaTypeObject"}}
-    {{>model.expression definition}}
 {{/compare~}} --}}

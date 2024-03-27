@@ -12,8 +12,7 @@
     },
     "routes": {
       "target": "./output/{api}/{name}/generated/{name}.routes.ts",
-      "template": "./templates/vnext/routes.hbs",
-      "script": "./scripts/test.lua"
+      "template": "./templates/vnext/routes.hbs"
     },
     "models": {
       "target": "./output/{api}/{name}/generated/{name}.models.ts",
@@ -21,8 +20,7 @@
     },
     "validations": {
       "target": "./output/{api}/{name}/generated/{name}.validations.ts",
-      "template": "./templates/vnext/validations.hbs",
-      "script": "./scripts/test.lua"
+      "template": "./templates/vnext/validations.hbs"
     }
   },
   "prettier": true,

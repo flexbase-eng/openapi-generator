@@ -1,71 +1,216 @@
-{{~#compare node "===" "IdentifierExpression"}}{{& prefix}}{{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}}{{/compare~}}
-
-{{~#compare node "===" "LiteralExpression"}}
-    {{#extendProperty . "propertyType"}}{{replace value "integer" "number"}}{{/extendProperty}}
-    {{#compare propertyType "===" "number"}}
-    if(Number.isNaN({{propertyName}})) {
-        addOrSet(errors, '{{propertyName}}', 'is not a {{propertyType}}');
-    }
-    {{/compare}}
-    if(typeof {{propertyName}} !== '{{propertyType}}') {
-        addOrSet(errors, '{{propertyName}}', 'is not a {{propertyType}}');
-    }
-    {{#compare value "===" "integer"}}
-    if(!Number.isInteger({{propertyName}})) {
-        addOrSet(errors, '{{propertyName}}', 'is not an integer')
-    }
-    {{/compare}}
-{{/compare~}}
-
-{{~#compare node "===" "ObjectExpression"}}
-    {{#properties}} {{>validation.declaration . modelName=../propertyName propertyName=./propertyName}}{{/properties}}
-{{/compare~}}
-
-{{~#compare node "===" "ArrayExpression"}}
-    if(!Array.isArray({{./propertyName}})) {
-        addOrSet(errors, '{{./propertyName}}', 'is not an array');
-    }    
-    {{#if elements}}
-    else {
-        for(const _item of {{./propertyName}}) {
-            {{~>validation.expression elements modelName="_item" propertyName="_item"}}
-        }
-    }
+{{#*inline "format" }}
+    {{!-- formats: date-time, date, time, duration, email, idn-email, hostname, idn-hostname, ipv4, ipv6, uri, 
+        uri-reference, iri, iri-reference, uuid, uri-template, json-pointer, relative-json-pointer, regex, binary, 
+        byte, password, int32, int64, float, double
+    --}}   
+    {{#if format}}
+         {{#compare format "===" "uuid"}}
+            if(!utilities.isUuid({{name}})) {
+                utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a valid UUID');
+            }
+        {{else or (compare format "===" "date-time") (compare format "===" "date") (compare format "===" "time") }}
+            const {{name}}dtTest = DateTime.fromISO({{name}}, {zone: 'utc'});
+            if(!{{name}}dtTest.isValid) {
+                utilities.addOrSet({{errorsName}}, '{{name}}', `is not valid: ${ {{name}}dtTest.invalidExplanation }`);
+            }
+        {{else compare format "===" "duration"}}
+            if(Number.isNaN(Number({{name}}))) {
+                const {{name}}dtTest = Duration.fromISO({{name}}, {zone: 'utc'});
+                if(!{{name}}dtTest.isValid) {
+                    utilities.addOrSet({{errorsName}}, '{{name}}', `is not valid: ${ {{name}}dtTest.invalidExplanation }`);
+                }
+            } else {
+                const {{name}}dtTest = Duration.fromMillis(Number({{name}}));
+                if(!{{name}}dtTest.isValid) {
+                    utilities.addOrSet({{errorsName}}, '{{name}}', `is not valid: ${ {{name}}dtTest.invalidExplanation }`);
+                }
+            }
+        {{else or (compare format "===" "email") (compare format "===" "idn-email")}}
+            if(!utilities.isEmail({{name}})) {
+                utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a valid email');
+            }
+        {{else compare format "===" "ipv4"}}
+            if(!utilities.isIpv4({{name}})) {
+                utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a valid ipv4 address');
+            }
+        {{else compare format "===" "ipv6"}}
+            if(!utilities.isIpv6({{name}})) {
+                utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a valid ipv6 address');
+            }
+        {{else or (compare format "===" "uri") (compare format "===" "uri-reference") (compare format "===" "iri") (compare format "===" "iri-reference") }}
+            try {
+                const {{name}}URL = new URL({{name}});
+            }
+            catch {
+                utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a valid url');
+            }  
+        {{else compare format "===" "password"}}{{!-- noop --}}
+        {{else compare format "===" "binary"}}{{!-- noop --}}
+        {{else}}
+            {{log "Format type not supported" format level="warn"}}
+        {{/compare}}
     {{/if}}
+    {{#if multipleOf includeZero=true}}
+        if(Number.isSafeInteger({{name}} / {{multipleOf}})) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a multiple of {{multipleOf}}');
+        }
+    {{/if}}
+    {{#if maximum includeZero=true}}
+        if(typeof {{name}} === 'number' && {{name}} >{{#isTruthy exclusiveMaximum}}={{/isTruthy}} {{maximum}}) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'must be less than {{#not exclusiveMaximum}}or equal to {{/not}}{{maximum}}');
+        }
+    {{/if}}
+    {{#if minimum includeZero=true}}
+        if(typeof {{name}} === 'number' && {{name}} <{{#isTruthy exclusiveMinimum}}={{/isTruthy}} {{minimum}}) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'must be greater than {{#not exclusiveMinimum}}or equal to {{/not}}{{minimum}}');
+        }
+    {{/if}}    
+    {{#if maxLength includeZero=true}}
+        if({{name}}.length > {{maxLength}}) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'has maximum length of {{maxLength}}');
+        }
+    {{/if}}    
+    {{#if minLength includeZero=true}}
+        if({{name}}.length < {{minLength}}) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'has minimum length of {{minLength}}');
+        }
+    {{/if}}        
+    {{#if pattern}}
+        if(!{{pattern}}.test({{name}})) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'is invalid');
+        }
+    {{/if}}   
+    {{#if maxItems includeZero=true}}
+        if({{name}}.length > {{maxItems}}) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'should have no more than {{maxItems}} items');
+        }
+    {{/if}}    
+    {{#if minItems includeZero=true}}
+        if({{name}}.length < {{minItems}}) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'should have at least {{minItems}} items');
+        }
+    {{/if}} 
+    {{#if uniqueItems}}
+        const {{name}}UniqueTest = [...new Set({{name}})];
+        if({{name}}UniqueTest.length != {{name}}.length) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'should have not have duplicate items');
+        }
+    {{/if}}
+    {{#if maxProperties includeZero=true}}
+        if(Object.keys({{name}}).length > {{maxProperties}}) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'should have no more than {{maxProperties}} properties');
+        }
+    {{/if}}    
+    {{#if minProperties includeZero=true}}
+        if(Object.keys({{name}}).length < {{minProperties}}) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'should have at least {{minProperties}} properties');
+        }
+    {{/if}}
+    {{#if enum}}
+        if(!["{{& join enum "\",\""}}"].includes({{name}})) {
+            utilities.addOrSet({{errorsName}}, '{{name}}', 'must be one of: {{& join enum ", "}}');
+        }
+    {{/if}}    
+{{/inline}}
+
+{{~#if (or (compare type "===" "object") (compare type "===" "headerObject"))}}
+    {{#each properties}}{{>validation.expression . inputName=../inputName errorsName=../errorsName}}{{/each}}
+
+{{else or (compare type "===" "property") (compare type "===" "parameter") (compare type "===" "header")}}
+{{^readOnly}}
+const {{name}} = {{inputName}}['{{name}}']
+    {{#if (compare (replace definition.type "integer" "number") "===" "number")}}
+        = utilities.stringToNumber({{inputName}}['{{name}}'], {{& defaultValue}})
+    {{else if (compare definition.type "===" "boolean")}}
+        = utilities.stringToBoolean({{inputName}}['{{name}}'], {{& defaultValue}})
+    {{else if defaultValue includeZero=true}}
+        ??= {{#compare definition.type "===" "string"}}'{{/compare}}{{& defaultValue}}{{#compare definition.type "===" "string"}}'{{/compare}}
+    {{/if}}    
+allowedProperties.push('{{name}}');
+{{#if required}}
+if({{name}} === undefined) {
+    utilities.addOrSet({{errorsName}}, '{{name}}', 'required field is missing');
+} else 
+{{/if}}
+if({{name}} !== undefined) {
+    {{>validation.expression definition inputName=./inputName errorsName=./errorsName name=./name ~}}
+}
+
+{{/readOnly}}
+
+{{else or (compare type "===" "string") (compare type "===" "boolean") (compare type "===" "number") (compare type "===" "integer") (compare type "===" "null")}}
+    {{#compare type "===" "number"}}
+    if(Number.isNaN({{name}})) {
+        utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a {{type}}');
+    }
+    {{else compare type "===" "integer"}}
+    if(!Number.isInteger({{name}})) {
+        utilities.addOrSet({{errorsName}}, '{{name}}', 'is not an integer')
+    }    
+    {{else}}
+    if(typeof {{name}} !== '{{type}}') {
+        utilities.addOrSet({{errorsName}}, '{{name}}', 'is not a {{type}}');
+    }
+    {{/compare}}
+    {{>format}}
+
+{{else or (compare type "===" "composite") (compare type "===" "union")}}
+    {{#each definitions}}{{>validation.expression . inputName=../inputName errorsName=../errorsName}}{{/each}}
+{{/if~}}
+
+{{~#compare type "===" "array"}}
+    if(!Array.isArray({{name}})) {
+        utilities.addOrSet({{errorsName}}, '{{name}}', 'is not an array');
+    }else {
+        {{>format}}    
+        {{#if definition}}    
+        for(let {{name}}_idx=0; {{name}}_idx<{{name}}.length; ++{{name}}_idx) {
+            {{~>validation.expression definition name=(append (append name "[") (append name "_idx]")) inputName=./inputName errorsName=./errorsName}}
+        }
+        {{/if}}        
+    }   
 {{/compare~}}
 
-{{~#compare node "===" "OmitExpression"}}
-    {{#extendProperty . "propertiesToOmit"}}{{#each omit}}{{>expression . prefix="'" suffix="'"}},{{/each}}{{/extendProperty}}
-    {{~>validation.expression elements modelName=./modelName propertyName=../propertyName propertiesToOmit=propertiesToOmit}}
-{{/compare~}}
-
-{{~#compare node "===" "CompositeExpression"}}
-   {{#elements}}{{>validation.expression . modelName=../modelName propertyName=../propertyName}}{{/elements}}
-{{/compare~}}
-
-{{~#compare node "===" "UnionExpression"}}
-    {{#elements}}{{>validation.expression . modelName=../modelName propertyName=../propertyName}}{{/elements}}
-{{/compare~}}
-
-{{~#compare node "===" "ReferenceExpression"}}
+{{~#compare type "===" "reference"}}
     {
-        const validatorResponse = {{& resolveValidator .}}({{modelName}});
-        errors = new Map<string, string | string[]>([...errors, ...validatorResponse.errors ]);
+        const validatorResponse = {{& resolveValidator2 .}}({{modelName}});
+        {{errorsName}} = new Map<string, string | string[]>([...{{errorsName}}, ...validatorResponse.{{errorsName}} ]);
         allowedProperties.push(...validatorResponse.allowedProperties);
     }
 {{/compare~}}
 
+{{~#compare node "===" "ObjectExpression"}}
+    {{#properties}} {{>validation.declaration . modelName=../name name=./name}}{{/properties}}
+{{/compare~}}
+
+
+
+{{~#compare node "===" "OmitExpression"}}
+    {{#extendProperty . "propertiesToOmit"}}{{#each omit}}{{>expression . prefix="'" suffix="'"}},{{/each}}{{/extendProperty}}
+    {{~>validation.expression elements modelName=./modelName name=../name propertiesToOmit=propertiesToOmit}}
+{{/compare~}}
+
+{{~#compare node "===" "CompositeExpression"}}
+   {{#elements}}{{>validation.expression . modelName=../modelName name=../name}}{{/elements}}
+{{/compare~}}
+
+{{~#compare node "===" "UnionExpression"}}
+    {{#elements}}{{>validation.expression . modelName=../modelName name=../name}}{{/elements}}
+{{/compare~}}
+
+
+
 {{~#compare node "===" "ResponseExpression"}}
-    {{#each bodies}}{{>validation.expression . modelName=../modelName propertyName=../propertyName}}{{/each}}
+    {{#each bodies}}{{>validation.expression . modelName=../modelName name=../name}}{{/each}}
 {{/compare~}}
 
 {{~#compare node "===" "RequestExpression"}}
-    {{#bodies}}{{>validation.expression . modelName=../modelName propertyName=../propertyName}}{{/bodies}}
+    {{#bodies}}{{>validation.expression . modelName=../modelName name=../name}}{{/bodies}}
 {{/compare~}}
 
 {{~#compare node "===" "MediaExpression"}}
     {{~#inArray (toArray "application/json" "application/x-www-form-urlencoded" "multipart/form-data") mediaType}}
-    {{#if body}}{{> validation.expression body modelName=modelName propertyName=propertyName}}{{/if}}
+    {{#if body}}{{> validation.expression body modelName=modelName name=name}}{{/if}}
     {{else}}
     {{log "Unsupported response media type" mediaType level="warn"}}
     {{/inArray~}} 
@@ -75,10 +220,10 @@
     {{~#inArray (toArray "application/json" "multipart/form-data") mediaType}}
     {{#if body}}
     const $body = {{modelName}}['$body'];
-    {{> validation.expression body modelName="$body" propertyName="$body"}}{{/if}}    
+    {{> validation.expression body modelName="$body" name="$body"}}{{/if}}    
     {{#if headers}}
     const $headers = {{modelName}}['$headers'];
-    {{> validation.expression headers modelName="$headers" propertyName="$headers"}}{{/if}}
+    {{> validation.expression headers modelName="$headers" name="$headers"}}{{/if}}
     {{else}}
     {{log "Unsupported response media type" mediaType level="warn"}}
     {{/inArray~}} 

@@ -1,3 +1,4 @@
+{{>comments2}}
 {{~#*inline "validator"}}
 {{~#compare validation "!==" false}}
 {{#compare type "===" "reference"}}
@@ -6,22 +7,12 @@
     {{log "Only references are support for validation currently" level="warn"}}
 {{/compare}}
 {{else}}
-{{input}} as {{>expression . prefix=./modelPrefix suffix=./modelSuffix}};
+{{input}} as {{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}};
 {{/compare~}}
 {{/inline~}}
 
-{{~#compare type "===" "pathItem"}}
-{{>route.declaration definition prefix=./prefix path=name}}
-{{/compare~}}
-
-{{~#compare type "===" "pathItemObject"}}
-{{#each operations}}
-{{>route.declaration . prefix=../prefix path=../path}}
-{{/each}}
-{{/compare~}}
-
 {{~#compare type "===" "operation"}}
-{{prefix}}Router.{{lowercase method}}<object, object, {{#requests}}{{>expression prefix="models."}},{{/requests}}>('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}', 
+{{prefix}}Router.{{lowercase method}}<object, object, {{#if request}}{{>model.expression request prefix="models."}},{{/if}}>('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}', 
     {{~#if (isArray security)}}
     {{^isEmpty security}}routerAuthMiddleware([{{#each security}}{{#each names}}'{{.}}', {{/each}}{{/each}}]),
     {{else}} /* anonymous */
@@ -32,8 +23,8 @@
 
     async (ctx, next) => {
 
-    {{#if requests}}
-    const body = {{#requests}}{{>validator . input="ctx.request.body" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}}{{/requests}};   
+    {{#if request}}
+    const body = {{>validator request input="ctx.request.body" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}};   
     {{/if}}
     {{#if pathParameter}}
     const params = {{>validator pathParameter input="ctx.params" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}}
@@ -52,19 +43,17 @@
     */
     {{/if}}
 
-    {{#if responses}}
-    const response: 
-    {{#forEach responses}}
-    {{>model.expression . prefix="models."}} {{#unless isLast}}|{{/unless}}
-    {{/forEach}}
+    {{#if response}}
+    const response:    
+    {{>model.expression response prefix="models."}}
     =
     {{else}}
-    const response = {};
+    const response = undefined;
     {{/if}}
 
     await handlers.{{& replace operationId (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}
     (ctx,
-        {{~#if requests}}body,{{/if~}}
+        {{~#if request}}body,{{/if~}}
         {{~#if pathParameter}}params,{{/if~}}
         {{~#if queryParameter}}query,{{/if~}}
         {{~#if headerParameter}}headers,{{/if~}}
@@ -74,5 +63,10 @@
 
     await next();
 });
+{{/compare~}}
 
+{{~#compare type "===" "path"}}
+{{#if operations}}{{#each operations}}
+{{>route.declaration . prefix=../prefix path=../name}}
+{{/each}}{{/if}}
 {{/compare~}}

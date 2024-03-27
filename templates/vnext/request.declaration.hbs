@@ -1,3 +1,2 @@
 {{>comments2}}
-
-export type {{& replace title (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}} = {{>request.expression}} ;
+export type {{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}} = {{>request.expression}} ;

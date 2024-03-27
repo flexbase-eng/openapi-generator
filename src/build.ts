@@ -147,13 +147,25 @@ const render = async (
   }
 };
 
+const writeFile = async (path: string, title: string, data: unknown, logger: Logger) => {
+  const name = Path.join(path, title);
+  let json = JSON.stringify(data);
+  try {
+    json = await runPrettier(json, 'json');
+  } catch (e) {
+    logger.info(`Prettier error on ${name}`, e);
+  }
+  await fs.ensureDir(path);
+  await fs.writeFile(name, json);
+};
+
 export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocument: ParsedDocument, logger: Logger) => {
   if (config.generate === undefined) {
     logger.info('No generate config settings found');
     return;
   }
 
-  const globalizer = new Globalizer();
+  // const globalizer = new Globalizer();
   const organizer = new Organizer(logger);
 
   //parsedDocument = globalizer.globalize(parsedDocument);
@@ -170,19 +182,7 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
   // const luaEngine = await factory.createEngine();
 
   if (config.debug) {
-    const writeFile = async (title: string, data: object) => {
-      const name = Path.join(config.debugPath, title);
-      let json = JSON.stringify(data);
-      try {
-        json = await runPrettier(json, 'json');
-      } catch (e) {
-        logger.info(`Prettier error on ${name}`, e);
-      }
-      await fs.writeFile(name, json);
-    };
-
-    await fs.ensureDir(config.debugPath);
-    await writeFile(`${parsedDocument.title}.optimized.json`, compiler.optimize(parsedDocument));
+    await writeFile(config.debugPath, `${parsedDocument.title}.optimized.json`, compiler.optimize(parsedDocument), logger);
   }
 
   for (const entry of Object.entries(config.generate)) {
@@ -216,7 +216,14 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
       //   continue;
       // }
 
-      await generate2(config, generateConfig, variables, compiler.optimize(doc), logger);
+      const optimizedDoc = compiler.optimize(doc);
+
+      if (config.debug) {
+        await writeFile(config.debugPath, `${doc.title}.parsed.json`, doc, logger);
+        await writeFile(config.debugPath, `${doc.title}.optimized.json`, optimizedDoc, logger);
+      }
+
+      await generate2(config, generateConfig, variables, optimizedDoc, logger);
     }
   }
 
@@ -232,20 +239,6 @@ const generate2 = async (
   logger: Logger,
   //luaEngine: LuaEngine,
 ) => {
-  if (config.debug) {
-    const variableName = variables.get('{name}');
-
-    await fs.ensureDir(config.debugPath);
-    const name = Path.join(config.debugPath, `${variableName}.json`);
-    let json = JSON.stringify(document);
-    try {
-      json = await runPrettier(json, 'json');
-    } catch (e) {
-      logger.info(`Prettier error on ${name}`, e);
-    }
-    await fs.writeFile(name, json);
-  }
-
   if (generateConfig.script) {
     // const scriptContents = await fs.readFile(generateConfig.script);
     // luaEngine.doStringSync(scriptContents.toString());

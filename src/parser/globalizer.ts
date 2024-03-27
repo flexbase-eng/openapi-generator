@@ -199,22 +199,22 @@ export class Globalizer {
     // pathItem.headerParameters = this.globalizeParameters(pathNameHash, generated, pathItem.headerParameters);
     // pathItem.cookieParameters = this.globalizeParameters(pathNameHash, generated, pathItem.cookieParameters);
 
-    if (pathItem.parameters !== undefined) {
-      const parameters = pathItem.parameters.map(parameter => {
-        if (isReference(parameter)) {
-          return parameter;
-        }
+    // if (pathItem.parameters !== undefined) {
+    //   const parameters = pathItem.parameters.map(parameter => {
+    //     if (isReference(parameter)) {
+    //       return parameter;
+    //     }
 
-        // make a global parameter
-        const name = `generated-${parameter.name}`;
-        const referenceName = `#/components/parameters/${name}`;
-        generated.push({ name, referenceName, generated: true, definition: parameter });
+    //     // make a global parameter
+    //     const name = `generated-${parameter.name}`;
+    //     const referenceName = `#/components/parameters/${name}`;
+    //     generated.push({ name, referenceName, generated: true, definition: parameter });
 
-        return <Reference>{ type: 'reference', reference: referenceName };
-      });
+    //     return <Reference>{ type: 'reference', reference: referenceName };
+    //   });
 
-      pathItem.parameters = parameters;
-    }
+    //   pathItem.parameters = parameters;
+    // }
 
     return generated;
   }

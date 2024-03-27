@@ -10,7 +10,7 @@ export interface Path extends ParsedNode {
 
 export interface PathItem extends ParsedNode {
   operations: Operation[];
-  parameters?: (Parameter | Reference)[];
+  // parameters?: (Parameter | Reference)[];
 }
 
 export const isPath = (value: ParsedNode): value is Path => {

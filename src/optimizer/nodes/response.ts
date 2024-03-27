@@ -10,14 +10,13 @@ export interface ResponseContent extends OptimizedNode {
 export interface ResponseObject extends OptimizedNode {
   description: string;
   headers?: HeaderObject;
-  'content-type': Record<string, OptimizedNode>;
+  'content-type'?: Record<string, OptimizedNode>;
   //links?: NamedLink[];
 }
 
 export interface Response extends OptimizedNode {
-  title: string;
+  name: string;
   status: Record<number, ResponseObject | Reference>;
-  //definition: ResponseObject | Reference;
 }
 
 export const isResponseContent = (value: OptimizedNode): value is ResponseContent => {

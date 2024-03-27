@@ -252,7 +252,7 @@ export abstract class OpenApiParser {
 
   private getModifiers(schema: SchemaObject): Modifiers {
     return {
-      title: schema.title,
+      name: schema.title,
       description: schema.description,
       format: schema.format,
       default: schema.default,
@@ -615,7 +615,7 @@ export abstract class OpenApiParser {
     }
 
     const operations: Operation[] = [];
-    let parameters: (Parameter | Reference)[] | undefined;
+    //let parameters: (Parameter | Reference)[] | undefined;
 
     for (const method in OpenAPIV3.HttpMethods) {
       const operationObject = schema[method.toLowerCase() as OpenAPIV3.HttpMethods];
@@ -638,7 +638,7 @@ export abstract class OpenApiParser {
     return {
       type: 'pathItemObject',
       operations,
-      parameters,
+      //parameters,
     };
   }
 
@@ -754,6 +754,10 @@ export abstract class OpenApiParser {
     if (schema.properties) {
       const propEntries = Object.entries(schema.properties);
       for (const propEntry of propEntries) {
+        if (propEntry[0].length === 0) {
+          this._logger.warn('property is missing name');
+          continue;
+        }
         const required = schema.required?.find(x => x === propEntry[0]) !== undefined;
         properties.push(this.createProperty(propEntry[0], propEntry[1], required));
       }
@@ -823,9 +827,6 @@ export abstract class OpenApiParser {
   }
 
   private parseMixedSchemaObject(schema: MixedSchemaObject, modifiers: Modifiers): Union {
-    const hasItems = schema.items !== undefined;
-    const hasEnum = schema.enum !== undefined;
-
     if (!schema.type) {
       this._logger.warn('Mixed schema missing type array');
       return <Union>{
