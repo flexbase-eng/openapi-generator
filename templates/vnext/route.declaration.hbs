@@ -23,7 +23,7 @@
     async (ctx, next) => {
 
     {{#if request}}
-    const body = ctx.body; {{!-- {{>validator request input="ctx.request.body" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}};    --}}
+    const body = ctx.body;
     {{/if}}
     {{#if pathParameter}}
     const params = {{>validator pathParameter input="ctx.params" prefix="validators." modelPrefix="models." validation=../extensions.x-validation}}
