@@ -131,7 +131,11 @@ export class Converter {
     };
   }
 
-  private convertParameter(parsedNode: parsed.Parameter, parsedComponents: parsed.Components, components: optimized.Components): optimized.Parameter {
+  private convertParameter(
+    parsedNode: parsed.Parameter,
+    parsedComponents: parsed.Components,
+    components: optimized.Components,
+  ): optimized.ParameterObject {
     let definition: optimized.OptimizedNode = { type: 'error' };
 
     if (parsedNode.definition) {
@@ -141,18 +145,38 @@ export class Converter {
     }
 
     return {
-      type: 'parameter',
+      type: 'parameterObject',
       name: parsedNode.name,
-      description: parsedNode.description,
-      required: parsedNode.required,
-      deprecated: parsedNode.deprecated,
-      allowEmptyValue: parsedNode.allowEmptyValue,
-      style: parsedNode.style,
-      explode: parsedNode.explode,
-      allowReserved: parsedNode.allowReserved,
-      extensions: parsedNode.extensions,
-      definition,
+      properties: [
+        {
+          type: 'parameter',
+          name: parsedNode.name,
+          description: parsedNode.description,
+          required: parsedNode.required,
+          deprecated: parsedNode.deprecated,
+          allowEmptyValue: parsedNode.allowEmptyValue,
+          style: parsedNode.style,
+          explode: parsedNode.explode,
+          allowReserved: parsedNode.allowReserved,
+          extensions: parsedNode.extensions,
+          definition,
+        },
+      ],
     };
+
+    // return {
+    //   type: 'parameter',
+    //   name: parsedNode.name,
+    //   description: parsedNode.description,
+    //   required: parsedNode.required,
+    //   deprecated: parsedNode.deprecated,
+    //   allowEmptyValue: parsedNode.allowEmptyValue,
+    //   style: parsedNode.style,
+    //   explode: parsedNode.explode,
+    //   allowReserved: parsedNode.allowReserved,
+    //   extensions: parsedNode.extensions,
+    //   definition,
+    // };
   }
 
   private convertResponseObject(

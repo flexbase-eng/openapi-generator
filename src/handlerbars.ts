@@ -18,8 +18,6 @@ import {
   string,
   url,
 } from 'useful-handlebars-helpers';
-import { IsModelDeclaration } from './ast/nodes/ast.model';
-import { IsReferenceExpression } from './ast/nodes/ast.reference';
 import { ChalkLogger } from './chalk.logger';
 
 export const referenceRegistrations = new Map<string, string>();
@@ -220,6 +218,11 @@ export const createHandlebars = (): typeof Handlebars => {
     const rendered = options.fn(context);
 
     context[name] = rendered;
+  });
+
+  handlebars.registerHelper('isDefined', function (context, options: Handlebars.HelperOptions) {
+    const rendered = typeof context === 'object' && options ? options.fn(context) : context;
+    return rendered !== undefined;
   });
 
   (handlebars.logger as any)['actualLogger'] = new ChalkLogger();

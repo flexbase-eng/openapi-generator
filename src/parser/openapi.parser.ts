@@ -741,11 +741,16 @@ export abstract class OpenApiParser {
   }
 
   private createProperty(name: string, schema: SchemaObject | ReferenceObject, required: boolean): Property {
+    const definition = this.parseSchema(schema);
+    const description = definition.description;
+    definition.description = undefined;
+
     return {
       name,
       type: 'property',
-      definition: this.parseSchema(schema),
+      definition,
       required,
+      description,
     };
   }
 

@@ -32,26 +32,7 @@ export const parseSpec2 = async (config: OpenApiGeneratorConfiguation, specPath:
     throw new Error(`${specPath} is not an open api v3 spec`);
   }
 
-  const output = OpenApiParserFactor.parse(apiDoc, logger);
-
-  if (config.debug) {
-    const writeFile = async (title: string, data: object) => {
-      const name = Path.join(config.debugPath, title);
-      let json = JSON.stringify(data);
-      try {
-        json = await runPrettier(json, 'json');
-      } catch (e) {
-        logger.info(`Prettier error on ${name}`, e);
-      }
-      await fs.writeFile(name, json);
-    };
-
-    await fs.ensureDir(config.debugPath);
-    //await writeFile(`${output.title}.schema.json`, apiDoc);
-    await writeFile(`${output.title}.parsed.json`, output);
-  }
-
-  return output;
+  return OpenApiParserFactor.parse(apiDoc, logger);
 };
 
 export const parseSpec = async (

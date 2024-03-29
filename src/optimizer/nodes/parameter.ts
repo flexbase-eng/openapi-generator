@@ -12,6 +12,14 @@ export interface Parameter extends OptimizedNode {
   definition?: OptimizedNode;
 }
 
+export interface ParameterObject extends OptimizedNode {
+  properties: Parameter[];
+}
+
 export const isParameter = (value: OptimizedNode): value is Parameter => {
   return value.type === 'parameter';
+};
+
+export const isParameterObject = (value: OptimizedNode): value is ParameterObject => {
+  return value.type === 'parameterObject';
 };

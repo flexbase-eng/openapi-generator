@@ -181,8 +181,18 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
 
   // const luaEngine = await factory.createEngine();
 
+  const variables = new Map<string, string>();
+
+  const apiName = parsedDocument.title.trim();
+
+  const regex = /([^a-zA-Z0-9])+/g;
+  const variableApi = apiName.replace(regex, '-').toLocaleLowerCase();
+  variables.set('{api}', variableApi);
+
   if (config.debug) {
-    await writeFile(config.debugPath, `${parsedDocument.title}.optimized.json`, compiler.optimize(parsedDocument), logger);
+    const debugPath = substituteParams(config.debugPath, variables);
+    await writeFile(debugPath, `${parsedDocument.title}.parsed.json`, parsedDocument, logger);
+    await writeFile(debugPath, `${parsedDocument.title}.optimized.json`, compiler.optimize(parsedDocument), logger);
   }
 
   for (const entry of Object.entries(config.generate)) {
@@ -194,14 +204,6 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
     const skipEmpty: boolean = generateConfig.skipEmpty ?? config.skipEmpty;
 
     const documents = organizeByTags ? organizer.organizeByTags(parsedDocument) : [parsedDocument];
-
-    const apiName = parsedDocument.title.trim();
-
-    const variables = new Map<string, string>();
-
-    const regex = /([^a-zA-Z0-9])+/g;
-    const variableApi = apiName.replace(regex, '-').toLocaleLowerCase();
-    variables.set('{api}', variableApi);
 
     for (const doc of documents) {
       // if (shouldFlatten) {
@@ -219,8 +221,9 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
       const optimizedDoc = compiler.optimize(doc);
 
       if (config.debug) {
-        await writeFile(config.debugPath, `${doc.title}.parsed.json`, doc, logger);
-        await writeFile(config.debugPath, `${doc.title}.optimized.json`, optimizedDoc, logger);
+        const debugPath = substituteParams(config.debugPath, variables);
+        await writeFile(debugPath, `${doc.title}.parsed.json`, doc, logger);
+        await writeFile(debugPath, `${doc.title}.optimized.json`, optimizedDoc, logger);
       }
 
       await generate2(config, generateConfig, variables, optimizedDoc, logger);
