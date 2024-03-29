@@ -7,6 +7,8 @@
  @version {{document.version}}
 ------------------------------------------------------------ */
 
+{{clearReferences}}
+
 {{#document}}
 
 import { DateTime, Duration } from "luxon";
@@ -20,7 +22,7 @@ import { FlexbaseContext, UnsupportedMediaTypeError } from '@shared/models/index
 
 {{>references}}
 
-{{#each requests}}{{>parser.declaration modelSuffix="Request"}}{{/each}}
+{{#each requests}}{{>parser.declaration modelSuffix="Requests"}}{{/each}}
 
 {{/components}}
 {{/document}}

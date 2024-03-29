@@ -10,7 +10,8 @@
 {{#document}}
 
 export * from './{{lowercase (replace title (toRegex '(-|\.| )+' 'g') '_')}}.models.js'; 
-export * from './{{lowercase (replace title (toRegex '(-|\.| )+' 'g') '_')}}.routes.js'; 
 export * from './{{lowercase (replace title (toRegex '(-|\.| )+' 'g') '_')}}.validations.js';
+export * from './{{lowercase (replace title (toRegex '(-|\.| )+' 'g') '_')}}.parsers.js'; 
+export * from './{{lowercase (replace title (toRegex '(-|\.| )+' 'g') '_')}}.routes.js'; 
 
 {{/document}}

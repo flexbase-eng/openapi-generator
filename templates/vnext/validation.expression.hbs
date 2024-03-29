@@ -121,11 +121,11 @@
 {{^readOnly}}
 const {{safeName}} = {{inputName}}['{{name}}']
     {{#if (compare (replace definition.type "integer" "number") "===" "number")}}
-        = utilities.stringToNumber({{inputName}}['{{name}}'], {{& defaultValue}})
+        = utilities.stringToNumber({{inputName}}['{{name}}'], {{& definition.default}})
     {{else if (compare definition.type "===" "boolean")}}
-        = utilities.stringToBoolean({{inputName}}['{{name}}'], {{& defaultValue}})
-    {{else if defaultValue includeZero=true}}
-        ??= {{#compare definition.type "===" "string"}}'{{/compare}}{{& defaultValue}}{{#compare definition.type "===" "string"}}'{{/compare}}
+        = utilities.stringToBoolean({{inputName}}['{{name}}'], {{& definition.default}})
+    {{else if default includeZero=true}}
+        ??= {{#compare definition.type "===" "string"}}'{{/compare}}{{& definition.default}}{{#compare definition.type "===" "string"}}'{{/compare}}
     {{/if}}    
 allowedProperties.push('{{name}}');
 {{#if required}}
@@ -174,7 +174,7 @@ if({{safeName}} !== undefined) {
 
 {{~#compare type "===" "reference"}}
     {
-        const validatorResponse = {{& resolveValidator2 .}}({{modelName}});
+        const validatorResponse = {{& resolveReference $ref "validators"}}({{./inputName}});
         {{errorsName}} = new Map<string, string | string[]>([...{{errorsName}}, ...validatorResponse.{{errorsName}} ]);
         allowedProperties.push(...validatorResponse.allowedProperties);
     }
@@ -183,55 +183,3 @@ if({{safeName}} !== undefined) {
 {{~#compare type "===" "request"}}
    
 {{/compare~}}
-
-
-
-{{~#compare node "===" "ObjectExpression"}}
-    {{#properties}} {{>validation.declaration . modelName=../name name=./name}}{{/properties}}
-{{/compare~}}
-
-{{~#compare node "===" "OmitExpression"}}
-    {{#extendProperty . "propertiesToOmit"}}{{#each omit}}{{>expression . prefix="'" suffix="'"}},{{/each}}{{/extendProperty}}
-    {{~>validation.expression elements modelName=./modelName name=../name propertiesToOmit=propertiesToOmit}}
-{{/compare~}}
-
-{{~#compare node "===" "CompositeExpression"}}
-   {{#elements}}{{>validation.expression . modelName=../modelName name=../name}}{{/elements}}
-{{/compare~}}
-
-{{~#compare node "===" "UnionExpression"}}
-    {{#elements}}{{>validation.expression . modelName=../modelName name=../name}}{{/elements}}
-{{/compare~}}
-
-
-
-{{~#compare node "===" "ResponseExpression"}}
-    {{#each bodies}}{{>validation.expression . modelName=../modelName name=../name}}{{/each}}
-{{/compare~}}
-
-{{~#compare node "===" "RequestExpression"}}
-    {{#bodies}}{{>validation.expression . modelName=../modelName name=../name}}{{/bodies}}
-{{/compare~}}
-
-{{~#compare node "===" "MediaExpression"}}
-    {{~#inArray (toArray "application/json" "application/x-www-form-urlencoded" "multipart/form-data") mediaType}}
-    {{#if body}}{{> validation.expression body modelName=modelName name=name}}{{/if}}
-    {{else}}
-    {{log "Unsupported response media type" mediaType level="warn"}}
-    {{/inArray~}} 
-{{/compare~}}
-
-{{~#compare node "===" "MediaResponseExpression"}}
-    {{~#inArray (toArray "application/json" "multipart/form-data") mediaType}}
-    {{#if body}}
-    const $body = {{modelName}}['$body'];
-    {{> validation.expression body modelName="$body" name="$body"}}{{/if}}    
-    {{#if headers}}
-    const $headers = {{modelName}}['$headers'];
-    {{> validation.expression headers modelName="$headers" name="$headers"}}{{/if}}
-    {{else}}
-    {{log "Unsupported response media type" mediaType level="warn"}}
-    {{/inArray~}} 
-{{/compare~}}
-
-{{~#compare node "===" "TodoExpression"}}{{log "TODO expression" what level="warn"}}{{/compare~}}

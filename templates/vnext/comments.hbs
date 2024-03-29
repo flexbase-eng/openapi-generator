@@ -7,3 +7,4 @@
 {{~#if (isArray security)}}{{^isEmpty security}}{{newline}}* @remarks required scopes: [{{#each security}}{{#each names}}'{{.}}', {{/each}}{{/each}}]
 {{~else}}{{newline}}* @remarks anonymous route{{/isEmpty}}{{/if}}
 {{/wrap}}
+{{newline}}

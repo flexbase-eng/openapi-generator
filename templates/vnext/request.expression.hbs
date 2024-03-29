@@ -1,4 +1,4 @@
-{{>comments2}}
+{{>comments}}
 {{~#compare type "===" "request"}}
 {
     {{#each content-type}}'{{@key}}': {{>model.expression .}} ; {{/each}}

@@ -37,7 +37,7 @@ export class Converter {
   addComponent(referenceName: string, definition: optimized.OptimizedNode, components: optimized.Components, type: keyof optimized.Components) {
     components[type] ??= {};
     components[type]![referenceName] = definition;
-    components[type]![referenceName].name = referenceName;
+    components[type]![referenceName].name ??= referenceName;
   }
 
   convertParsedNode(parsedNode: parsed.ParsedNode, parsedComponents: parsed.Components, components: optimized.Components): optimized.OptimizedNode {

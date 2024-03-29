@@ -77,25 +77,24 @@ export class OpenApiOptimizer {
   ) {
     let parameter: optimized.Reference;
 
-    const referenceName = `#/components/${type}/${name}`;
-
     if (parsedParameters.length === 1) {
       const optimizedParameter = this._converter.convertParsedNode(parsedParameters[0], document.components, components);
 
       if (optimized.isReference(optimizedParameter)) {
         parameter = optimizedParameter;
       } else {
+        //name = optimizedParameter.name ?? name;
         this._converter.addComponent(name, optimizedParameter, components, type);
         parameter = {
           type: 'reference',
-          $ref: referenceName,
+          $ref: `#/components/${type}/${name}`,
         };
       }
     } else {
       this._converter.addComponent(name, this.createParameterObject(parsedParameters, document.components, components), components, type);
       parameter = {
         type: 'reference',
-        $ref: referenceName,
+        $ref: `#/components/${type}/${name}`,
       };
     }
 
@@ -169,7 +168,7 @@ export class OpenApiOptimizer {
       const name = `${operation.operationId}`;
       const referenceName = `#/components/responses/${name}`;
 
-      const response: optimized.Response = { type: 'response', name, status: {} };
+      const response: optimized.Response = { type: 'response', name, statuses: [] };
       this._converter.addComponent(name, response, components, 'responses');
 
       operation.responses.forEach(parsedResponse => {
@@ -180,7 +179,7 @@ export class OpenApiOptimizer {
         if (nodeResponse) {
           const responseObject = this._converter.convertParsedNode(nodeResponse.definition, document.components, components);
 
-          response.status[Number(nodeResponse.status)] = responseObject as any;
+          response.statuses.push({ status: Number(nodeResponse.status), body: responseObject as any });
         }
       });
 
@@ -202,7 +201,7 @@ export class OpenApiOptimizer {
         : operation.requestBody;
 
       if (nodeRequest) {
-        const request = { ...this._converter.convertParsedNode(nodeRequest, document.components, components), title: name, content: undefined };
+        const request = { ...this._converter.convertParsedNode(nodeRequest, document.components, components), name, content: undefined };
         this._converter.addComponent(name, request, components, 'requests');
       }
 

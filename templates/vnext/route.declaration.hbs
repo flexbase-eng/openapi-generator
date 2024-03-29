@@ -1,7 +1,7 @@
 {{~#*inline "validator"}}
 {{~#compare validation "!==" false}}
 {{#compare type "===" "reference"}}
-    utilities.handleValidation<{{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}}>({{input}}, {{& prefix}}{{& resolveValidator2 .}}{{& suffix}}, utilities.handleRequestValidatorErrors);
+    utilities.handleValidation<{{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}}>({{input}}, {{& prefix}}{{& resolveReference $ref "validators"}}{{& suffix}}, utilities.handleRequestValidatorErrors);
 {{else}}
     {{log "Only references are support for validation currently" level="warn"}}
 {{/compare}}
@@ -11,7 +11,7 @@
 {{/inline~}}
 
 {{~#compare type "===" "operation"}}
-{{>comments2}}
+{{>comments}}
 {{prefix}}Router.{{lowercase method}}<object, object, {{#if request}}{{>model.expression request prefix="models."}},{{/if}}>('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}', 
     {{~#if (isArray security)}}
     {{^isEmpty security}}routerAuthMiddleware([{{#each security}}{{#each names}}'{{.}}', {{/each}}{{/each}}]),

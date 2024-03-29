@@ -1,4 +1,4 @@
-export const {{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& suffix}}:utilities.ValidatorFn = ({{inputName}}: any): utilities.ValidatorResponse => {
+export const {{& replace (replace name (toRegex "(-|\.| )+" "g") "_") (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{& suffix}}:utilities.ValidatorFn = ({{inputName}}: any): utilities.ValidatorResponse => {
     let {{errorsName}} = new Map<string, string | string[]>();
     const allowedProperties: string[] = [];
     {{>validation.expression . inputName=./inputName errorsName=./errorsName}}

@@ -7,66 +7,19 @@
  @version {{document.version}}
 ------------------------------------------------------------ */
 
-{{#document}}
+{{#clearReferences}}{{/clearReferences}}
 
-import { Readable } from 'node:stream';
-
+{{#document.components}}
+ 
 {{>references}}
 
-{{#if models}}
-//#region Models
-{{#each models}}
-{{>declaration suffix="Model"}}
-{{/each}}
-//#endregion
-{{/if}}
+{{#each models}}{{>model.declaration suffix="Model"}}{{/each}}
+{{#each parameters}}{{>model.declaration suffix="Parameter"}}{{/each}}
+{{#each pathParameters}}{{>model.declaration suffix="PathParameter"}}{{/each}}
+{{#each headerParameters}}{{>model.declaration suffix="HeaderParameter"}}{{/each}}
+{{#each queryParameters}}{{>model.declaration suffix="QueryParameter"}}{{/each}}
+{{#each cookieParameters}}{{>model.declaration suffix="CookieParameter"}}{{/each}}
+{{#each requests}}{{>request.declaration suffix="Requests"}}{{/each}}
+{{#each responses}}{{>response.declaration suffix="Response"}}{{/each}}
 
-{{#if responses}}
-//#region Responses
-{{#each responses}}
-{{>declaration suffix="Response"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{#if requests}}
-//#region Requests
-{{#each requests}}
-{{>declaration suffix="Requests"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{#if pathParameters}}
-//#region Path Parameters
-{{#each pathParameters}}
-{{>declaration suffix="PathParameter"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{#if headerParameters}}
-//#region Header Parameters
-{{#each headerParameters}}
-{{>declaration suffix="HeaderParameter"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{#if queryParameters}}
-//#region Query Parameters
-{{#each queryParameters}}
-{{>declaration suffix="QueryParameter"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{#if cookieParameters}}
-//#region Cookie Parameters
-{{#each cookieParameters}}
-{{>declaration suffix="CookieParameter"}}
-{{/each}}
-//#endregion
-{{/if}}
-
-{{/document}}
+{{/document.components}}

@@ -24,6 +24,8 @@ import { ChalkLogger } from './chalk.logger';
 
 export const referenceRegistrations = new Map<string, string>();
 
+export const references = new Map<string, Map<string, string>>();
+
 export const createHandlebars = (): typeof Handlebars => {
   const handlebars = Handlebars.create();
 
@@ -33,111 +35,132 @@ export const createHandlebars = (): typeof Handlebars => {
     },
   );
 
-  handlebars.registerHelper('registerReference', function (context, options: Handlebars.HelperOptions) {
-    if (!IsModelDeclaration(context) || context.referenceName === undefined) {
-      throw Error('Expected a model declaration with a reference name');
+  handlebars.registerHelper('registerReference', function (context, referenceType, referenceKey, options: Handlebars.HelperOptions) {
+    if (!references.has(referenceType)) {
+      references.set(referenceType, new Map<string, string>());
     }
 
-    const name = options.fn(context);
+    const referenceMap = references.get(referenceType)!;
 
-    if (referenceRegistrations.has(context.referenceName)) {
-      handlebars.log(2, `Multiple references ${context.referenceName} registered, last one wins!`);
+    if (referenceMap.has(referenceKey)) {
+      handlebars.log(2, `Multiple references ${referenceKey} registered in ${referenceType}, last one wins!`);
     }
 
-    referenceRegistrations.set(context.referenceName, name);
+    const referenceValue = typeof context === 'object' && options ? options.fn(context) : context;
 
-    return;
+    referenceMap.set(referenceKey, referenceValue);
+
+    //console.log('register', referenceKey, referenceValue);
   });
 
-  handlebars.registerHelper('registerValidator', function (context, options: Handlebars.HelperOptions) {
-    if (!IsModelDeclaration(context) || context.referenceName === undefined) {
-      throw Error('Expected a model declaration with a reference name for validator');
+  handlebars.registerHelper('resolveReference', function (context, referenceType, options: Handlebars.HelperOptions) {
+    const referenceMap = references.get(referenceType)!;
+    if (!referenceMap) {
+      handlebars.log(1, `${referenceType} references not found`);
     }
 
-    const referenceName = context.referenceName + '/validator';
+    const referenceKey = typeof context === 'object' && options ? options.fn(context) : context;
 
-    const name = options.fn(context);
-
-    if (referenceRegistrations.has(referenceName)) {
-      handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
+    const referenceValue = referenceMap.get(referenceKey);
+    if (!referenceValue) {
+      handlebars.log(1, `Reference ${referenceKey} not registered with ${referenceType}`);
     }
 
-    referenceRegistrations.set(referenceName, name);
+    //console.log('resolve', referenceKey, referenceValue);
 
-    return;
+    return referenceValue;
   });
 
-  handlebars.registerHelper('registerReference2', function (context, location, options: Handlebars.HelperOptions) {
-    const name = options.fn(context);
+  handlebars.registerHelper('clearReferences', function (context, options: Handlebars.HelperOptions) {
+    const referenceType = typeof context === 'object' && options ? options.fn(context) : context;
 
-    const referenceName = location + context.name;
-
-    if (referenceRegistrations.has(referenceName)) {
-      handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
+    if (typeof referenceType === 'string') {
+      const referenceMap = references.get(referenceType)!;
+      if (referenceMap) {
+        referenceMap.clear();
+      }
+    } else {
+      references.clear();
     }
-
-    referenceRegistrations.set(referenceName, name);
-
-    return;
   });
 
-  handlebars.registerHelper('registerValidator2', function (context, location, options: Handlebars.HelperOptions) {
-    const name = options.fn(context);
+  // handlebars.registerHelper('registerValidator', function (context, options: Handlebars.HelperOptions) {
+  //   if (!IsModelDeclaration(context) || context.referenceName === undefined) {
+  //     throw Error('Expected a model declaration with a reference name for validator');
+  //   }
 
-    const referenceName = location + context.name + '/validator';
+  //   const referenceName = context.referenceName + '/validator';
 
-    if (referenceRegistrations.has(referenceName)) {
-      handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
-    }
+  //   const name = options.fn(context);
 
-    referenceRegistrations.set(referenceName, name);
+  //   if (referenceRegistrations.has(referenceName)) {
+  //     handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
+  //   }
 
-    return;
-  });
+  //   referenceRegistrations.set(referenceName, name);
 
-  handlebars.registerHelper('resolveReference', function (context) {
-    if (!IsReferenceExpression(context) || context.key === undefined) {
-      throw Error('Expected a reference expression with a reference key');
-    }
+  //   return;
+  // });
 
-    const ref = referenceRegistrations.get(context.key);
-    if (!ref) {
-      handlebars.log(2, `Reference ${context.key} not registered`);
-    }
-    return ref;
-  });
+  // handlebars.registerHelper('registerReference2', function (context, location, options: Handlebars.HelperOptions) {
+  //   const name = options.fn(context);
 
-  handlebars.registerHelper('resolveReference2', function (context) {
-    const ref = referenceRegistrations.get(context.$ref);
-    if (!ref) {
-      handlebars.log(2, `Reference ${context.$ref} not registered`);
-    }
-    return ref;
-  });
+  //   const referenceName = location + context.name;
 
-  handlebars.registerHelper('resolveValidator', function (context) {
-    if (!IsReferenceExpression(context) || context.key === undefined) {
-      throw Error('Expected a reference expression with a reference key for validator', { cause: context });
-    }
+  //   if (referenceRegistrations.has(referenceName)) {
+  //     handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
+  //   }
 
-    const referenceKey = context.key + '/validator';
+  //   referenceRegistrations.set(referenceName, name);
 
-    const ref = referenceRegistrations.get(referenceKey);
-    if (!ref) {
-      handlebars.log(2, `Reference ${referenceKey} not registered`);
-    }
-    return ref;
-  });
+  //   return;
+  // });
 
-  handlebars.registerHelper('resolveValidator2', function (context) {
-    const referenceKey = context.$ref + '/validator';
+  // handlebars.registerHelper('registerValidator2', function (context, location, options: Handlebars.HelperOptions) {
+  //   const name = options.fn(context);
 
-    const ref = referenceRegistrations.get(referenceKey);
-    if (!ref) {
-      handlebars.log(2, `Reference ${referenceKey} not registered`);
-    }
-    return ref;
-  });
+  //   const referenceName = location + context.name + '/validator';
+
+  //   if (referenceRegistrations.has(referenceName)) {
+  //     handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
+  //   }
+
+  //   referenceRegistrations.set(referenceName, name);
+
+  //   return;
+  // });
+
+  // handlebars.registerHelper('resolveReference2', function (context) {
+  //   const ref = referenceRegistrations.get(context.$ref);
+  //   if (!ref) {
+  //     handlebars.log(2, `Reference ${context.$ref} not registered`);
+  //   }
+  //   return ref;
+  // });
+
+  // handlebars.registerHelper('resolveValidator', function (context) {
+  //   if (!IsReferenceExpression(context) || context.key === undefined) {
+  //     throw Error('Expected a reference expression with a reference key for validator', { cause: context });
+  //   }
+
+  //   const referenceKey = context.key + '/validator';
+
+  //   const ref = referenceRegistrations.get(referenceKey);
+  //   if (!ref) {
+  //     handlebars.log(2, `Reference ${referenceKey} not registered`);
+  //   }
+  //   return ref;
+  // });
+
+  // handlebars.registerHelper('resolveValidator2', function (context) {
+  //   const referenceKey = context.$ref + '/validator';
+
+  //   const ref = referenceRegistrations.get(referenceKey);
+  //   if (!ref) {
+  //     handlebars.log(2, `Reference ${referenceKey} not registered`);
+  //   }
+  //   return ref;
+  // });
 
   handlebars.registerHelper('wrap', function (context, prefix, suffix, options: Handlebars.HelperOptions) {
     const rendered = options.fn(context);

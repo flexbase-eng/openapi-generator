@@ -1,5 +1,5 @@
 {
-  "include": ["../platform/openapi/Identity.yaml"],
+  "include": ["../platform/openapi/Servicing.yaml"],
   "sharedTemplates": ["./templates/vnext/*.hbs"],
   "generate": {
     "router.ts": {
@@ -16,7 +16,7 @@
     },
     "models": {
       "target": "./output/{api}/{name}/generated/{name}.models.ts",
-      "template": "./templates/vnext/model2.hbs"
+      "template": "./templates/vnext/models.hbs"
     },
     "validations": {
       "target": "./output/{api}/{name}/generated/{name}.validations.ts",

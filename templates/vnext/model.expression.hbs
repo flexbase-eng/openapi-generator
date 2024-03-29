@@ -1,25 +1,24 @@
-{{>comments2 definition}}
+{{>comments definition}}
 {{~#compare type "===" "object"}}
     {
     {{#each properties}}{{>model.expression}}{{/each}}
     }
 {{/compare~}}
-{{~#compare type "===" "property"}}'{{name}}'{{^required}}{{^defaultValue}}?{{/defaultValue}}{{/required}}: {{>model.expression definition}};
+{{~#compare type "===" "property"}}'{{name}}'{{^required}}{{^default}}?{{/default}}{{/required}}: {{>model.expression definition}};
 {{/compare~}}
 {{~#compare type "===" "array"}}({{>model.expression definition}})[]{{/compare~}}
 {{~#compare type "===" "string"}}{{#if enum}}"{{& join enum "\"|\""}}"{{else}}string{{/if}}{{/compare~}}
 {{~#compare type "===" "boolean"}}boolean{{/compare~}}
 {{~#compare type "===" "number"}}number{{/compare~}}
-{{~#compare type "===" "integer"}}number /*integer*/{{/compare~}}
+{{~#compare type "===" "integer"}}number{{/compare~}}
 {{~#compare type "===" "null"}}null{{/compare~}}
-{{~#compare type "===" "reference"}}{{& prefix}}{{& resolveReference2 .}}{{& suffix}}{{/compare~}}
+{{~#compare type "===" "reference"}}{{& prefix}}{{& resolveReference $ref "models"}}{{& suffix}}{{/compare~}}
 {{~#compare type "===" "composite"}}{{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}&{{/unless}}{{/forEach}}{{/if}}{{/compare~}}
 {{~#compare type "===" "union"}}{{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}{{/compare~}}
-{{~#compare type "===" "parameter"}}{'{{name}}'{{^required}}{{^defaultValue}}?{{/defaultValue}}{{/required}}: {{>model.expression definition}} } {{/compare~}}
+{{~#compare type "===" "parameter"}}{'{{name}}'{{^required}}{{^default}}?{{/default}}{{/required}}: {{>model.expression definition}} } {{/compare~}}
 {{~#compare type "===" "headerObject"}}
     {
     {{#each properties}}{{>model.expression}}{{/each}}
     }
 {{/compare~}}
-{{~#compare type "===" "header"}}'{{name}}'{{^required}}{{^defaultValue}}?{{/defaultValue}}{{/required}}: {{>model.expression definition}};{{/compare~}}
-
+{{~#compare type "===" "header"}}'{{name}}'{{^required}}{{^default}}?{{/default}}{{/required}}: {{>model.expression definition}};{{/compare~}}

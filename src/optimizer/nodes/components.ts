@@ -14,8 +14,3 @@ export interface Components {
   queryParameters?: Record<string, OptimizedNode>;
   cookieParameters?: Record<string, OptimizedNode>;
 }
-
-export interface Component {
-  referenceName: string;
-  definition: OptimizedNode;
-}

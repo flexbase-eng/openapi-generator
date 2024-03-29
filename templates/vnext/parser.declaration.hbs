@@ -1,7 +1,7 @@
 {{~#*inline "validator"}}
 {{~#compare validation "!==" false}}
 {{#compare type "===" "reference"}}
-    utilities.handleValidation<{{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}}>({{input}}, {{& prefix}}{{& resolveValidator2 .}}{{& suffix}}, utilities.handleRequestValidatorErrors);
+    utilities.handleValidation<{{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}}>({{input}}, {{& prefix}}{{& resolveReference $ref "validators"}}{{& suffix}}, utilities.handleRequestValidatorErrors);
 {{else}}
     {{log "Only references are support for validation currently" level="warn"}}
 {{/compare}}
@@ -11,7 +11,7 @@
 {{/inline~}}
 
 {{~#compare type "===" "request"}}
-export const {{& replace name (toRegex "(-|\.| )+" "g") "_"}}{{& modelSuffix}}Parser = (): Koa.Middleware<object, FlexbaseContext> => {
+export const {{& replace (replace name (toRegex "(-|\.| )+" "g") "_") (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{& modelSuffix}}Parser = (): Koa.Middleware<object, FlexbaseContext> => {
     return async (ctx, next) => {
     
       {{#each content-type}}
