@@ -103,14 +103,20 @@ export class Converter {
     };
   }
 
-  private convertUnion(parsedNode: parsed.Union, parsedComponents: parsed.Components, components: optimized.Components): optimized.Union {
+  private convertUnion(parsedNode: parsed.Union, parsedComponents: parsed.Components, components: optimized.Components) {
+    if (parsedNode.definitions.length === 1) {
+      return this.convertParsedNode(parsedNode.definitions[0], parsedComponents, components);
+    }
     return {
       ...parsedNode,
       definitions: parsedNode.definitions.map(p => this.convertParsedNode(p, parsedComponents, components)),
     };
   }
 
-  private convertComposite(parsedNode: parsed.Composite, parsedComponents: parsed.Components, components: optimized.Components): optimized.Composite {
+  private convertComposite(parsedNode: parsed.Composite, parsedComponents: parsed.Components, components: optimized.Components) {
+    if (parsedNode.definitions.length === 1) {
+      return this.convertParsedNode(parsedNode.definitions[0], parsedComponents, components);
+    }
     return {
       ...parsedNode,
       definitions: parsedNode.definitions.map(p => this.convertParsedNode(p, parsedComponents, components)),
@@ -163,20 +169,6 @@ export class Converter {
         },
       ],
     };
-
-    // return {
-    //   type: 'parameter',
-    //   name: parsedNode.name,
-    //   description: parsedNode.description,
-    //   required: parsedNode.required,
-    //   deprecated: parsedNode.deprecated,
-    //   allowEmptyValue: parsedNode.allowEmptyValue,
-    //   style: parsedNode.style,
-    //   explode: parsedNode.explode,
-    //   allowReserved: parsedNode.allowReserved,
-    //   extensions: parsedNode.extensions,
-    //   definition,
-    // };
   }
 
   private convertResponseObject(
@@ -223,6 +215,7 @@ export class Converter {
       let node = this.convertParsedNode(requestContent.definition, parsedComponents, components);
       if (!optimized.isReference(node)) {
         const name = `${node.name ?? '_' + String(murmurHash(JSON.stringify(node), 42))}RequestObject`;
+        node.name = name;
         const referenceName = `#/components/models/${name}`;
         this.addComponent(name, node, components, 'models');
 

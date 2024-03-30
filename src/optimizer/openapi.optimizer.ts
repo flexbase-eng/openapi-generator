@@ -83,7 +83,7 @@ export class OpenApiOptimizer {
       if (optimized.isReference(optimizedParameter)) {
         parameter = optimizedParameter;
       } else {
-        //name = optimizedParameter.name ?? name;
+        optimizedParameter.name = name;
         this._converter.addComponent(name, optimizedParameter, components, type);
         parameter = {
           type: 'reference',
@@ -193,19 +193,17 @@ export class OpenApiOptimizer {
     let requestReference: optimized.Reference | undefined;
 
     if (operation.requestBody) {
-      const name = `${operation.operationId}`;
-      const referenceName = `#/components/requests/${name}`;
-
       const nodeRequest = parsed.isReference(operation.requestBody)
         ? this.lookupReference<parsed.RequestBody>(operation.requestBody, document.components, 'requests')?.definition
         : operation.requestBody;
 
       if (nodeRequest) {
+        const name = nodeRequest.name ?? `${operation.operationId}`;
+        const referenceName = `#/components/requests/${name}`;
         const request = { ...this._converter.convertParsedNode(nodeRequest, document.components, components), name, content: undefined };
         this._converter.addComponent(name, request, components, 'requests');
+        requestReference = { type: 'reference', $ref: referenceName };
       }
-
-      requestReference = { type: 'reference', $ref: referenceName };
     }
 
     return requestReference;
@@ -263,18 +261,18 @@ export class OpenApiOptimizer {
   }
 
   private compactComposite(composite: optimized.Composite) {
-    const mergeNodes: optimized.ObjectNode[] = [];
+    const mergeNodes: optimized.BaseObjectNode[] = [];
     const otherNodes: optimized.OptimizedNode[] = [];
 
     for (const node of composite.definitions) {
-      if (optimized.isObjectNode(node)) {
+      if (optimized.isObjectNode(node) || optimized.isParameterObject(node) || optimized.isHeaderObject(node)) {
         mergeNodes.push(node);
       } else {
         otherNodes.push(node);
       }
     }
 
-    const properties: optimized.Property[] = [];
+    const properties: optimized.BaseProperty[] = [];
     mergeNodes.forEach(x => properties.push(...x.properties));
     if (properties.length > 0) {
       otherNodes.push(<optimized.ObjectNode>{ type: 'object', properties });
@@ -300,5 +298,15 @@ export class OpenApiOptimizer {
 
   private optimizeComponents(components: optimized.Components) {
     if (components.models) components.models = this.optimizeComponentRecord(components.models);
+    if (components.requests) components.requests = this.optimizeComponentRecord(components.requests);
+    if (components.responses) components.responses = this.optimizeComponentRecord(components.responses);
+    if (components.parameters) components.parameters = this.optimizeComponentRecord(components.parameters);
+    if (components.headers) components.headers = this.optimizeComponentRecord(components.headers);
+    if (components.callbacks) components.callbacks = this.optimizeComponentRecord(components.callbacks);
+    if (components.pathItems) components.pathItems = this.optimizeComponentRecord(components.pathItems);
+    if (components.pathParameters) components.pathParameters = this.optimizeComponentRecord(components.pathParameters);
+    if (components.headerParameters) components.headerParameters = this.optimizeComponentRecord(components.headerParameters);
+    if (components.queryParameters) components.queryParameters = this.optimizeComponentRecord(components.queryParameters);
+    if (components.cookieParameters) components.cookieParameters = this.optimizeComponentRecord(components.cookieParameters);
   }
 }

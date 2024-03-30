@@ -1,35 +1,35 @@
 {
-  "include": ["../platform/openapi/Servicing.yaml"],
-  "sharedTemplates": ["./templates/vnext/*.hbs"],
+  "include": ["../platform/openapi/*.yaml"],
+  "sharedTemplates": ["../platform/openapi/templates/*.hbs"],
   "generate": {
     "router.ts": {
       "target": "./output/{api}/router.ts",
-      "template": "./templates/vnext/router.hbs"
+      "template": "../platform/openapi/templates/router.hbs"
     },
     "index": {
       "target": "./output/{api}/{name}/generated/{name}.ts",
-      "template": "./templates/vnext/index.hbs"
+      "template": "../platform/openapi/templates/index.hbs"
     },
     "routes": {
       "target": "./output/{api}/{name}/generated/{name}.routes.ts",
-      "template": "./templates/vnext/routes.hbs"
+      "template": "../platform/openapi/templates/routes.hbs"
     },
     "models": {
       "target": "./output/{api}/{name}/generated/{name}.models.ts",
-      "template": "./templates/vnext/models.hbs"
+      "template": "../platform/openapi/templates/models.hbs"
     },
     "validations": {
       "target": "./output/{api}/{name}/generated/{name}.validations.ts",
-      "template": "./templates/vnext/validations.hbs"
+      "template": "../platform/openapi/templates/validations.hbs"
     },
     "parsers": {
       "target": "./output/{api}/{name}/generated/{name}.parsers.ts",
-      "template": "./templates/vnext/parsers.hbs"
+      "template": "../platform/openapi/templates/parsers.hbs"
     }
   },
   "prettier": true,
   "tags": true,
   "flatten": true,
   "references": true,
-  "debugPath": "./output/debug/"
+  "debugPath": "./output/debug/{api}/"
 }

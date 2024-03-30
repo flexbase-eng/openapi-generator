@@ -14,3 +14,4 @@ export * from './composite';
 export * from './exclusion';
 export * from './request';
 export * from './tag';
+export * from './base.object.node';

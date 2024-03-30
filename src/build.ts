@@ -279,7 +279,7 @@ const render2 = async (
       try {
         rendered = await runPrettier(rendered, ext === '.ts' ? 'typescript' : 'babel');
       } catch (e) {
-        logger.info(`Prettier error on ${fileName}`, e);
+        //logger.info(`Prettier error on ${fileName}`, e);
       }
     }
 

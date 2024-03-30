@@ -1,25 +1,20 @@
+import { BaseObjectNode, BaseProperty } from './base.object.node';
 import { OptimizedNode } from './optimized.node';
 
-export interface Header extends OptimizedNode {
-  name: string;
-  description?: string;
+export interface Header extends BaseProperty {
   required?: boolean;
-  deprecated?: boolean;
   allowEmptyValue?: boolean;
   style?: string;
   explode?: boolean;
   allowReserved?: boolean;
-  definition: OptimizedNode;
 }
 
-export interface HeaderObject extends OptimizedNode {
-  properties: Header[];
-}
+export interface HeaderObject extends BaseObjectNode<Header> {}
 
 export const isHeader = (value: OptimizedNode): value is Header => {
   return value.type === 'header';
 };
 
-export const isHeaderObject = (value: OptimizedNode): value is Header => {
+export const isHeaderObject = (value: OptimizedNode): value is HeaderObject => {
   return value.type === 'headerObject';
 };

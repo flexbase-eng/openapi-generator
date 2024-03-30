@@ -34,6 +34,7 @@ import {
   isReference,
   isObjectNode,
   isComposite,
+  isRequestBody,
 } from './parsed_nodes';
 import { Header, NamedHeader } from './parsed_nodes/header';
 import { Logger } from '@flexbase/logger';
@@ -149,6 +150,9 @@ export abstract class OpenApiParser {
         const referenceName = `#/components/requestBodies/${name}`;
 
         const definition = this.parseRequestBody(schema, components);
+        if (isRequestBody(definition)) {
+          definition.name = name;
+        }
         components.requests ??= [];
         components.requests.push({ name, referenceName, definition });
       }

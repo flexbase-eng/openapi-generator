@@ -1,20 +1,15 @@
+import { BaseProperty, BaseObjectNode } from './base.object.node';
 import { OptimizedNode } from './optimized.node';
 
-export interface Parameter extends OptimizedNode {
-  name: string;
-  description?: string;
+export interface Parameter extends BaseProperty {
   required?: boolean;
-  deprecated?: boolean;
   allowEmptyValue?: boolean;
   style?: string;
   explode?: boolean;
   allowReserved?: boolean;
-  definition?: OptimizedNode;
 }
 
-export interface ParameterObject extends OptimizedNode {
-  properties: Parameter[];
-}
+export interface ParameterObject extends BaseObjectNode<Parameter> {}
 
 export const isParameter = (value: OptimizedNode): value is Parameter => {
   return value.type === 'parameter';
