@@ -214,7 +214,7 @@ export class Converter {
     parsedNode.content?.forEach(requestContent => {
       let node = this.convertParsedNode(requestContent.definition, parsedComponents, components);
       if (!optimized.isReference(node)) {
-        const name = `${node.name ?? '_' + String(murmurHash(JSON.stringify(node), 42))}RequestObject`;
+        const name = `${node.name ?? parsedNode.name ?? '_' + String(murmurHash(JSON.stringify(node), 42))}RequestObject`;
         node.name = name;
         const referenceName = `#/components/models/${name}`;
         this.addComponent(name, node, components, 'models');
