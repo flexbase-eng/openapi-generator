@@ -13,6 +13,7 @@ import { LuaEngine, LuaFactory } from 'wasmoon';
 import { Globalizer } from './parser/globalizer';
 import { Organizer } from './parser/organizer';
 import { OptimizedDocument } from './optimizer/optimized.document';
+import $RefParser from '@stoplight/json-schema-ref-parser';
 
 export const build = async (config: OpenApiGeneratorConfiguation, astDocument: AstDocument, astBuilder: IAstBuilder, logger: Logger) => {
   if (config.generate === undefined) {
@@ -80,7 +81,9 @@ const generate = async (
 
   const templates: string[] = [...(config.sharedTemplates ?? []), ...(generateConfig.additionalTemplates ?? [])];
 
-  const handlebars = createHandlebars();
+  const jsonSchema = await $RefParser.resolve(astDocument);
+
+  const handlebars = createHandlebars(jsonSchema);
   registerPartials(handlebars, templates);
 
   referenceRegistrations.clear();
@@ -248,7 +251,9 @@ const generate2 = async (
   } else {
     const templates: string[] = [...(config.sharedTemplates ?? []), ...(generateConfig.additionalTemplates ?? [])];
 
-    const handlebars = createHandlebars();
+    const jsonSchema = await $RefParser.resolve(document);
+
+    const handlebars = createHandlebars(jsonSchema);
     registerPartials(handlebars, templates);
 
     referenceRegistrations.clear();

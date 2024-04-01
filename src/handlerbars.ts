@@ -19,12 +19,13 @@ import {
   url,
 } from 'useful-handlebars-helpers';
 import { ChalkLogger } from './chalk.logger';
+import { $Refs } from '@stoplight/json-schema-ref-parser';
 
 export const referenceRegistrations = new Map<string, string>();
 
 export const references = new Map<string, Map<string, string>>();
 
-export const createHandlebars = (): typeof Handlebars => {
+export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
   const handlebars = Handlebars.create();
 
   [array, code, collection, comparison, date, html, i18n, inflection, markdown, math, misc, number, object, path, regex, string, url].forEach(
@@ -79,6 +80,19 @@ export const createHandlebars = (): typeof Handlebars => {
       }
     } else {
       references.clear();
+    }
+  });
+
+  handlebars.registerHelper('jsonRef', function (context, options: Handlebars.HelperOptions) {
+    if (typeof context === 'function') {
+      context = context.call(handlebars);
+    }
+
+    if (!Handlebars.Utils.isEmpty(context)) {
+      const ref = jsonSchema.get(context);
+      return options.fn(ref, { data: options.data, blockParams: [context] });
+    } else {
+      return options.inverse(handlebars);
     }
   });
 
