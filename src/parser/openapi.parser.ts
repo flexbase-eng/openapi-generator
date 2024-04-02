@@ -411,7 +411,7 @@ export abstract class OpenApiParser {
     return nodes;
   }
 
-  protected parseRequestBody(schema: ReferenceObject | RequestBodyObject, components: Components): RequestBody | Reference {
+  protected parseRequestBody(schema: ReferenceObject | RequestBodyObject, components: Components, name?: string): RequestBody | Reference {
     if (this.isReferenceObject(schema)) {
       return this.createReference(schema);
     }
@@ -423,6 +423,7 @@ export abstract class OpenApiParser {
 
     return {
       type: 'requestBody',
+      name,
       description,
       required,
       extensions,
@@ -676,7 +677,7 @@ export abstract class OpenApiParser {
       parameters.push(nodeType);
     }
 
-    const requestBody = schema.requestBody ? this.parseRequestBody(schema.requestBody, components) : undefined;
+    const requestBody = schema.requestBody ? this.parseRequestBody(schema.requestBody, components, operationId) : undefined;
 
     if (schema.responses) {
       responses = [];
