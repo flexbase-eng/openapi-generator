@@ -90,10 +90,23 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
 
     if (!Handlebars.Utils.isEmpty(context)) {
       const ref = jsonSchema.get(context);
-      return options.fn(ref, { data: options.data, blockParams: [context] });
-    } else {
-      return options.inverse(handlebars);
+      const data = options.data ? Handlebars.createFrame(options.data) : undefined;
+
+      return options.fn(ref, { data, blockParams: [context] });
     }
+  });
+
+  handlebars.registerHelper('hasLength', function (context, length, options: Handlebars.HelperOptions) {
+    const value = context; //typeof context === 'object' && options ? options.fn(context) : context;
+
+    let len = 0;
+    if (typeof value === 'string' || Array.isArray(value)) {
+      len = value.length;
+    } else if (typeof value === 'object') {
+      len = Object.keys(value).length;
+    }
+
+    return len === length;
   });
 
   // handlebars.registerHelper('registerValidator', function (context, options: Handlebars.HelperOptions) {
