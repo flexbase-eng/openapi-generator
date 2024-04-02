@@ -162,6 +162,19 @@ const writeFile = async (path: string, title: string, data: unknown, logger: Log
   await fs.writeFile(name, json);
 };
 
+const isEmpty = (document: OptimizedDocument): boolean => {
+  return (
+    document.components.models === undefined &&
+    document.components.responses === undefined &&
+    document.components.requests === undefined &&
+    document.components.pathParameters === undefined &&
+    document.components.headerParameters === undefined &&
+    document.components.queryParameters === undefined &&
+    document.components.cookieParameters === undefined &&
+    document.paths.length === 0
+  );
+};
+
 export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocument: ParsedDocument, logger: Logger) => {
   if (config.generate === undefined) {
     logger.info('No generate config settings found');
@@ -217,11 +230,11 @@ export const build2 = async (config: OpenApiGeneratorConfiguation, parsedDocumen
       const variableName = doc.title.trim().replace(regex, '-').toLocaleLowerCase();
       variables.set('{name}', variableName);
 
-      // if (skipEmpty && astBuilder.isEmpty(doc)) {
-      //   continue;
-      // }
-
       const optimizedDoc = compiler.optimize(doc);
+
+      if (skipEmpty && isEmpty(optimizedDoc)) {
+        continue;
+      }
 
       if (config.debug) {
         const debugPath = substituteParams(config.debugPath, variables);

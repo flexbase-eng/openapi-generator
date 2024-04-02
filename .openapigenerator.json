@@ -21,10 +21,6 @@
     "validations": {
       "target": "./output/{api}/{name}/generated/{name}.validations.ts",
       "template": "../platform/openapi/templates/validations.hbs"
-    },
-    "parsers": {
-      "target": "./output/{api}/{name}/generated/{name}.parsers.ts",
-      "template": "../platform/openapi/templates/parsers.hbs"
     }
   },
   "prettier": true,
