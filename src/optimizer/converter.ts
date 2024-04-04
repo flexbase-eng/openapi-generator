@@ -5,7 +5,11 @@ import { murmurHash } from '../utilities/murmur.hash';
 export class Converter {
   constructor(private readonly _logger: Logger) {}
 
-  private findInSection(components: parsed.Components, node: parsed.Reference, section: keyof parsed.Components): parsed.Component | undefined {
+  private findInSection<T extends parsed.ParsedNode = parsed.ParsedNode>(
+    components: parsed.Components,
+    node: parsed.Reference,
+    section: keyof parsed.Components,
+  ): parsed.Component<T> | undefined {
     const comps = components[section];
 
     if (!comps) {
@@ -19,7 +23,7 @@ export class Converter {
       if (found.length > 1) {
         this._logger.warn(`mulitiple references of ${section} ${node.reference} found, using first instance`);
       }
-      return found[0];
+      return found[0] as parsed.Component<T>;
     }
   }
 
@@ -56,8 +60,10 @@ export class Converter {
       return this.convertPrimative(parsedNode);
     } else if (parsed.isParameter(parsedNode)) {
       return this.convertParameter(parsedNode, parsedComponents, components);
+    } else if (parsed.isResponse(parsedNode)) {
+      return this.convertResponse(parsedNode, parsedComponents, components);
     } else if (parsed.isResponseBody(parsedNode)) {
-      return this.convertResponseObject(parsedNode, parsedComponents, components);
+      return this.convertResponseObject(parsedNode, parsedComponents, components, 0);
     } else if (parsed.isHeader(parsedNode)) {
       return this.convertHeader(parsedNode, parsedComponents, components);
     } else if (parsed.isMediaType(parsedNode)) {
@@ -171,10 +177,41 @@ export class Converter {
     };
   }
 
+  private convertResponse(
+    parsedNode: parsed.Response,
+    parsedComponents: parsed.Components,
+    components: optimized.Components,
+  ): optimized.ResponseObject | optimized.Reference {
+    const status = Number(parsedNode.status);
+
+    let definitionName: string | undefined;
+    let definition: parsed.ResponseBody | undefined;
+
+    if (parsed.isReference(parsedNode.definition)) {
+      const component = this.findInSection<parsed.ResponseBody>(parsedComponents, parsedNode.definition, 'responses');
+      definitionName = component?.name;
+      definition = component?.definition;
+    } else {
+      definitionName = parsedNode.name;
+      definition = parsedNode.definition;
+    }
+
+    if (definition) {
+      const response = this.convertResponseObject(definition, parsedComponents, components, status);
+      const name = `${response.name ?? definitionName ?? '_' + String(murmurHash(JSON.stringify(response), 42))}ResponseObject`;
+      const referenceName = `#/components/responses/${name}`;
+      this.addComponent(name, response, components, 'responses');
+      return <optimized.Reference>{ type: 'reference', $ref: referenceName };
+    } else {
+      return { type: 'responseObject', status, name: definitionName, description: parsedNode.description ?? '' };
+    }
+  }
+
   private convertResponseObject(
     parsedNode: parsed.ResponseBody,
     parsedComponents: parsed.Components,
     components: optimized.Components,
+    status: number,
   ): optimized.ResponseObject {
     let contentType: Record<string, optimized.OptimizedNode> | undefined;
 
@@ -201,7 +238,14 @@ export class Converter {
       contentType[responseContent.name] = this.convertParsedNode(responseContent.definition, parsedComponents, components);
     });
 
-    return { type: 'responseObject', description: parsedNode.description, headers: headers, 'content-type': contentType };
+    return {
+      type: 'responseObject',
+      status,
+      name: parsedNode.name,
+      description: parsedNode.description,
+      headers: headers,
+      'content-type': contentType,
+    };
   }
 
   private convertRequestBody(

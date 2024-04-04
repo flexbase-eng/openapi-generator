@@ -8,6 +8,7 @@ export interface ResponseContent extends OptimizedNode {
 }
 
 export interface ResponseObject extends OptimizedNode {
+  status: number;
   description: string;
   headers?: HeaderObject;
   'content-type'?: Record<string, OptimizedNode>;
@@ -16,7 +17,7 @@ export interface ResponseObject extends OptimizedNode {
 
 export interface Response extends OptimizedNode {
   name: string;
-  statuses: { status: number; body: ResponseObject | Reference }[];
+  responses: (ResponseObject | Reference)[];
 }
 
 export const isResponseContent = (value: OptimizedNode): value is ResponseContent => {

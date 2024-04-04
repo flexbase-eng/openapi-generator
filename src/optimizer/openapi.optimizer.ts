@@ -1,7 +1,6 @@
 import { Logger } from '@flexbase/logger';
 import { ParsedDocument } from '../parser/parsed.document';
 import * as parsed from '../parser/parsed_nodes';
-//import '../utilities/array';
 import { OptimizedDocument } from './optimized.document';
 import * as optimized from './nodes';
 import { Converter } from './converter';
@@ -168,7 +167,7 @@ export class OpenApiOptimizer {
       const name = `${operation.operationId}`;
       const referenceName = `#/components/responses/${name}`;
 
-      const response: optimized.Response = { type: 'response', name, statuses: [] };
+      const response: optimized.Response = { type: 'response', name, responses: [] };
       this._converter.addComponent(name, response, components, 'responses');
 
       operation.responses.forEach(parsedResponse => {
@@ -177,9 +176,9 @@ export class OpenApiOptimizer {
           : parsedResponse;
 
         if (nodeResponse) {
-          const responseObject = this._converter.convertParsedNode(nodeResponse.definition, document.components, components);
-
-          response.statuses.push({ status: Number(nodeResponse.status), body: responseObject as any });
+          nodeResponse.name ??= name;
+          const responseObject = this._converter.convertParsedNode(nodeResponse, document.components, components);
+          response.responses.push(responseObject as any);
         }
       });
 
