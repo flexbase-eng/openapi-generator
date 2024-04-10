@@ -3,29 +3,18 @@ import { program } from 'commander';
 import * as glob from 'glob';
 import Path from 'path';
 import fs from 'fs-extra';
-import { IOpenApiSpecBuilder } from './oas-tree/oas.builder.interface';
-import { IOpenApiSpecConverter } from './oas-tree/oas.converter.interface';
-import { IAstBuilder } from './ast/ast.builder.interface';
-import { AstDocument } from './ast/nodes/ast.document';
 import pkg from '../package.json' assert { type: 'json' };
 import { OpenApiGeneratorConfiguation } from './runtime.config';
 import { build } from './build';
 import { parseSpec } from './parse';
 
-export async function main(
-  oasBuilder: IOpenApiSpecBuilder,
-  oasConverter: IOpenApiSpecConverter,
-  astBuilder: IAstBuilder,
-  logger: Logger
-): Promise<void> {
+export async function main(logger: Logger): Promise<void> {
   program.name(pkg.name).description(pkg.description).version(pkg.version);
 
   let config: OpenApiGeneratorConfiguation = {
     include: [],
     prettier: true,
     tags: true,
-    flatten: true,
-    references: true,
     debug: false,
     debugPath: '',
     skipEmpty: true,
@@ -38,8 +27,6 @@ export async function main(
     .option('--config <file>', 'Specify a configuration to use', '.openapigenerator.json')
     .option('--no-prettier', 'Disable prettier')
     .option('--no-tags', 'Disable organization by tags')
-    .option('--no-flatten', 'Disable flatten model optimization')
-    .option('--no-references', 'Resolve all references')
     .option('--no-skipempty', 'Generate empty files')
     .action(options => {
       const fileConfig = fs.existsSync(options.config ?? '.openapigenerator.json')
@@ -59,30 +46,19 @@ export async function main(
       if (options.sharedTemplates != undefined)
         config.sharedTemplates = Array.isArray(options.sharedTemplates) ? options.sharedTemplates : [options.sharedTemplates];
       if (options.tags != undefined) config.tags = options.tags;
-      if (options.flatten != undefined) config.flatten = options.flatten;
       if (options.prettier != undefined) config.prettier = options.prettier;
-      if (options.references != undefined) config.references = options.references;
       if (options.skipEmpty != undefined) config.skipEmpty = options.skipEmpty;
     });
 
   try {
     program.parse(process.argv);
 
-    const astList: AstDocument[] = [];
-
     const globInput = glob.sync(config.include);
+
     for (const specPath of globInput) {
       try {
-        const ast = await parseSpec(config, specPath, oasBuilder, oasConverter, astBuilder, logger);
-        astList.push(ast);
-      } catch (e) {
-        logger.error(e);
-      }
-    }
-
-    for (const ast of astList) {
-      try {
-        await build(config, ast, astBuilder, logger);
+        const parsedDocument = await parseSpec(specPath, logger);
+        await build(config, parsedDocument, logger);
       } catch (e) {
         logger.error(e);
       }

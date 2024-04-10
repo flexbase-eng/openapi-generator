@@ -1,0 +1,119 @@
+{{#*inline "lookupReference"}}{{& replace (replace (resolveReference name type)) (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{/inline}}
+
+{{~#*inline "validator"}}
+{{~#compare validation "!==" false}}
+{{#compare type "===" "reference"}}
+    utilities.handleValidation<{{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}}>({{input}}, {{& prefix}}{{>lookupReference name=$ref type="validators"}}{{& suffix}}, utilities.handleRequestValidatorErrors);
+{{else}}
+    {{log "Only references are supported for validation currently" level="warn"}}
+{{/compare}}
+{{else}}
+{{input}} as {{>model.expression . prefix=./modelPrefix suffix=./modelSuffix}};
+{{/compare~}}
+{{/inline~}}
+
+{{~#*inline "bodyParser"}}
+middleware.bodyParserMiddleware([
+{{#if .}}
+{{#compare type "===" "reference"}}
+{{#jsonRef $ref}}{{#each content-type}}'{{@key}}',{{/each}}{{/jsonRef}}
+{{else}}
+    {{log "Only references are supported for request parsing currently" level="warn"}}
+{{/compare}}
+{{/if}}
+])
+{{/inline~}}
+
+{{~#*inline "bodyType"}}
+{{#compare type "===" "reference"}}
+{{#jsonRef $ref}}{{#each content-type}}{{#startsWith "multipart" @key}}utilities.MultipartBody{{else}}{{>model.expression . prefix="models."}}{{/startsWith}}{{#unless @last}}|{{/unless}}{{/each}}{{/jsonRef}}
+{{else}}
+    {{log "Only references are supported for request type currently" level="warn"}}
+{{/compare}}
+{{/inline~}}
+
+{{~#*inline "bodyValidator"}}
+{{#compare type "===" "reference"}}
+{{#jsonRef $ref}}
+{{#if (hasLength content-type 1)}}const body = {{#each content-type}}{{#startsWith "multipart" @key}}ctx.body{{else}}{{>validator . input=../../input prefix=../../prefix modelPrefix=../../modelPrefix validation=../../validation}}{{/startsWith}}{{/each}}
+{{else}}
+let body;
+{{#each content-type}}
+{{#if @last}}else{{else}}{{#unless @first}}else {{/unless}}if(ctx.request.type === '{{@key}}'){{/if}} {
+body = {{#startsWith "multipart" @key}}ctx.body{{else}}{{>validator . input=../../input prefix=../../prefix modelPrefix=../../modelPrefix validation=../../validation}}{{/startsWith}}
+}{{/each}}
+{{/if}}
+{{/jsonRef}}
+{{else}}
+    {{log "Only references are supported for request validator currently" level="warn"}}
+{{/compare}}
+{{/inline~}}
+
+{{~#*inline "responseType"}}
+{{#compare type "===" "reference"}}
+{{#jsonRef $ref}}{{#each content-type}}'{{@key}}',{{/each}}{{/jsonRef}}
+{{else}}
+    {{log "Only references are supported for response type currently" level="warn"}}
+{{/compare}}
+{{/inline~}}
+
+
+{{~#*inline "responsesType"}}
+{{#compare type "===" "reference"}}
+{{#jsonRef $ref}}{{#each responses}}{{>responseType}}{{/each}}{{/jsonRef}}
+{{else}}
+    {{log "Only references are supported for response type currently" level="warn"}}
+{{/compare}}
+{{/inline~}}
+
+{{~#compare type "===" "operation"}}
+{{>comments}}
+{{prefix}}Router.{{lowercase method}}<object, object, {{#if request}}{{>bodyType request prefix="models."}},{{/if}}>('{{replace path (toRegex "{(\w+)}" "g") ":$1"}}', 
+    {{~#if (isArray security)}}
+    {{^isEmpty security}}middleware.routerAuthMiddleware([{{#each security}}{{#each names}}'{{.}}', {{/each}}{{/each}}]),
+    {{else}} /* anonymous */
+    {{/isEmpty}}
+    {{else}}middleware.routerAuthMiddleware({{extensions.x-mfa}}),{{/if~}}
+    {{>bodyParser request}},
+    async (ctx, next) => {
+    {{#if request}}
+    {{>bodyValidator request input="ctx.body" prefix="validators." modelPrefix="models." validation=extensions.x-validation}};
+    {{/if}}
+    {{#if pathParameter}}
+    const params = {{>validator pathParameter input="ctx.params" prefix="validators." modelPrefix="models."}}
+    {{/if}}    
+    {{#if queryParameter}}
+    const query = {{>validator queryParameter input="ctx.request.query" prefix="validators." modelPrefix="models."}}
+    {{/if}}
+    {{#if headerParameter}}
+    const headers = {{>validator headerParameter input="ctx.request.headers" prefix="validators." modelPrefix="models."}};
+    {{/if}}
+    {{#if cookieParameter}}
+    const cookies = {{>validator cookieParameter input="ctx.cookies" prefix="validators." modelPrefix="models."}};
+    {{/if}}
+
+    {{#if response}}
+    const response: {{>model.expression response prefix="models."}} =
+    {{else}}
+    const response = undefined;
+    {{/if}}
+    await handlers.{{& replace operationId (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}
+    (ctx,
+        {{~#if request}}body,{{/if~}}
+        {{~#if pathParameter}}params,{{/if~}}
+        {{~#if queryParameter}}query,{{/if~}}
+        {{~#if headerParameter}}headers,{{/if~}}
+        {{~#if cookieParameter}}cookies,{{/if~}}       
+    );
+    
+    utilities.serializeResponse(ctx, response, [{{#if response}}{{>responsesType response}}{{/if}}]);
+
+    await next();
+});
+{{/compare~}}
+
+{{~#compare type "===" "path"}}
+{{#if operations}}{{#each operations}}
+{{>route.declaration . prefix=../prefix path=../name}}
+{{/each}}{{/if}}
+{{/compare~}}

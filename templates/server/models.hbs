@@ -1,0 +1,29 @@
+/* eslint-disable */
+/* ------------------------------------------------------------
+ File auto-generated
+
+ @summary {{document.title}}
+ @description {{document.description}}
+ @version {{document.version}}
+------------------------------------------------------------ */
+
+{{#clearReferences}}{{/clearReferences}}
+
+{{#document.components}}
+ 
+{{>references}}
+
+import { Stream } from 'node:stream';
+
+{{#each models}}{{>model.declaration suffix="Model"}}{{/each}}
+{{#each parameters}}{{>model.declaration suffix="Parameter"}}{{/each}}
+{{#each pathParameters}}{{>model.declaration suffix="PathParameter"}}{{/each}}
+{{#each headerParameters}}{{>model.declaration suffix="HeaderParameter"}}{{/each}}
+{{#each queryParameters}}{{>model.declaration suffix="QueryParameter"}}{{/each}}
+{{#each cookieParameters}}{{>model.declaration suffix="CookieParameter"}}{{/each}}
+{{#each requests}}{{>model.declaration suffix="Request"}}{{/each}}
+{{#each requestObjects}}{{>model.declaration suffix="RequestObject"}}{{/each}}
+{{#each responses}}{{>model.declaration suffix="Response"}}{{/each}}
+{{#each responseObjects}}{{>model.declaration suffix="ResponseObject"}}{{/each}}
+
+{{/document.components}}

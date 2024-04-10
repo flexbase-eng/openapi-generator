@@ -1,0 +1,17 @@
+/* eslint-disable */
+/* ------------------------------------------------------------
+ File auto-generated
+
+ @summary {{document.apiName}}
+ @description {{document.apiDescription}}
+ @version {{document.version}}
+------------------------------------------------------------ */
+
+{{#document}}
+
+import Router from '@koa/router';
+import { FlexbaseContext } from '@shared/models/index.js';
+
+export const {{replace apiName (toRegex "(-|\.| )+" "g") "_"}}Router = new Router<{}, FlexbaseContext>();
+
+{{/document}}

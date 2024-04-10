@@ -1,33 +1,29 @@
 {
-    "include": [
-        "./openapi/**/*.yaml"
-    ],
-    "sharedTemplates": [
-        "./templates/koa/**/*.hbs"
-    ],
-    "generate": {
-        "index": {
-            "target": "./output/{api}/{name}.ts",
-            "template": "./templates/koa/document.hbs"
-        },
-        "operations": {
-            "target": "",
-            "template": "",
-            "additionalTemplates": []
-        },
-        "models": {
-            "target": "",
-            "template": "",
-            "additionalTemplates": []
-        },
-        "validations": {
-            "target": "",
-            "template": "",
-            "additionalTemplates": []
-        }
+  "include": ["./tests/data/*.yaml"],
+  "sharedTemplates": ["./templates/server/*.hbs"],
+  "generate": {
+    "router.ts": {
+      "target": "./output/{api}/router.ts",
+      "template": "./templates/server/router.hbs"
     },
-    "prettier": true,
-    "tags": true,
-    "flatten": true,
-    "references": true
+    "index": {
+      "target": "./output/{api}/{name}/generated/{name}.ts",
+      "template": "./templates/server/index.hbs"
+    },
+    "routes": {
+      "target": "./output/{api}/{name}/generated/{name}.routes.ts",
+      "template": "./templates/server/routes.hbs"
+    },
+    "models": {
+      "target": "./output/{api}/{name}/generated/{name}.models.ts",
+      "template": "./templates/server/models.hbs"
+    },
+    "validations": {
+      "target": "./output/{api}/{name}/generated/{name}.validations.ts",
+      "template": "./templates/server/validations.hbs"
+    }
+  },
+  "prettier": true,
+  "tags": true,
+  "debugPath": "./output/debug/{api}/"
 }
