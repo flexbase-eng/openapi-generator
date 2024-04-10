@@ -7,7 +7,7 @@
     "strict": true,
     "outDir": "dist",
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
+    "noFallthroughCasesInSwitch": false,
     "module": "esnext",
     "moduleResolution": "node",
     "stripInternal": true,

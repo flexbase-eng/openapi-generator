@@ -11,7 +11,7 @@ export const compareParsedNodes = (nodeA?: ParsedNode, nodeB?: ParsedNode): bool
   if (isParameter(nodeA) && isParameter(nodeB)) {
     return compareParameters(nodeA, nodeB, compareParsedNodes);
   } else if (isPrimative(nodeA) && isPrimative(nodeB)) {
-    return comparePrimatives(nodeA, nodeB, compareParsedNodes);
+    return comparePrimatives(nodeA, nodeB);
   }
 
   return false;

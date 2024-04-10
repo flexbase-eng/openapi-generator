@@ -83,7 +83,7 @@ export class Globalizer {
     const generatedParameters: Component[] = [];
     const pathNameHash = ''; // String(murmurHash(path.name, 42));
 
-    generatedParameters.push(...this.globalizePathItemParameters(pathNameHash, pathItem));
+    generatedParameters.push(...this.globalizePathItemParameters());
 
     for (const operation of pathItem.operations) {
       if (operation.tags) {
