@@ -12,7 +12,6 @@ export interface ResponseObject extends OptimizedNode {
   description: string;
   headers?: HeaderObject;
   'content-type'?: Record<string, OptimizedNode>;
-  //links?: NamedLink[];
 }
 
 export interface Response extends OptimizedNode {
