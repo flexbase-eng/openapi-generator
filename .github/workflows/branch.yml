@@ -15,7 +15,9 @@ jobs:
     needs: build
     uses: flexbase-eng/.github/.github/workflows/test.unit.typescript.yml@main
     secrets: inherit
-
+    with:
+      node_version: '20'
+      
   coverage:
     name: Compute test coverage
     needs: [unit-test]
