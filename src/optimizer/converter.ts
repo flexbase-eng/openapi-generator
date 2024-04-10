@@ -192,15 +192,18 @@ export class Converter {
       definitionName = component?.name;
       definition = component?.definition;
     } else {
-      definitionName = parsedNode.name;
+      definitionName = parsedNode.definition.name;
       definition = parsedNode.definition;
+      if (!definitionName) {
+        definitionName = `${parsedNode.name}${parsedNode.status}`;
+      }
     }
 
     if (definition) {
       const response = this.convertResponseObject(definition, parsedComponents, components, status);
-      const name = `${response.name ?? definitionName ?? '_' + String(murmurHash(JSON.stringify(response), 42))}ResponseObject`;
-      const referenceName = `#/components/responses/${name}`;
-      this.addComponent(name, response, components, 'responses');
+      const name = `${response.name ?? definitionName ?? '_' + String(murmurHash(JSON.stringify(response), 42))}`;
+      const referenceName = `#/components/responseObjects/${name}`;
+      this.addComponent(name, response, components, 'responseObjects');
       return <optimized.Reference>{ type: 'reference', $ref: referenceName };
     } else {
       return { type: 'responseObject', status, name: definitionName, description: parsedNode.description ?? '' };
@@ -260,10 +263,10 @@ export class Converter {
     parsedNode.content?.forEach(requestContent => {
       let node = this.convertParsedNode(requestContent.definition, parsedComponents, components);
       if (!optimized.isReference(node)) {
-        const name = `${node.name ?? parsedNodeName ?? '_' + String(murmurHash(JSON.stringify(node), 42))}RequestObject`;
+        const name = `${node.name ?? parsedNodeName ?? '_' + String(murmurHash(JSON.stringify(node), 42))}`;
         node.name = name;
-        const referenceName = `#/components/models/${name}`;
-        this.addComponent(name, node, components, 'models');
+        const referenceName = `#/components/requestObjects/${name}`;
+        this.addComponent(name, node, components, 'requestObjects');
 
         node = <optimized.Reference>{ type: 'reference', $ref: referenceName };
       }
