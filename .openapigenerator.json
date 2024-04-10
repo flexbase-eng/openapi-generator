@@ -25,7 +25,5 @@
   },
   "prettier": true,
   "tags": true,
-  "flatten": true,
-  "references": true,
   "debugPath": "./output/debug/{api}/"
 }

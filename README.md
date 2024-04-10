@@ -33,6 +33,42 @@ openapi-generator -i <openapispec>.yaml -o . -t <template>.hbs
 | `--no-tags`              |                                                            | Disable organization by tags                                         |
 | `-d` or `--debug [path]` |                                                            | Output the internal representation                                   |
 
+## Configuration
+
+Example configuration
+
+```json
+{
+  "include": ["./tests/data/*.yaml"],
+  "sharedTemplates": ["./templates/server/*.hbs"],
+  "generate": {
+    "router.ts": {
+      "target": "./output/{api}/router.ts",
+      "template": "./templates/server/router.hbs"
+    },
+    "index": {
+      "target": "./output/{api}/{name}/generated/{name}.ts",
+      "template": "./templates/server/index.hbs"
+    },
+    "routes": {
+      "target": "./output/{api}/{name}/generated/{name}.routes.ts",
+      "template": "./templates/server/routes.hbs"
+    },
+    "models": {
+      "target": "./output/{api}/{name}/generated/{name}.models.ts",
+      "template": "./templates/server/models.hbs"
+    },
+    "validations": {
+      "target": "./output/{api}/{name}/generated/{name}.validations.ts",
+      "template": "./templates/server/validations.hbs"
+    }
+  },
+  "prettier": true,
+  "tags": true,
+  "debugPath": "./output/debug/{api}/"
+}
+```
+
 ## Templates
 
 Below are some example [handlebars](https://handlebarsjs.com/) templates to generate a typescript output file
