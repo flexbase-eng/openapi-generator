@@ -1,0 +1,10 @@
+{{#wrap . "/**\n" "\n*/ \n"}}
+{{~#summary}}{{newline}}* @summary {{& .}}{{/summary}}
+{{~#if description}}{{newline}}* @description {{& description}}{{/if}}
+{{~#deprecated}}{{newline}}* @deprecated{{/deprecated}}
+{{~#if (isArray security)}}{{^isEmpty security}}{{newline}}* @remarks required scopes: [{{#each security}}{{#each names}}'{{.}}', {{/each}}{{/each}}]{{~else}}{{newline}}* @remarks anonymous route{{/isEmpty}}{{/if}}
+{{~#if definition.readOnly}}{{newline}}* @readonly{{/if}}
+{{~#if (isDefined definition.default)}}{{newline}}* @default {{& definition.default}}{{/if}}
+{{~#if (isDefined definition.minLength)}}{{newline}}* minimum length of {{& definition.minLength}}{{/if}}
+{{~#if (isDefined definition.maxLength)}}{{newline}}* maximum length of {{& definition.maxLength}}{{/if}}
+{{/wrap}}

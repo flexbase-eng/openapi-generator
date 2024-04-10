@@ -6,7 +6,6 @@ export default defineConfig({
     environment: 'node',
     setupFiles: 'tests/setup.ts',
     coverage: {
-      provider: 'istanbul',
       reporter: ['lcov'],
     },
   },

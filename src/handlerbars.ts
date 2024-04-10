@@ -109,84 +109,6 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
     return len === length;
   });
 
-  // handlebars.registerHelper('registerValidator', function (context, options: Handlebars.HelperOptions) {
-  //   if (!IsModelDeclaration(context) || context.referenceName === undefined) {
-  //     throw Error('Expected a model declaration with a reference name for validator');
-  //   }
-
-  //   const referenceName = context.referenceName + '/validator';
-
-  //   const name = options.fn(context);
-
-  //   if (referenceRegistrations.has(referenceName)) {
-  //     handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
-  //   }
-
-  //   referenceRegistrations.set(referenceName, name);
-
-  //   return;
-  // });
-
-  // handlebars.registerHelper('registerReference2', function (context, location, options: Handlebars.HelperOptions) {
-  //   const name = options.fn(context);
-
-  //   const referenceName = location + context.name;
-
-  //   if (referenceRegistrations.has(referenceName)) {
-  //     handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
-  //   }
-
-  //   referenceRegistrations.set(referenceName, name);
-
-  //   return;
-  // });
-
-  // handlebars.registerHelper('registerValidator2', function (context, location, options: Handlebars.HelperOptions) {
-  //   const name = options.fn(context);
-
-  //   const referenceName = location + context.name + '/validator';
-
-  //   if (referenceRegistrations.has(referenceName)) {
-  //     handlebars.log(2, `Multiple references ${referenceName} registered, last one wins!`);
-  //   }
-
-  //   referenceRegistrations.set(referenceName, name);
-
-  //   return;
-  // });
-
-  // handlebars.registerHelper('resolveReference2', function (context) {
-  //   const ref = referenceRegistrations.get(context.$ref);
-  //   if (!ref) {
-  //     handlebars.log(2, `Reference ${context.$ref} not registered`);
-  //   }
-  //   return ref;
-  // });
-
-  // handlebars.registerHelper('resolveValidator', function (context) {
-  //   if (!IsReferenceExpression(context) || context.key === undefined) {
-  //     throw Error('Expected a reference expression with a reference key for validator', { cause: context });
-  //   }
-
-  //   const referenceKey = context.key + '/validator';
-
-  //   const ref = referenceRegistrations.get(referenceKey);
-  //   if (!ref) {
-  //     handlebars.log(2, `Reference ${referenceKey} not registered`);
-  //   }
-  //   return ref;
-  // });
-
-  // handlebars.registerHelper('resolveValidator2', function (context) {
-  //   const referenceKey = context.$ref + '/validator';
-
-  //   const ref = referenceRegistrations.get(referenceKey);
-  //   if (!ref) {
-  //     handlebars.log(2, `Reference ${referenceKey} not registered`);
-  //   }
-  //   return ref;
-  // });
-
   handlebars.registerHelper('wrap', function (context, prefix, suffix, options: Handlebars.HelperOptions) {
     const rendered = options.fn(context);
 
@@ -196,8 +118,16 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
 
     const trimmed = rendered.trim();
 
+    if (prefix) {
+      prefix = prefix.replaceAll('\\n', '\n');
+    }
+
+    if (suffix) {
+      suffix = suffix.replaceAll('\\n', '\n');
+    }
+
     if (trimmed.length > 0) {
-      return `${prefix}${rendered}${suffix}`;
+      return `${prefix}${trimmed}${suffix}`;
     }
 
     return trimmed;

@@ -1,26 +1,26 @@
 {
-  "include": ["../platform/openapi/*.yaml"],
-  "sharedTemplates": ["../platform/openapi/templates/*.hbs"],
+  "include": ["./tests/data/*.yaml"],
+  "sharedTemplates": ["./templates/server/*.hbs"],
   "generate": {
     "router.ts": {
       "target": "./output/{api}/router.ts",
-      "template": "../platform/openapi/templates/router.hbs"
+      "template": "./templates/server/router.hbs"
     },
     "index": {
       "target": "./output/{api}/{name}/generated/{name}.ts",
-      "template": "../platform/openapi/templates/index.hbs"
+      "template": "./templates/server/index.hbs"
     },
     "routes": {
       "target": "./output/{api}/{name}/generated/{name}.routes.ts",
-      "template": "../platform/openapi/templates/routes.hbs"
+      "template": "./templates/server/routes.hbs"
     },
     "models": {
       "target": "./output/{api}/{name}/generated/{name}.models.ts",
-      "template": "../platform/openapi/templates/models.hbs"
+      "template": "./templates/server/models.hbs"
     },
     "validations": {
       "target": "./output/{api}/{name}/generated/{name}.validations.ts",
-      "template": "../platform/openapi/templates/validations.hbs"
+      "template": "./templates/server/validations.hbs"
     }
   },
   "prettier": true,

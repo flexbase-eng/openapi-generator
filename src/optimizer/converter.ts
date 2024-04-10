@@ -182,7 +182,7 @@ export class Converter {
     parsedComponents: parsed.Components,
     components: optimized.Components,
   ): optimized.ResponseObject | optimized.Reference {
-    const status = Number(parsedNode.status);
+    const status = Number.isNaN(Number(parsedNode.status)) ? 200 : Number(parsedNode.status);
 
     let definitionName: string | undefined;
     let definition: parsed.ResponseBody | undefined;

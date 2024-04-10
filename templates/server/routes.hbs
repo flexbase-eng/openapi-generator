@@ -1,0 +1,29 @@
+/* eslint-disable */
+/* ------------------------------------------------------------
+ File auto-generated
+
+ @summary {{document.title}}
+ @description {{document.description}}
+ @version {{document.version}}
+------------------------------------------------------------ */
+
+{{clearReferences}}
+
+{{#document}}
+{{#if paths}}
+import * as middleware from '@middleware/index.js';
+import * as utilities from '@shared/utilities/openapi.utilities.js';
+import * as models from './{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}.models.js';
+import * as validators from './{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}.validations.js';
+import * as handlers from '@modules/{{lowercase (replace apiName (toRegex "(-|\.| )+" "g") "-")}}/routes/{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}/{{lowercase (replace title (toRegex "(-|\.| )+" "g") "_")}}.handlers.js';
+import { {{replace apiName (toRegex "(-|\.| )+" "g") "_"}}Router } from '@modules/{{lowercase (replace apiName (toRegex "(-|\.| )+" "g") "-")}}/routes/router.js'
+
+
+{{#components}}{{>references}}{{/components}}
+
+{{#each paths}}
+{{>route.declaration prefix=(replace ../apiName (toRegex "(-|\.| )+" "g") "_")}}
+{{/each}}
+
+{{/if}}
+{{/document}}

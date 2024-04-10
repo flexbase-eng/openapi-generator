@@ -690,6 +690,10 @@ export abstract class OpenApiParser {
         const status = record[0];
         const schema = record[1];
 
+        if (Number.isNaN(Number(status))) {
+          this._logger.warn(`Operation ${operationId} has invalid response status: ${status}. Will use 200 instead`);
+        }
+
         const definition = this.parseResponse(schema, components);
         responses.push({
           type: 'response',

@@ -1,28 +1,20 @@
-import { assert, expect, test } from 'vitest';
-import OpenAPIParser from '@readme/openapi-parser';
-import { OpenAPI } from 'openapi-types';
-import { IsDocument } from '../src/utilities/openapi.utilities';
-import { OpenApiSpecBuilder } from '../src/oas-tree/oas.builder';
-import { OpenApiSpecConverter } from '../src/oas-tree/oas.converter';
-import { NoopLogger } from '@flexbase/logger';
+import { expect, test } from 'vitest';
+import { noopLogger } from '@flexbase/logger';
+import { parseSpec } from '../src/parse';
+import { OpenApiOptimizer } from '../src/optimizer/openapi.optimizer';
+import { Organizer } from '../src/parser/organizer';
 
 test('petstore schemas', async () => {
-  const apiDoc: OpenAPI.Document = await OpenAPIParser.parse('./tests/data/petstore.yaml');
+  const organizer = new Organizer(noopLogger);
+  const compiler = new OpenApiOptimizer(noopLogger);
 
-  if (!IsDocument(apiDoc)) {
-    assert.fail();
-  }
+  const parsedDocument = await parseSpec('./tests/data/petstore.yaml', noopLogger);
 
-  const oasBuilder = new OpenApiSpecBuilder(new NoopLogger());
-  const oasConverter = new OpenApiSpecConverter();
+  expect(parsedDocument.paths).toHaveLength(13);
 
-  const oasTree = oasBuilder.generateOasTree(apiDoc);
+  const documents = organizer.organizeByTags(parsedDocument);
 
-  expect(oasTree.declarations).toHaveLength(12);
-  expect(oasTree.operations).toHaveLength(19);
+  const optimizedDocs = documents.map(doc => compiler.optimize(doc));
 
-  const poco = oasConverter.convertOasToPoco(oasTree);
-
-  expect(poco.declarations).toHaveLength(12);
-  expect(poco.operations).toHaveLength(19);
+  expect(optimizedDocs).toHaveLength(3);
 });

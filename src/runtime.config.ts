@@ -4,8 +4,6 @@ export interface OpenApiGeneratorConfiguationGenerate {
   script?: string;
   additionalTemplates?: string[];
   tags?: boolean;
-  flatten?: boolean;
-  references?: boolean;
   skipEmpty?: boolean;
 }
 
@@ -15,8 +13,6 @@ export interface OpenApiGeneratorConfiguation {
   generate?: Record<string, OpenApiGeneratorConfiguationGenerate>;
   prettier: boolean;
   tags: boolean;
-  flatten: boolean;
-  references: boolean;
   debug: boolean;
   debugPath: string;
   skipEmpty: boolean;

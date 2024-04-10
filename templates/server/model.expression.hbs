@@ -1,0 +1,34 @@
+{{#*inline "lookupReference"}}{{& replace (replace (resolveReference name type)) (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{/inline}}
+{{~#if (or (compare type "===" "object") (compare type "===" "headerObject") (compare type "===" "parameterObject"))}}
+    {
+    {{#each properties}}{{>model.expression}}{{/each}}
+    }
+{{/if}}
+{{#if (or (compare type "===" "property") (compare type "===" "header") (compare type "===" "parameter"))}}{{>comments}}'{{name}}'{{#not required}}{{#not (isDefined definition.default)}}?{{/not}}{{/not}}: {{>model.expression definition}};{{/if}}
+{{#compare type "===" "array"}}({{>model.expression definition}})[]{{/compare}}
+{{#compare type "===" "string"}}{{#if enum}}"{{& join enum "\"|\""}}"{{else compare format "===" "binary"}}Stream{{else}}string{{/if}}{{/compare}}
+{{#compare type "===" "boolean"}}boolean{{/compare}}
+{{#if (or (compare type "===" "number") (compare type "===" "integer"))}}number{{/if}}
+{{#compare type "===" "null"}}null{{/compare}}
+{{~#compare type "===" "reference"}}{{& prefix}}{{>lookupReference name=$ref type='models'}}{{& suffix}}{{/compare}}
+{{~#compare type "===" "composite"}}{{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}&{{/unless}}{{/forEach}}{{/if}}{{/compare}}
+{{~#compare type "===" "union"}}{{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}{{/compare}}
+{{~#compare type "===" "responseObject"}}
+{
+    $status: {{status}}; 
+    {{#if headers}}$headers: {{>model.expression headers}} ; {{/if~}}
+    {{#if content-type}}{{#each content-type}}'{{@key}}': {{>model.expression .}} ; {{/each}}{{/if}}
+}
+{{/compare}}
+{{~#compare type "===" "response"}}
+{{#if responses}}
+{{#forEach responses}}{{>model.expression}}{{#unless isLast}}|{{/unless}}{{/forEach}}
+{{else}}{}
+{{/if}}
+;
+{{/compare}}
+{{~#compare type "===" "request"}}
+{
+    {{#each content-type}}'{{@key}}': {{>model.expression .}} ; {{/each}}
+}
+{{/compare}}

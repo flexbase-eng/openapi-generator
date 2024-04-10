@@ -1,4 +1,3 @@
-import { murmurHash } from '../utilities/murmur.hash';
 import { ParsedDocument } from './parsed.document';
 import { Component, Components, Operation, Parameter, Path, PathItem, Reference, isReference } from './parsed_nodes';
 import { Tag } from './parsed_nodes/tag';

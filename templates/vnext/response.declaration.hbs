@@ -1,2 +1,0 @@
-{{>comments}}
-export type {{& replace (replace name (toRegex "(-|\.| )+" "g") "_") (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{& suffix}} = {{>response.expression}} ;
