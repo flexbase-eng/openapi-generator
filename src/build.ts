@@ -1,4 +1,4 @@
-import { createHandlebars, referenceRegistrations } from './handlerbars';
+import { createHandlebars } from './handlerbars';
 import { OpenApiGeneratorConfiguation, OpenApiGeneratorConfiguationGenerate } from './runtime.config';
 import Path from 'path';
 import fs from 'fs-extra';
@@ -130,7 +130,6 @@ const generate = async (
   const handlebars = createHandlebars(jsonSchema);
   registerPartials(handlebars, templates);
 
-  referenceRegistrations.clear();
   const templateFile = await fs.readFile(generateConfig.template, 'utf8');
   const handlebarTemplate = handlebars.compile(templateFile);
   const fileName = substituteParams(generateConfig.target, variables);

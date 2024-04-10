@@ -107,8 +107,7 @@ export class OpenApiOptimizer {
     let cookieParams: (parsed.Reference | parsed.Parameter)[] | undefined;
 
     if (operation.parameters) {
-      for (let i = 0; i < operation.parameters.length; ++i) {
-        const parameter = operation.parameters[i];
+      for (const parameter of operation.parameters) {
         const nodeParameter = parsed.isReference(parameter)
           ? this.lookupReference<parsed.Parameter>(parameter, document.components, 'parameters')?.definition
           : parameter;
@@ -284,11 +283,11 @@ export class OpenApiOptimizer {
 
   private optimizeComponentRecord(components: Record<string, optimized.OptimizedNode>): Record<string, optimized.OptimizedNode> {
     const entries = Object.entries(components);
-    for (let i = 0; i < entries.length; ++i) {
-      const component = entries[i][1];
+    for (const kvp of entries) {
+      const component = kvp[1];
       if (optimized.isComposite(component)) {
         const composite = this.compactComposite(component);
-        components[entries[i][0]] = composite;
+        components[kvp[0]] = composite;
       }
     }
 

@@ -109,7 +109,7 @@ export class Converter {
     };
   }
 
-  private convertUnion(parsedNode: parsed.Union, parsedComponents: parsed.Components, components: optimized.Components) {
+  private compress(parsedNode: parsed.Union | parsed.Composite, parsedComponents: parsed.Components, components: optimized.Components) {
     if (parsedNode.definitions.length === 1) {
       return this.convertParsedNode(parsedNode.definitions[0], parsedComponents, components);
     }
@@ -119,14 +119,12 @@ export class Converter {
     };
   }
 
+  private convertUnion(parsedNode: parsed.Union, parsedComponents: parsed.Components, components: optimized.Components) {
+    return this.compress(parsedNode, parsedComponents, components);
+  }
+
   private convertComposite(parsedNode: parsed.Composite, parsedComponents: parsed.Components, components: optimized.Components) {
-    if (parsedNode.definitions.length === 1) {
-      return this.convertParsedNode(parsedNode.definitions[0], parsedComponents, components);
-    }
-    return {
-      ...parsedNode,
-      definitions: parsedNode.definitions.map(p => this.convertParsedNode(p, parsedComponents, components)),
-    };
+    return this.compress(parsedNode, parsedComponents, components);
   }
 
   private convertExclusion(parsedNode: parsed.Exclusion, parsedComponents: parsed.Components, components: optimized.Components): optimized.Exclusion {

@@ -21,8 +21,6 @@ import {
 import { ChalkLogger } from './chalk.logger';
 import { $Refs } from '@stoplight/json-schema-ref-parser';
 
-export const referenceRegistrations = new Map<string, string>();
-
 export const references = new Map<string, Map<string, string>>();
 
 export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
@@ -48,8 +46,6 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
     const referenceValue = typeof context === 'object' && options ? options.fn(context) : context;
 
     referenceMap.set(referenceKey, referenceValue);
-
-    //console.log('register', referenceKey, referenceValue);
   });
 
   handlebars.registerHelper('resolveReference', function (context, referenceType, options: Handlebars.HelperOptions) {
@@ -64,8 +60,6 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
     if (!referenceValue) {
       handlebars.log(1, `Reference ${referenceKey} not registered with ${referenceType}`);
     }
-
-    //console.log('resolve', referenceKey, referenceValue);
 
     return referenceValue;
   });
