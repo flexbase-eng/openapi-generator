@@ -460,10 +460,14 @@ export abstract class OpenApiParser {
     const encodings = this.parseMediaEncoding(mediaTypeObject.encoding, components);
     let omitDefinition;
 
-    if (definition && isReference(definition)) {
-      const found = this.lookupReference(definition, components, 'models');
-      if (found) {
-        omitDefinition = this.createOmitDefinition(found.definition, omitType, components);
+    if (definition) {
+      if (isReference(definition)) {
+        const found = this.lookupReference(definition, components, 'models');
+        if (found) {
+          omitDefinition = this.createOmitDefinition(found.definition, omitType, components);
+        }
+      } else {
+        omitDefinition = this.createOmitDefinition(definition, omitType, components);
       }
     }
 
