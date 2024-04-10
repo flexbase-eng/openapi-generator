@@ -80,8 +80,8 @@ export const compareModifiers = (a: Modifiers, b: Modifiers): boolean => {
   if (typeof a.required === 'boolean' && typeof b.required === 'boolean') {
     same &&= a.required === b.required;
   } else if (Array.isArray(a.required) && Array.isArray(b.required) && a.required.length === b.required.length) {
-    const ar = a.required.sort();
-    const br = b.required.sort();
+    const ar = a.required.sort((a1, b1) => a1.localeCompare(b1));
+    const br = b.required.sort((a1, b1) => a1.localeCompare(b1));
     for (let i = 0; i < ar.length; ++i) {
       same &&= ar[i] == br[i];
     }
@@ -90,8 +90,8 @@ export const compareModifiers = (a: Modifiers, b: Modifiers): boolean => {
   }
 
   if (Array.isArray(a.enum) && Array.isArray(b.enum)) {
-    const ar = a.enum.sort();
-    const br = b.enum.sort();
+    const ar = a.enum.sort((a1, b1) => a1.localeCompare(b1));
+    const br = b.enum.sort((a1, b1) => a1.localeCompare(b1));
     for (let i = 0; i < ar.length; ++i) {
       same &&= ar[i] == br[i];
     }
