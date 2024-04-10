@@ -5,10 +5,6 @@
 
 [OpenAPI](https://www.openapis.org/) code generator.
 
-#### TODO
-
-- [] finish full support for openapi spec v3
-
 ## Getting started
 
 ```
@@ -27,350 +23,280 @@ npm i @flexbase/openapi-generator -D
 openapi-generator -i <openapispec>.yaml -o . -t <template>.hbs
 ```
 
-| Option               | Argument                                                   | Description                                                                   |
-| -------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `-i` or `--input`    | path                                                       | OpenAPI spec to parse (_.json, _.yaml)                                        |
-| `-n` or `--name`     | name                                                       | The output file name to use. Defaults to the title of the OpenAPI spec        |
-| `-e` or `--ext`      | ext                                                        | The file extension to use. Defaults to .ts                                    |
-| `-o` or `--output`   | path                                                       | An optional output path                                                       |
-| `-t` or `--template` | path                                                       | The [handlebars](https://handlebarsjs.com/) template to use                   |
-| `-p` or `--partials` | [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) | Optional partial [handlebars](https://handlebarsjs.com/) templates to include |
-| `-d` or `--debug`    |                                                            | Output the internal ast representation                                        |
+| Option                   | Argument                                                   | Description                                                          |
+| ------------------------ | ---------------------------------------------------------- | -------------------------------------------------------------------- |
+| `--include`              | [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) | Specifies the glob pattern for files to parse                        |
+| `--sharedTemplates`      | [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) | Specifies the glob pattern for shared templates                      |
+| `--config`               | file                                                       | Specify a configuration to use. Defaults to `.openapigenerator.json` |
+| `--no-prettier`          |                                                            | Disable prettier                                                     |
+| `--no-skipempty`         |                                                            | Generate empty files                                                 |
+| `--no-tags`              |                                                            | Disable organization by tags                                         |
+| `-d` or `--debug [path]` |                                                            | Output the internal representation                                   |
 
 ## Templates
 
 Below are some example [handlebars](https://handlebarsjs.com/) templates to generate a typescript output file
 
-### `document.hbs` template
+### `models.hbs` template
 
-https://github.com/flexbase-eng/openapi-generator/blob/main/templates/nestjs/document.hbs
+https://github.com/flexbase-eng/openapi-generator/blob/main/templates/server/models.hbs
 
-### `declaration.hbs` partial template
+### `model.declaration.hbs` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/main/templates/nestjs/declaration.hbs
+https://github.com/flexbase-eng/openapi-generator/blob/main/templates/server/model.declaration.hbs
 
-### `expression.hbs` partial template
+### `model.expression.hbs` partial template
 
-https://github.com/flexbase-eng/openapi-generator/blob/main/templates/nestjs/expression.hbs
+https://github.com/flexbase-eng/openapi-generator/blob/main/templates/server/model.expression.hbs
 
 ## Example
 
 Generating the petstore openapi spec by running the following:
 
 ```
-openapi-generator yarn start -i './tests/data/petstore.yaml' -o ./output -t './templates/nestjs/document.hbs' -p './templates/nestjs/**/*.hbs' -n petstore -d
+openapi-generator
 ```
 
 or
 
 ```
-yarn start:petstore
+yarn start
 ```
 
-Will output two files `petstore.ts` and `petstore.ts.ast.json`
+will generate code under `./output/swagger-petstore-openapi-3-0/`
 
-### Output `petstore.ts`
+### Output `{output}/pet/generated/pet.routes.ts`
 
 ```ts
 /* eslint-disable */
 /* ------------------------------------------------------------
  File auto-generated
 
- @summary Swagger Petstore
- @description 
- @version 1.0.0
+ @summary pet
+ @description Everything about your Pets
+ @version 1.0.17
 ------------------------------------------------------------ */
 
-import { Body, Get, Param, Post, Query, Patch, Delete, Headers, Head, Options, SetMetadata } from '@nestjs/common';
+import * as middleware from '@middleware/index.js';
+import * as utilities from '@shared/utilities/openapi.utilities.js';
+import * as models from './pet.models.js';
+import * as validators from './pet.validations.js';
+import * as handlers from '@modules/swagger-petstore-openapi-3-0/routes/pet/pet.handlers.js';
+import { Swagger_Petstore_OpenAPI_3_0Router } from '@modules/swagger-petstore-openapi-3-0/routes/router.js';
 
-const Scopes = (...scopes: string[]) => SetMetadata('scopes', scopes);
-
-export type Swagger_PetstoreControllerResponse<BODY = void, HEADER = Record<string, any>> = {
-  $status?: number;
-  $headers?: HEADER;
-  $body: BODY;
-};
-
-//#region Models
-export type PetModel = {
-  id: number;
-
-  name: string;
-
-  tag?: string;
-};
-
-export type PetsModel = PetModel[];
-
-export type ErrorModel = {
-  code: number;
-
-  message: string;
-};
-
-//#endregion
-
-//#region Path Parameters
-export type showPetByIdPathParameter = {
-  /*** @description The id of the pet to retrieve*/
-  petId: string;
-};
-
-//#endregion
-
-//#region Query Parameters
-export type listPetsQueryParameter = {
-  /*** @description How many items to return at one time (max 100)*/
-  limit?: number;
-};
-
-//#endregion
-
-export abstract class Swagger_PetstoreControllerGenerated {
-  protected abstract _listPets(query: listPetsQueryParameter): Promise<Swagger_PetstoreControllerResponse<PetsModel | ErrorModel>>;
-  @Get('/pets')
-  listPets(@Query() query: listPetsQueryParameter): Promise<Swagger_PetstoreControllerResponse<PetsModel | ErrorModel>> {
-    return this._listPets(query);
-  }
-
-  protected abstract _createPets(): Promise<Swagger_PetstoreControllerResponse<null | ErrorModel>>;
-  @Post('/pets')
-  createPets(): Promise<Swagger_PetstoreControllerResponse<null | ErrorModel>> {
-    return this._createPets();
-  }
-
-  protected abstract _showPetById(path: showPetByIdPathParameter): Promise<Swagger_PetstoreControllerResponse<PetModel | ErrorModel>>;
-  @Get('/pets/:petId')
-  showPetById(@Param() path: showPetByIdPathParameter): Promise<Swagger_PetstoreControllerResponse<PetModel | ErrorModel>> {
-    return this._showPetById(path);
-  }
-}
-```
-
-### Debug dump `petstore.ts.ast.json`
-
-```json
-{
-  "node": "Document",
-  "title": "Swagger Petstore",
-  "version": "1.0.0",
-  "models": [
-    {
-      "node": "ModelDeclaration",
-      "id": { "node": "IdentifierExpression", "name": "Pet" },
-      "definition": {
-        "node": "ObjectExpression",
-        "properties": [
-          {
-            "node": "PropertyDeclaration",
-            "id": { "node": "IdentifierExpression", "name": "id" },
-            "definition": { "node": "LiteralExpression", "value": "integer" },
-            "format": "int64",
-            "required": true
-          },
-          {
-            "node": "PropertyDeclaration",
-            "id": { "node": "IdentifierExpression", "name": "name" },
-            "definition": { "node": "LiteralExpression", "value": "string" },
-            "required": true
-          },
-          {
-            "node": "PropertyDeclaration",
-            "id": { "node": "IdentifierExpression", "name": "tag" },
-            "definition": { "node": "LiteralExpression", "value": "string" }
-          }
-        ]
-      },
-      "referenceName": "#/components/schemas/Pet"
-    },
-    {
-      "node": "ModelDeclaration",
-      "id": { "node": "IdentifierExpression", "name": "Pets" },
-      "definition": {
-        "node": "ArrayExpression",
-        "elements": { "node": "ReferenceExpression", "key": "#/components/schemas/Pet" }
-      },
-      "referenceName": "#/components/schemas/Pets"
-    },
-    {
-      "node": "ModelDeclaration",
-      "id": { "node": "IdentifierExpression", "name": "Error" },
-      "definition": {
-        "node": "ObjectExpression",
-        "properties": [
-          {
-            "node": "PropertyDeclaration",
-            "id": { "node": "IdentifierExpression", "name": "code" },
-            "definition": { "node": "LiteralExpression", "value": "integer" },
-            "format": "int32",
-            "required": true
-          },
-          {
-            "node": "PropertyDeclaration",
-            "id": { "node": "IdentifierExpression", "name": "message" },
-            "definition": { "node": "LiteralExpression", "value": "string" },
-            "required": true
-          }
-        ]
-      },
-      "referenceName": "#/components/schemas/Error"
+/**
+ * @summary Update an existing pet
+ * @description Update an existing pet by Id
+ * @remarks required scopes: []
+ */
+Swagger_Petstore_OpenAPI_3_0Router.put<object, object, models.PetModel | models.PetModel | models.PetModel>(
+  '/pet',
+  middleware.routerAuthMiddleware([]),
+  middleware.bodyParserMiddleware(['application/json', 'application/xml', 'application/x-www-form-urlencoded']),
+  async (ctx, next) => {
+    let body;
+    if (ctx.request.type === 'application/json') {
+      body = utilities.handleValidation<models.PetModel>(ctx.body, validators.PetModelValidator, utilities.handleRequestValidatorErrors);
+    } else if (ctx.request.type === 'application/xml') {
+      body = utilities.handleValidation<models.PetModel>(ctx.body, validators.PetModelValidator, utilities.handleRequestValidatorErrors);
+    } else {
+      body = utilities.handleValidation<models.PetModel>(ctx.body, validators.PetModelValidator, utilities.handleRequestValidatorErrors);
     }
-  ],
-  "responses": [],
-  "requests": [],
-  "pathParameters": [
-    {
-      "node": "ModelDeclaration",
-      "id": { "node": "IdentifierExpression", "name": "showPetById" },
-      "definition": {
-        "node": "ObjectExpression",
-        "properties": [
-          {
-            "node": "PropertyDeclaration",
-            "id": { "node": "IdentifierExpression", "name": "petId" },
-            "definition": { "node": "LiteralExpression", "value": "string" },
-            "description": "The id of the pet to retrieve",
-            "required": true
-          }
-        ]
-      },
-      "referenceName": "#/components/generated/showPetById"
+    const response: models.updatePetResponse = await handlers.updatePet(ctx, body);
+
+    utilities.serializeResponse(ctx, response, ['application/xml', 'application/json']);
+
+    await next();
+  },
+);
+
+/**
+ * @summary Add a new pet to the store
+ * @description Add a new pet to the store
+ * @remarks required scopes: []
+ */
+Swagger_Petstore_OpenAPI_3_0Router.post<object, object, models.PetModel | models.PetModel | models.PetModel>(
+  '/pet',
+  middleware.routerAuthMiddleware([]),
+  middleware.bodyParserMiddleware(['application/json', 'application/xml', 'application/x-www-form-urlencoded']),
+  async (ctx, next) => {
+    let body;
+    if (ctx.request.type === 'application/json') {
+      body = utilities.handleValidation<models.PetModel>(ctx.body, validators.PetModelValidator, utilities.handleRequestValidatorErrors);
+    } else if (ctx.request.type === 'application/xml') {
+      body = utilities.handleValidation<models.PetModel>(ctx.body, validators.PetModelValidator, utilities.handleRequestValidatorErrors);
+    } else {
+      body = utilities.handleValidation<models.PetModel>(ctx.body, validators.PetModelValidator, utilities.handleRequestValidatorErrors);
     }
-  ],
-  "headerParameters": [],
-  "queryParameters": [
-    {
-      "node": "ModelDeclaration",
-      "id": { "node": "IdentifierExpression", "name": "listPets" },
-      "definition": {
-        "node": "ObjectExpression",
-        "properties": [
-          {
-            "node": "PropertyDeclaration",
-            "id": { "node": "IdentifierExpression", "name": "limit" },
-            "definition": { "node": "LiteralExpression", "value": "integer" },
-            "description": "How many items to return at one time (max 100)",
-            "required": false
-          }
-        ]
-      },
-      "referenceName": "#/components/generated/listPets"
-    }
-  ],
-  "cookieParameters": [],
-  "referenceParameters": [],
-  "unknownParameters": [],
-  "operations": [
-    {
-      "node": "OperationDeclaration",
-      "id": { "node": "IdentifierExpression", "name": "listPets" },
-      "httpMethod": "Get",
-      "path": "/pets",
-      "responses": [
-        {
-          "node": "ResponseExpression",
-          "statusCode": "200",
-          "headers": {
-            "node": "ObjectExpression",
-            "properties": [
-              {
-                "node": "PropertyDeclaration",
-                "id": { "node": "IdentifierExpression", "name": "x-next" },
-                "definition": { "node": "LiteralExpression", "value": "string" },
-                "description": "A link to the next page of responses"
-              }
-            ]
-          },
-          "responses": [
-            {
-              "node": "MediaExpression",
-              "mediaType": "application/json",
-              "body": { "node": "ReferenceExpression", "key": "#/components/schemas/Pets" }
-            }
-          ]
-        },
-        {
-          "node": "ResponseExpression",
-          "statusCode": "default",
-          "responses": [
-            {
-              "node": "MediaExpression",
-              "mediaType": "application/json",
-              "body": { "node": "ReferenceExpression", "key": "#/components/schemas/Error" }
-            }
-          ]
-        }
-      ],
-      "requests": {
-        "node": "RequestExpression",
-        "queryParameters": {
-          "node": "ReferenceExpression",
-          "key": "#/components/generated/listPets"
-        }
-      }
-    },
-    {
-      "node": "OperationDeclaration",
-      "id": { "node": "IdentifierExpression", "name": "createPets" },
-      "httpMethod": "Post",
-      "path": "/pets",
-      "responses": [
-        {
-          "node": "ResponseExpression",
-          "statusCode": "201",
-          "responses": [{ "node": "LiteralExpression", "value": "null" }]
-        },
-        {
-          "node": "ResponseExpression",
-          "statusCode": "default",
-          "responses": [
-            {
-              "node": "MediaExpression",
-              "mediaType": "application/json",
-              "body": { "node": "ReferenceExpression", "key": "#/components/schemas/Error" }
-            }
-          ]
-        }
-      ],
-      "requests": { "node": "RequestExpression" }
-    },
-    {
-      "node": "OperationDeclaration",
-      "id": { "node": "IdentifierExpression", "name": "showPetById" },
-      "httpMethod": "Get",
-      "path": "/pets/{petId}",
-      "responses": [
-        {
-          "node": "ResponseExpression",
-          "statusCode": "200",
-          "responses": [
-            {
-              "node": "MediaExpression",
-              "mediaType": "application/json",
-              "body": { "node": "ReferenceExpression", "key": "#/components/schemas/Pet" }
-            }
-          ]
-        },
-        {
-          "node": "ResponseExpression",
-          "statusCode": "default",
-          "responses": [
-            {
-              "node": "MediaExpression",
-              "mediaType": "application/json",
-              "body": { "node": "ReferenceExpression", "key": "#/components/schemas/Error" }
-            }
-          ]
-        }
-      ],
-      "requests": {
-        "node": "RequestExpression",
-        "pathParameters": {
-          "node": "ReferenceExpression",
-          "key": "#/components/generated/showPetById"
-        }
-      }
-    }
-  ]
-}
+    const response: models.addPetResponse = await handlers.addPet(ctx, body);
+
+    utilities.serializeResponse(ctx, response, ['application/xml', 'application/json']);
+
+    await next();
+  },
+);
+
+/**
+ * @summary Find pet by ID
+ * @description Returns a single pet
+ * @remarks required scopes: []
+ */
+Swagger_Petstore_OpenAPI_3_0Router.get<object, object>(
+  '/pet/:petId',
+  middleware.routerAuthMiddleware([]),
+  middleware.bodyParserMiddleware([]),
+  async (ctx, next) => {
+    const params = utilities.handleValidation<models.getPetByIdPathParameter>(
+      ctx.params,
+      validators.getPetByIdPathParameterValidator,
+      utilities.handleRequestValidatorErrors,
+    );
+
+    const response: models.getPetByIdResponse = await handlers.getPetById(ctx, params);
+
+    utilities.serializeResponse(ctx, response, ['application/xml', 'application/json']);
+
+    await next();
+  },
+);
+
+/**
+ * @summary Updates a pet in the store with form data
+ * @remarks required scopes: []
+ */
+Swagger_Petstore_OpenAPI_3_0Router.post<object, object>(
+  '/pet/:petId',
+  middleware.routerAuthMiddleware([]),
+  middleware.bodyParserMiddleware([]),
+  async (ctx, next) => {
+    const params = utilities.handleValidation<models.updatePetWithFormPathParameter>(
+      ctx.params,
+      validators.updatePetWithFormPathParameterValidator,
+      utilities.handleRequestValidatorErrors,
+    );
+
+    const query = utilities.handleValidation<models.updatePetWithFormQueryParameter>(
+      ctx.request.query,
+      validators.updatePetWithFormQueryParameterValidator,
+      utilities.handleRequestValidatorErrors,
+    );
+
+    const response: models.updatePetWithFormResponse = await handlers.updatePetWithForm(ctx, params, query);
+
+    utilities.serializeResponse(ctx, response, []);
+
+    await next();
+  },
+);
+
+/**
+ * @summary Deletes a pet
+ * @remarks required scopes: []
+ */
+Swagger_Petstore_OpenAPI_3_0Router.delete<object, object>(
+  '/pet/:petId',
+  middleware.routerAuthMiddleware([]),
+  middleware.bodyParserMiddleware([]),
+  async (ctx, next) => {
+    const params = utilities.handleValidation<models.deletePetPathParameter>(
+      ctx.params,
+      validators.deletePetPathParameterValidator,
+      utilities.handleRequestValidatorErrors,
+    );
+
+    const headers = utilities.handleValidation<models.deletePetHeaderParameter>(
+      ctx.request.headers,
+      validators.deletePetHeaderParameterValidator,
+      utilities.handleRequestValidatorErrors,
+    );
+    const response: models.deletePetResponse = await handlers.deletePet(ctx, params, headers);
+
+    utilities.serializeResponse(ctx, response, []);
+
+    await next();
+  },
+);
+
+/**
+ * @summary uploads an image
+ * @remarks required scopes: []
+ */
+Swagger_Petstore_OpenAPI_3_0Router.post<object, object, models.uploadFileRequestObject>(
+  '/pet/:petId/uploadImage',
+  middleware.routerAuthMiddleware([]),
+  middleware.bodyParserMiddleware(['application/octet-stream']),
+  async (ctx, next) => {
+    const body = utilities.handleValidation<models.uploadFileRequestObject>(
+      ctx.body,
+      validators.uploadFileRequestObjectValidator,
+      utilities.handleRequestValidatorErrors,
+    );
+
+    const params = utilities.handleValidation<models.uploadFilePathParameter>(
+      ctx.params,
+      validators.uploadFilePathParameterValidator,
+      utilities.handleRequestValidatorErrors,
+    );
+
+    const query = utilities.handleValidation<models.uploadFileQueryParameter>(
+      ctx.request.query,
+      validators.uploadFileQueryParameterValidator,
+      utilities.handleRequestValidatorErrors,
+    );
+
+    const response: models.uploadFileResponse = await handlers.uploadFile(ctx, body, params, query);
+
+    utilities.serializeResponse(ctx, response, ['application/json']);
+
+    await next();
+  },
+);
+
+/**
+ * @summary Finds Pets by status
+ * @description Multiple status values can be provided with comma separated strings
+ * @remarks required scopes: []
+ */
+Swagger_Petstore_OpenAPI_3_0Router.get<object, object>(
+  '/pet/findByStatus',
+  middleware.routerAuthMiddleware([]),
+  middleware.bodyParserMiddleware([]),
+  async (ctx, next) => {
+    const query = utilities.handleValidation<models.findPetsByStatusQueryParameter>(
+      ctx.request.query,
+      validators.findPetsByStatusQueryParameterValidator,
+      utilities.handleRequestValidatorErrors,
+    );
+
+    const response: models.findPetsByStatusResponse = await handlers.findPetsByStatus(ctx, query);
+
+    utilities.serializeResponse(ctx, response, ['application/xml', 'application/json']);
+
+    await next();
+  },
+);
+
+/**
+ * @summary Finds Pets by tags
+ * @description Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.
+ * @remarks required scopes: []
+ */
+Swagger_Petstore_OpenAPI_3_0Router.get<object, object>(
+  '/pet/findByTags',
+  middleware.routerAuthMiddleware([]),
+  middleware.bodyParserMiddleware([]),
+  async (ctx, next) => {
+    const query = utilities.handleValidation<models.findPetsByTagsQueryParameter>(
+      ctx.request.query,
+      validators.findPetsByTagsQueryParameterValidator,
+      utilities.handleRequestValidatorErrors,
+    );
+
+    const response: models.findPetsByTagsResponse = await handlers.findPetsByTags(ctx, query);
+
+    utilities.serializeResponse(ctx, response, ['application/xml', 'application/json']);
+
+    await next();
+  },
+);
 ```
