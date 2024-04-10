@@ -1,5 +1,5 @@
 import { ParsedDocument } from './parsed.document';
-import { Component, Components, Operation, Parameter, Path, PathItem, Reference, isReference } from './parsed_nodes';
+import { Component, Components, Operation, Parameter, Path, Reference, isReference } from './parsed_nodes';
 import { Tag } from './parsed_nodes/tag';
 
 export class Globalizer {
@@ -102,7 +102,7 @@ export class Globalizer {
   }
 
   private globalizeOperationResponses(pathNameHash: string, operation: Operation): Component[] {
-    let generated: Component[] = [];
+    const generated: Component[] = [];
 
     if (operation.responses !== undefined) {
       const responses = operation.responses.map(response => {
@@ -125,7 +125,7 @@ export class Globalizer {
   }
 
   private globalizeOperationRequests(pathNameHash: string, operation: Operation): Component[] {
-    let generated: Component[] = [];
+    const generated: Component[] = [];
 
     if (operation.requestBody !== undefined) {
       if (isReference(operation.requestBody) || operation.requestBody.content === undefined) {
@@ -163,7 +163,7 @@ export class Globalizer {
   }
 
   private globalizeOperationParameters(pathNameHash: string, operation: Operation): Component[] {
-    let generated: Component[] = [];
+    const generated: Component[] = [];
 
     // operation.pathParameters = this.globalizeParameters(pathNameHash, generated, operation.pathParameters);
     // operation.queryParameters = this.globalizeParameters(pathNameHash, generated, operation.queryParameters);
@@ -190,8 +190,8 @@ export class Globalizer {
     return generated;
   }
 
-  private globalizePathItemParameters(pathNameHash: string, pathItem: PathItem): Component[] {
-    let generated: Component[] = [];
+  private globalizePathItemParameters(): Component[] {
+    const generated: Component[] = [];
 
     // pathItem.pathParameters = this.globalizeParameters(pathNameHash, generated, pathItem.pathParameters);
     // pathItem.queryParameters = this.globalizeParameters(pathNameHash, generated, pathItem.queryParameters);

@@ -1,5 +1,4 @@
 import { Operation } from './operation';
-import { Parameter } from './parameter';
 import { ParsedNode } from './parsed.node';
 import { Reference } from './reference';
 

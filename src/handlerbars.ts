@@ -96,8 +96,8 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
     }
   });
 
-  handlebars.registerHelper('hasLength', function (context, length, options: Handlebars.HelperOptions) {
-    const value = context; //typeof context === 'object' && options ? options.fn(context) : context;
+  handlebars.registerHelper('hasLength', function (context, length) {
+    const value = context;
 
     let len = 0;
     if (typeof value === 'string' || Array.isArray(value)) {

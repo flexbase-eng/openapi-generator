@@ -1,7 +1,7 @@
 {
   "name": "@flexbase/openapi-generator",
   "version": "2.3.2",
-  "description": "Open API v3 code generator",
+  "description": "Open API code generator",
   "author": {
     "name": "Flexbase Technologies",
     "email": "hello@flex.one",
@@ -13,8 +13,8 @@
   },
   "homepage": "https://github.com/flexbase-eng/openapi-generator#readme",
   "keywords": [
-    "flexbase",
     "openapi",
+    "swagger",
     "generator"
   ],
   "repository": {
@@ -39,7 +39,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "prepare": "is-ci || husky install",
-    "lint": "eslint . --ext .ts,.tsx,.json --max-warnings=0",
+    "lint": "eslint src/** --max-warnings=0",
     "lint:fix": "yarn lint --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,css,md,json}'",
     "test": "vitest run --coverage",
@@ -78,16 +78,12 @@
     "@typescript-eslint/parser": "^7.6.0",
     "@vitest/coverage-v8": "^1.4.0",
     "eslint": "9.0.0",
-    "eslint-config-prettier": "9.1.0",
-    "eslint-import-resolver-typescript": "3.6.1",
-    "eslint-plugin-check-file": "2.7.1",
-    "eslint-plugin-filenames-simple": "0.9.0",
-    "eslint-plugin-import": "2.29.1",
     "husky": "^9.0.11",
     "is-ci": "^3.0.1",
     "lint-staged": "^15.2.2",
     "semantic-release": "^23.0.8",
     "typescript": "^5.4.5",
+    "typescript-eslint": "^7.6.0",
     "vite": "5.2.8",
     "vite-plugin-dts": "^3.8.1",
     "vitest": "^1.4.0"
@@ -115,78 +111,6 @@
       }
     ]
   },
-  "eslintConfig": {
-    "env": {
-      "es2022": true
-    },
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:import/typescript",
-      "eslint-config-prettier"
-    ],
-    "overrides": [],
-    "plugins": [
-      "filenames-simple",
-      "check-file",
-      "import"
-    ],
-    "settings": {
-      "react": {
-        "version": "detect"
-      },
-      "parsers": "@typescript-eslint/parser",
-      "parserOptions": {
-        "ecmaVersion": "latest",
-        "sourceType": "module"
-      },
-      "import/resolver": {
-        "typescript": {
-          "alwaysTryTypes": true
-        },
-        "node": {
-          "paths": [
-            "src"
-          ],
-          "extensions": [
-            ".js",
-            ".ts",
-            ".d.ts",
-            ".tsx"
-          ]
-        }
-      }
-    },
-    "rules": {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-non-null-assertion": "off",
-      "@typescript-eslint/no-inferrable-types": "off",
-      "check-file/folder-naming-convention": [
-        "error",
-        {
-          "src/**/": "KEBAB_CASE",
-          "tests/**/": "KEBAB_CASE",
-          "cypress/**/": "KEBAB_CASE"
-        }
-      ],
-      "filenames-simple/naming-convention": [
-        "error",
-        {
-          "rule": "kebab-case"
-        }
-      ]
-    }
-  },
-  "eslintIgnore": [
-    "node_modules",
-    "dist",
-    ".github",
-    ".vscode",
-    "build",
-    "scripts",
-    "tests",
-    "output"
-  ],
   "release": {
     "branches": [
       "main",

@@ -13,7 +13,7 @@ export class OpenApiOptimizer {
   }
 
   optimize(document: ParsedDocument): OptimizedDocument {
-    let optimizedDocument = this.optimizePaths(document);
+    const optimizedDocument = this.optimizePaths(document);
 
     this.optimizeComponents(optimizedDocument.components);
 

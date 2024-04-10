@@ -13,13 +13,13 @@
 export const murmurHash = (key: string | Uint8Array, seed: number) => {
   if (typeof key === 'string') key = new TextEncoder().encode(key);
 
-  let remainder, bytes, h1, h1b, c1, c1b, c2, c2b, k1, i;
+  let h1, h1b, k1, i;
 
-  remainder = key.length & 3; // key.length % 4
-  bytes = key.length - remainder;
+  const remainder = key.length & 3; // key.length % 4
+  const bytes = key.length - remainder;
   h1 = seed;
-  c1 = 0xcc9e2d51;
-  c2 = 0x1b873593;
+  const c1 = 0xcc9e2d51;
+  const c2 = 0x1b873593;
   i = 0;
 
   while (i < bytes) {
@@ -39,10 +39,8 @@ export const murmurHash = (key: string | Uint8Array, seed: number) => {
   k1 = 0;
 
   switch (remainder) {
-    // @ts-ignore
     case 3:
       k1 ^= (key[i + 2] & 0xff) << 16;
-    // @ts-ignore
     case 2:
       k1 ^= (key[i + 1] & 0xff) << 8;
     case 1:

@@ -28,7 +28,7 @@ export class Converter {
   }
 
   private find(components: parsed.Components, node: parsed.Reference) {
-    for (let section of Object.keys(components)) {
+    for (const section of Object.keys(components)) {
       const component = this.findInSection(components, node, section as keyof parsed.Components);
       if (component) {
         return { component, section: section as keyof parsed.Components };
