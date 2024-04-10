@@ -298,7 +298,9 @@ export class OpenApiOptimizer {
   private optimizeComponents(components: optimized.Components) {
     if (components.models) components.models = this.optimizeComponentRecord(components.models);
     if (components.requests) components.requests = this.optimizeComponentRecord(components.requests);
+    if (components.requestObjects) components.requestObjects = this.optimizeComponentRecord(components.requestObjects);
     if (components.responses) components.responses = this.optimizeComponentRecord(components.responses);
+    if (components.responseObjects) components.responseObjects = this.optimizeComponentRecord(components.responseObjects);
     if (components.parameters) components.parameters = this.optimizeComponentRecord(components.parameters);
     if (components.headers) components.headers = this.optimizeComponentRecord(components.headers);
     if (components.callbacks) components.callbacks = this.optimizeComponentRecord(components.callbacks);
