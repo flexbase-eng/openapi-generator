@@ -176,6 +176,12 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
     return rendered !== undefined;
   });
 
+  handlebars.registerHelper('strJoin', function (separator, ...args) {
+    const strs = args.map(x => (typeof x === 'string' ? x : undefined)).filter(x => x);
+
+    return strs.join(separator);
+  });
+
   (handlebars.logger as any)['actualLogger'] = new ChalkLogger();
 
   handlebars.log = (level, ...messages) => {
