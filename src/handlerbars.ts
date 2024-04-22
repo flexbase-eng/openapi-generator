@@ -32,6 +32,27 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
     },
   );
 
+  function isOptions(val: any) {
+    return typeof val === 'object' && typeof val.hash === 'object';
+  }
+
+  function isBlock(options: any) {
+    return isOptions(options) && typeof options.fn === 'function' && typeof options.inverse === 'function';
+  }
+
+  function renderValue(val: unknown, context: unknown, options: any) {
+    if (isOptions(val)) {
+      return renderValue(null, val, options);
+    }
+    if (isOptions(context)) {
+      return renderValue(val, {}, context);
+    }
+    if (isBlock(options)) {
+      return val ? options.fn(context) : options.inverse(context);
+    }
+    return val;
+  }
+
   handlebars.registerHelper('registerReference', function (context, referenceType, referenceKey, options: Handlebars.HelperOptions) {
     if (!references.has(referenceType)) {
       references.set(referenceType, new Map<string, string>());
@@ -172,8 +193,7 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
   });
 
   handlebars.registerHelper('isDefined', function (context, options: Handlebars.HelperOptions) {
-    const rendered = typeof context === 'object' && options ? options.fn(context) : context;
-    return rendered !== undefined;
+    return renderValue(context, context, options) !== undefined;
   });
 
   handlebars.registerHelper('strJoin', function (separator, ...args) {
