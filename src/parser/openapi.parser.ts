@@ -529,6 +529,18 @@ export abstract class OpenApiParser {
     };
   }
 
+  private parseParameterSchema(schema: ReferenceObject | SchemaObject, style?: string) {
+    const parsedNode = this.parseSchema(schema);
+
+    if (style) {
+      return {
+        type: 'array',
+        definition: parsedNode,
+      };
+    }
+    return parsedNode;
+  }
+
   private parseParameterBaseObject(parameterBaseObject: ParameterBaseObject, components: Components) {
     const description = parameterBaseObject.description;
     const required = parameterBaseObject.required;
@@ -538,7 +550,7 @@ export abstract class OpenApiParser {
     const explode = parameterBaseObject.explode;
     const allowReserved = parameterBaseObject.allowReserved;
 
-    const definition = parameterBaseObject.schema ? this.parseSchema(parameterBaseObject.schema) : undefined;
+    const definition = parameterBaseObject.schema ? this.parseParameterSchema(parameterBaseObject.schema, style) : undefined;
     const content = this.parseMediaContent(parameterBaseObject.content, 'readOnly', components);
 
     return {
