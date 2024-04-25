@@ -5,7 +5,9 @@ export interface Property extends BaseProperty {
   required: boolean;
 }
 
-export interface ObjectNode extends BaseObjectNode<Property> {}
+export interface ObjectNode extends BaseObjectNode<Property> {
+  additionalProperty?: OptimizedNode;
+}
 
 export const isProperty = (value: OptimizedNode): value is Property => {
   return value.type === 'property';

@@ -34,7 +34,7 @@ export class Converter {
         return { component, section: section as keyof parsed.Components };
       }
     }
-    this._logger.warn(`${node.reference} not found`);
+    this._logger.warn(`missing reference: ${node.reference}`);
     return undefined;
   }
 
@@ -106,6 +106,9 @@ export class Converter {
     return {
       ...parsedNode,
       properties: parsedNode.properties.map(p => ({ ...p, definition: this.convertParsedNode(p.definition, parsedComponents, components) })),
+      additionalProperty: parsedNode.additionalProperty
+        ? this.convertParsedNode(parsedNode.additionalProperty, parsedComponents, components)
+        : undefined,
     };
   }
 

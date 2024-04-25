@@ -2,6 +2,7 @@ import { ParsedNode } from './parsed.node';
 
 export interface ObjectNode extends ParsedNode {
   properties: Property[];
+  additionalProperty?: ParsedNode;
 }
 
 export interface Property extends ParsedNode {

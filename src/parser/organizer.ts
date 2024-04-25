@@ -146,6 +146,9 @@ export class Organizer {
       this.traverseReferences(originalDocument, components, node.definition);
     } else if (parsed.isObjectNode(node)) {
       node.properties.forEach(x => this.traverseReferences(originalDocument, components, x));
+      if (node.additionalProperty) {
+        this.traverseReferences(originalDocument, components, node.additionalProperty);
+      }
     } else if (parsed.isProperty(node)) {
       this.traverseReferences(originalDocument, components, node.definition);
     } else if (parsed.isResponse(node)) {

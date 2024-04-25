@@ -793,7 +793,18 @@ export abstract class OpenApiParser {
       }
     }
 
-    return { type: 'object', properties, ...modifiers, required: undefined };
+    let additionalProperty: ParsedNode | undefined;
+    if (schema.additionalProperties) {
+      if (typeof schema.additionalProperties === 'boolean') {
+        if (schema.additionalProperties) {
+          additionalProperty = <ObjectNode>{ type: 'object', properties: [] };
+        }
+      } else {
+        additionalProperty = this.parseSchema(schema.additionalProperties);
+      }
+    }
+
+    return <ObjectNode>{ ...modifiers, type: 'object', properties, additionalProperty, additionalProperties: undefined, required: undefined };
   }
 
   private parseAllOf(schema: WithRequired<NonArraySchemaObject, 'allOf'>, modifiers: Modifiers): Composite {
