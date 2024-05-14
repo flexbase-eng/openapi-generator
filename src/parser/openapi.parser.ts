@@ -291,7 +291,7 @@ export abstract class OpenApiParser {
       return this.createReference(schema);
     }
 
-    schema.type ??= type ?? 'object';
+    schema.type ??= type ?? schema.enum ? 'string' : 'object';
     const modifiers = this.getModifiers(schema);
 
     if (this.isArraySchemaObject(schema)) {
