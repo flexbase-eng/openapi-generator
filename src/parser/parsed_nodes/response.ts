@@ -1,8 +1,8 @@
-import { NamedHeader } from './header';
-import { NamedLink } from './link';
-import { MediaContent } from './media';
-import { ParsedNode } from './parsed.node';
-import { Reference } from './reference';
+import { NamedHeader } from './header.js';
+import { NamedLink } from './link.js';
+import { MediaContent } from './media.js';
+import { ParsedNode } from './parsed.node.js';
+import { Reference } from './reference.js';
 
 export interface ResponseBody extends ParsedNode {
   description: string;

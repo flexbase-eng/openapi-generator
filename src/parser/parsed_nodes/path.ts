@@ -1,6 +1,6 @@
-import { Operation } from './operation';
-import { ParsedNode } from './parsed.node';
-import { Reference } from './reference';
+import { Operation } from './operation.js';
+import { ParsedNode } from './parsed.node.js';
+import { Reference } from './reference.js';
 
 export interface Path extends ParsedNode {
   name: string;

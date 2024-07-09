@@ -1,7 +1,7 @@
 import { Logger } from '@flexbase/logger';
-import * as parsed from '../parser/parsed_nodes';
-import * as optimized from './nodes';
-import { murmurHash } from '../utilities/murmur.hash';
+import * as parsed from '../parser/parsed_nodes/index.js';
+import * as optimized from './nodes/index.js';
+import { murmurHash } from '../utilities/murmur.hash.js';
 export class Converter {
   constructor(private readonly _logger: Logger) {}
 

@@ -1,15 +1,16 @@
-import { createHandlebars } from './handlerbars';
-import { OpenApiGeneratorConfiguation, OpenApiGeneratorConfiguationGenerate } from './runtime.config';
+import { createHandlebars } from './handlerbars.js';
+import { OpenApiGeneratorConfiguation, OpenApiGeneratorConfiguationGenerate } from './runtime.config.js';
 import Path from 'path';
 import fs from 'fs-extra';
 import { Logger } from '@flexbase/logger';
-import { runPrettier } from './run.prettier';
+import { runPrettier } from './run.prettier.js';
 import * as glob from 'glob';
-import { ParsedDocument } from './parser/parsed.document';
-import { OpenApiOptimizer } from './optimizer/openapi.optimizer';
-import { Organizer } from './parser/organizer';
-import { OptimizedDocument } from './optimizer/optimized.document';
+import { ParsedDocument } from './parser/parsed.document.js';
+import { OpenApiOptimizer } from './optimizer/openapi.optimizer.js';
+import { Organizer } from './parser/organizer.js';
+import { OptimizedDocument } from './optimizer/optimized.document.js';
 import $RefParser from '@stoplight/json-schema-ref-parser';
+import childProcess from 'child_process';
 
 const registerPartials = (handlebars: typeof Handlebars, templates: string[]) => {
   const globTemplates = glob.sync(templates);
@@ -116,6 +117,30 @@ export const build = async (config: OpenApiGeneratorConfiguation, parsedDocument
   }
 };
 
+const runScript = (scriptPath: string, callback: (err?: Error) => void) => {
+  // keep track of whether callback has been invoked to prevent multiple invocations
+  let invoked = false;
+
+  const process = childProcess.fork(scriptPath);
+
+  // listen for errors as they may prevent the exit event from firing
+  process.on('error', function (err) {
+    if (invoked) return;
+    invoked = true;
+    callback(err);
+  });
+
+  // execute the callback once the process has finished running
+  process.on('exit', function (code) {
+    if (invoked) return;
+    invoked = true;
+    const err = code === 0 ? undefined : new Error('exit code ' + code);
+    callback(err);
+  });
+
+  return process;
+};
+
 const generate = async (
   config: OpenApiGeneratorConfiguation,
   generateConfig: OpenApiGeneratorConfiguationGenerate,
@@ -126,6 +151,16 @@ const generate = async (
   const templates: string[] = [...(config.sharedTemplates ?? []), ...(generateConfig.additionalTemplates ?? [])];
 
   const jsonSchema = await $RefParser.resolve(document);
+
+  if (generateConfig.script) {
+    const process = runScript(generateConfig.script, err => {
+      if (err) throw err;
+    });
+    process.on('message', msg => {
+      if (msg === 'ready') process.send(document);
+    });
+    return;
+  }
 
   const handlebars = createHandlebars(jsonSchema);
   registerPartials(handlebars, templates);
@@ -150,7 +185,7 @@ const render = async (
   await fs.ensureDir(Path.dirname(fileName));
 
   try {
-    let rendered = handlebarTemplate(context);
+    let rendered = handlebarTemplate(context, { data: new Map<string, unknown>(), allowProtoMethodsByDefault: true });
 
     if (config.prettier) {
       try {

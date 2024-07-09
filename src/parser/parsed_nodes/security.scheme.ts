@@ -1,4 +1,4 @@
-import { ParsedNode } from './parsed.node';
+import { ParsedNode } from './parsed.node.js';
 
 export interface SecurityScheme extends ParsedNode {
   description?: string;

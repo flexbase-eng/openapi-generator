@@ -1,4 +1,4 @@
-import { OptimizedNode } from './optimized.node';
+import { OptimizedNode } from './optimized.node.js';
 
 export interface Reference extends OptimizedNode {
   $ref: string;

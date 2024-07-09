@@ -1,5 +1,5 @@
-import { NamedHeader } from './header';
-import { ParsedNode } from './parsed.node';
+import { NamedHeader } from './header.js';
+import { ParsedNode } from './parsed.node.js';
 
 export interface Encoding extends ParsedNode {
   contentType?: string;

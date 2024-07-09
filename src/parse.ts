@@ -1,9 +1,9 @@
 import $RefParser, { FileInfo, ResolverOptions } from '@stoplight/json-schema-ref-parser';
-import { IsDocument } from './utilities/openapi.utilities';
+import { IsDocument } from './utilities/openapi.utilities.js';
 import Path from 'path';
 import { Logger } from '@flexbase/logger';
-import { OpenApiParserFactor } from './parser/openapi.parser.factory';
-import { ParsedDocument } from './parser/parsed.document';
+import { OpenApiParserFactor } from './parser/openapi.parser.factory.js';
+import { ParsedDocument } from './parser/parsed.document.js';
 
 export const parseSpec = async (specPath: string, logger: Logger): Promise<ParsedDocument> => {
   const apiDoc = await $RefParser.bundle(specPath, {

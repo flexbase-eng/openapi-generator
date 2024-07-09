@@ -1,6 +1,6 @@
-import { HeaderObject } from './header';
-import { OptimizedNode } from './optimized.node';
-import { Reference } from './reference';
+import { HeaderObject } from './header.js';
+import { OptimizedNode } from './optimized.node.js';
+import { Reference } from './reference.js';
 
 export interface ResponseContent extends OptimizedNode {
   contentType: string;

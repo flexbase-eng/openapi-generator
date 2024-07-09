@@ -1,5 +1,5 @@
-import { BaseProperty, BaseObjectNode } from './base.object.node';
-import { OptimizedNode } from './optimized.node';
+import { BaseProperty, BaseObjectNode } from './base.object.node.js';
+import { OptimizedNode } from './optimized.node.js';
 
 export interface Parameter extends BaseProperty {
   required?: boolean;

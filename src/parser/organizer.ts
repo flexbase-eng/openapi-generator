@@ -1,5 +1,5 @@
-import { ParsedDocument } from './parsed.document';
-import * as parsed from '../parser/parsed_nodes';
+import { ParsedDocument } from './parsed.document.js';
+import * as parsed from '../parser/parsed_nodes/index.js';
 import { Logger } from '@flexbase/logger';
 
 export class Organizer {

@@ -1,4 +1,4 @@
-import { OptimizedNode } from './optimized.node';
+import { OptimizedNode } from './optimized.node.js';
 
 export interface Composite extends OptimizedNode {
   definitions: OptimizedNode[];

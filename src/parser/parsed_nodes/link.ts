@@ -1,5 +1,5 @@
-import { ParsedNode } from './parsed.node';
-import { Reference } from './reference';
+import { ParsedNode } from './parsed.node.js';
+import { Reference } from './reference.js';
 
 export interface Link extends ParsedNode {
   server: unknown;

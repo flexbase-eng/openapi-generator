@@ -1,5 +1,5 @@
-import { Operation } from './operation';
-import { OptimizedNode } from './optimized.node';
+import { Operation } from './operation.js';
+import { OptimizedNode } from './optimized.node.js';
 
 export interface Path extends OptimizedNode {
   name: string;

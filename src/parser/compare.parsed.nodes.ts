@@ -1,4 +1,4 @@
-import { ParsedNode, compareParameters, comparePrimatives, isParameter, isPrimative } from './parsed_nodes';
+import { ParsedNode, compareParameters, comparePrimatives, isParameter, isPrimative } from './parsed_nodes/index.js';
 
 export const compareParsedNodes = (nodeA?: ParsedNode, nodeB?: ParsedNode): boolean => {
   if (nodeA === undefined) {

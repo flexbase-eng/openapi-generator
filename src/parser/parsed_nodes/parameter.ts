@@ -1,6 +1,6 @@
-import { MediaContent } from './media';
-import { compareModifiers } from './modifiers';
-import { ParsedNode, CompareParsedNodes } from './parsed.node';
+import { MediaContent } from './media.js';
+import { compareModifiers } from './modifiers.js';
+import { ParsedNode, CompareParsedNodes } from './parsed.node.js';
 
 export interface Parameter extends ParsedNode {
   name: string;

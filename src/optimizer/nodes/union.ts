@@ -1,4 +1,4 @@
-import { OptimizedNode } from './optimized.node';
+import { OptimizedNode } from './optimized.node.js';
 
 export interface Union extends OptimizedNode {
   definitions: OptimizedNode[];
