@@ -1,5 +1,5 @@
-import { compareModifiers } from './modifiers';
-import { ParsedNode } from './parsed.node';
+import { compareModifiers } from './modifiers.js';
+import { ParsedNode } from './parsed.node.js';
 
 export type PrimativeTypes = 'string' | 'number' | 'boolean' | 'integer' | 'null';
 

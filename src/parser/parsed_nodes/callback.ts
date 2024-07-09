@@ -1,6 +1,6 @@
-import { ParsedNode } from './parsed.node';
-import { PathItem } from './path';
-import { Reference } from './reference';
+import { ParsedNode } from './parsed.node.js';
+import { PathItem } from './path.js';
+import { Reference } from './reference.js';
 
 export interface Callback extends ParsedNode {
   name: string;

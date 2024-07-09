@@ -1,6 +1,6 @@
-import { Components } from './nodes/components';
-import { Path } from './nodes/path';
-import { Tag } from './nodes/tag';
+import { Components } from './nodes/components.js';
+import { Path } from './nodes/path.js';
+import { Tag } from './nodes/tag.js';
 
 export interface OptimizedDocument {
   title: string;

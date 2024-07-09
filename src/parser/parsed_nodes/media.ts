@@ -1,5 +1,5 @@
-import { MediaEncoding } from './encoding';
-import { ParsedNode } from './parsed.node';
+import { MediaEncoding } from './encoding.js';
+import { ParsedNode } from './parsed.node.js';
 
 export interface MediaType extends ParsedNode {
   definition?: ParsedNode;

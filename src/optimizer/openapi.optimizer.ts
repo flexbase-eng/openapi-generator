@@ -1,9 +1,9 @@
 import { Logger } from '@flexbase/logger';
-import { ParsedDocument } from '../parser/parsed.document';
-import * as parsed from '../parser/parsed_nodes';
-import { OptimizedDocument } from './optimized.document';
-import * as optimized from './nodes';
-import { Converter } from './converter';
+import { ParsedDocument } from '../parser/parsed.document.js';
+import * as parsed from '../parser/parsed_nodes/index.js';
+import { OptimizedDocument } from './optimized.document.js';
+import * as optimized from './nodes/index.js';
+import { Converter } from './converter.js';
 
 export class OpenApiOptimizer {
   private readonly _converter: Converter;

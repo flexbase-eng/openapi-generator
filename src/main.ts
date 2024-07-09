@@ -4,9 +4,9 @@ import * as glob from 'glob';
 import Path from 'path';
 import fs from 'fs-extra';
 import pkg from '../package.json' assert { type: 'json' };
-import { OpenApiGeneratorConfiguation } from './runtime.config';
-import { build } from './build';
-import { parseSpec } from './parse';
+import { OpenApiGeneratorConfiguation } from './runtime.config.js';
+import { build } from './build.js';
+import { parseSpec } from './parse.js';
 
 export async function main(logger: Logger): Promise<void> {
   program.name(pkg.name).description(pkg.description).version(pkg.version);
@@ -66,5 +66,4 @@ export async function main(logger: Logger): Promise<void> {
   } catch (e) {
     logger.error(e);
   }
-  return;
 }

@@ -1,5 +1,5 @@
 import { OpenAPIV3_1, OpenAPIV3 } from 'openapi-types';
-import { compareStringRecords } from '../../utilities/records';
+import { compareStringRecords } from '../../utilities/records.js';
 
 export type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
 export type ReferenceObject = OpenAPIV3.ReferenceObject | OpenAPIV3_1.ReferenceObject;

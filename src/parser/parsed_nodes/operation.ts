@@ -1,9 +1,9 @@
-import { Callback } from './callback';
-import { Parameter } from './parameter';
-import { ParsedNode } from './parsed.node';
-import { Reference } from './reference';
-import { RequestBody } from './request.body';
-import { Response } from './response';
+import { Callback } from './callback.js';
+import { Parameter } from './parameter.js';
+import { ParsedNode } from './parsed.node.js';
+import { Reference } from './reference.js';
+import { RequestBody } from './request.body.js';
+import { Response } from './response.js';
 
 export interface Operation extends ParsedNode {
   method: string;

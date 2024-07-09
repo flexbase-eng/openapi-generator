@@ -1,7 +1,7 @@
 import { OpenAPIV3_1 as OpenAPI } from 'openapi-types';
-import { OpenApiParser } from './openapi.parser';
+import { OpenApiParser } from './openapi.parser.js';
 import { Logger } from '@flexbase/logger';
-import { Component, Components } from './parsed_nodes';
+import { Component, Components } from './parsed_nodes/index.js';
 
 export class OpenApiParser3_1 extends OpenApiParser {
   constructor(logger: Logger) {

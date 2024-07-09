@@ -1,4 +1,4 @@
-import { ParsedNode } from './parsed.node';
+import { ParsedNode } from './parsed.node.js';
 
 export interface ArrayNode extends ParsedNode {
   definition: ParsedNode;

@@ -1,5 +1,5 @@
-import { MediaContent } from './media';
-import { ParsedNode } from './parsed.node';
+import { MediaContent } from './media.js';
+import { ParsedNode } from './parsed.node.js';
 
 export interface Header extends ParsedNode {
   description?: string;

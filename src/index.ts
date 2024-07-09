@@ -1,5 +1,5 @@
-import { ChalkLogger } from './chalk.logger';
-import { main } from './main';
+import { ChalkLogger } from './chalk.logger.js';
+import { main } from './main.js';
 
 const logger = new ChalkLogger();
 

@@ -1,5 +1,5 @@
-import { OptimizedNode } from './optimized.node';
-import { Reference } from './reference';
+import { OptimizedNode } from './optimized.node.js';
+import { Reference } from './reference.js';
 
 export interface Operation extends OptimizedNode {
   method: string;

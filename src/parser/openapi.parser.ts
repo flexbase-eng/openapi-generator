@@ -35,11 +35,11 @@ import {
   isObjectNode,
   isComposite,
   isRequestBody,
-} from './parsed_nodes';
-import { Header, NamedHeader } from './parsed_nodes/header';
+} from './parsed_nodes/index.js';
+import { Header, NamedHeader } from './parsed_nodes/header.js';
 import { Logger } from '@flexbase/logger';
-import { ParsedDocument } from './parsed.document';
-import { Tag } from './parsed_nodes/tag';
+import { ParsedDocument } from './parsed.document.js';
+import { Tag } from './parsed_nodes/tag.js';
 
 type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
 type ReferenceObject = OpenAPIV3.ReferenceObject | OpenAPIV3_1.ReferenceObject;

@@ -1,22 +1,35 @@
 {
   "compilerOptions": {
-    "target": "esnext",
+    "target": "ESNext",
+    "useDefineForClassFields": true,
     "lib": ["ESNext"],
+    "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "strict": true,
-    "outDir": "dist",
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": false,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "stripInternal": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
-    "experimentalDecorators": true,
-    "noEmit": true,   
+    "isolatedModules": true,
+    "outDir": "dist",
+    "baseUrl": ".",
     "sourceMap": true,
-    "inlineSources": true,
-    "sourceRoot": "/"
+    "inlineSources": true
+  },
+  "watchOptions": {
+    // Use native file system events for files and directories
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents",
+    // Poll files for updates more frequently
+    // when they're updated a lot.
+    "fallbackPolling": "dynamicPriority",
+    // Don't coalesce watch notification
+    "synchronousWatchDirectory": true,
+    // Finally, two additional settings for reducing the amount of possible
+    // files to track  work from these directories
+    "excludeDirectories": ["**/node_modules"]
   },
   "include": ["src/**/*"]
 }

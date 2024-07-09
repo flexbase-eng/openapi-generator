@@ -1,4 +1,4 @@
-import { OptimizedNode } from './optimized.node';
+import { OptimizedNode } from './optimized.node.js';
 
 export interface ArrayNode extends OptimizedNode {
   definition: OptimizedNode;
