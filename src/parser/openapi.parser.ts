@@ -532,7 +532,7 @@ export abstract class OpenApiParser {
   private parseParameterSchema(schema: ReferenceObject | SchemaObject, style?: string) {
     const parsedNode = this.parseSchema(schema);
 
-    if (style) {
+    if (style && parsedNode.type !== 'array') {
       return {
         type: 'array',
         definition: parsedNode,
