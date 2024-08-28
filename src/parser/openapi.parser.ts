@@ -446,11 +446,20 @@ export abstract class OpenApiParser {
         };
       }
     } else if (isComposite(parsedNode)) {
-      for (let i = 0; i < parsedNode.definitions.length; ++i) {
-        const omitDef = this.createOmitDefinition(parsedNode.definitions[i], omitType, components);
+      const definitions: ParsedNode[] = [...parsedNode.definitions];
+      let hasOmit = false;
+      for (let i = 0; i < definitions.length; ++i) {
+        const omitDef = this.createOmitDefinition(definitions[i], omitType, components);
         if (omitDef) {
-          parsedNode.definitions[i] = omitDef;
+          hasOmit = true;
+          definitions[i] = omitDef;
         }
+      }
+      if (hasOmit) {
+        return <Composite>{
+          ...parsedNode,
+          definitions,
+        };
       }
     }
   }
