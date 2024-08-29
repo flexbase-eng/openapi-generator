@@ -40,7 +40,7 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
   );
 
   function isOptions(val: any) {
-    return typeof val === 'object' && typeof val.hash === 'object';
+    return typeof val === 'object' && typeof val?.hash === 'object';
   }
 
   function isBlock(options: any) {
@@ -197,8 +197,12 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
     return eval(rendered);
   });
 
-  handlebars.registerHelper('extendProperty', function (context, name, options: Handlebars.HelperOptions) {
-    const rendered = options.fn(context);
+  handlebars.registerHelper('extendProperty', function (context, name, value) {
+    let rendered = value;
+
+    if (isBlock(value)) {
+      rendered = value.fn(context);
+    }
 
     context[name] = rendered;
   });
