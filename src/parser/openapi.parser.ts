@@ -431,6 +431,37 @@ export abstract class OpenApiParser {
     };
   }
 
+  private omitProperties(parsedNode: ParsedNode, omitType: 'readOnly' | 'writeOnly', components: Components): Property[] {
+    const properties: Property[] = [];
+
+    if (isObjectNode(parsedNode)) {
+      for (const property of parsedNode.properties) {
+        if (property.definition[omitType] !== true) {
+          if (isReference(property.definition)) {
+            const found = this.lookupReference(property.definition, components, 'models');
+            if (found) {
+              const node = this.createOmitDefinition(found.definition, omitType, components);
+              if (node) {
+                if (!isObjectNode(node) || node.properties.length > 0) {
+                  properties.push(<Property>{
+                    ...property,
+                    definition: node,
+                  });
+                }
+              } else {
+                properties.push(property);
+              }
+            }
+          } else {
+            properties.push(property);
+          }
+        }
+      }
+    }
+
+    return properties;
+  }
+
   private createOmitDefinition(parsedNode: ParsedNode, omitType: 'readOnly' | 'writeOnly', components: Components): ParsedNode | undefined {
     if (isReference(parsedNode)) {
       const found = this.lookupReference(parsedNode, components, 'models');
@@ -438,7 +469,7 @@ export abstract class OpenApiParser {
         return this.createOmitDefinition(found.definition, omitType, components);
       }
     } else if (isObjectNode(parsedNode)) {
-      const properties = parsedNode.properties.filter(x => x.definition[omitType] !== true);
+      const properties = this.omitProperties(parsedNode, omitType, components);
       if (properties.length !== parsedNode.properties.length) {
         return <ObjectNode>{
           ...parsedNode,
@@ -790,6 +821,7 @@ export abstract class OpenApiParser {
 
   private parseObject(schema: NonArraySchemaObject, modifiers: Modifiers): ObjectNode {
     const properties: Property[] = [];
+
     if (schema.properties) {
       const propEntries = Object.entries(schema.properties);
       for (const propEntry of propEntries) {
@@ -798,7 +830,8 @@ export abstract class OpenApiParser {
           continue;
         }
         const required = schema.required?.find(x => x === propEntry[0]) !== undefined;
-        properties.push(this.createProperty(propEntry[0], propEntry[1], required));
+        const prop = this.createProperty(propEntry[0], propEntry[1], required);
+        properties.push(prop);
       }
     }
 
@@ -813,7 +846,14 @@ export abstract class OpenApiParser {
       }
     }
 
-    return <ObjectNode>{ ...modifiers, type: 'object', properties, additionalProperty, additionalProperties: undefined, required: undefined };
+    return <ObjectNode>{
+      ...modifiers,
+      type: 'object',
+      properties,
+      additionalProperty,
+      additionalProperties: undefined,
+      required: undefined,
+    };
   }
 
   private parseAllOf(schema: WithRequired<NonArraySchemaObject, 'allOf'>, modifiers: Modifiers): Composite {

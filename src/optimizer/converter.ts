@@ -3,6 +3,8 @@ import * as parsed from '../parser/parsed_nodes/index.js';
 import * as optimized from './nodes/index.js';
 import { murmurHash } from '../utilities/murmur.hash.js';
 export class Converter {
+  private recursionDepth: number = 0;
+
   constructor(private readonly _logger: Logger) {}
 
   private findInSection<T extends parsed.ParsedNode = parsed.ParsedNode>(
@@ -15,15 +17,19 @@ export class Converter {
     if (!comps) {
       return undefined;
     }
-
-    const found = comps.filter(x => x.referenceName === node.reference);
-    if (found === undefined || found.length === 0) {
-      return undefined;
-    } else {
-      if (found.length > 1) {
-        this._logger.warn(`mulitiple references of ${section} ${node.reference} found, using first instance`);
+    try {
+      const found = comps.filter(x => x.referenceName === node.reference);
+      if (found === undefined || found.length === 0) {
+        return undefined;
+      } else {
+        if (found.length > 1) {
+          this._logger.warn(`mulitiple references of ${section} ${node.reference} found, using first instance`);
+        }
+        return found[0] as parsed.Component<T>;
       }
-      return found[0] as parsed.Component<T>;
+    } catch (e) {
+      this._logger.error(e, { node, section });
+      return undefined;
     }
   }
 
@@ -45,41 +51,55 @@ export class Converter {
   }
 
   convertParsedNode(parsedNode: parsed.ParsedNode, parsedComponents: parsed.Components, components: optimized.Components): optimized.OptimizedNode {
-    if (parsed.isReference(parsedNode)) {
-      const found = this.find(parsedComponents, parsedNode);
-      if (found) {
-        this.addComponent(
-          found.component.name,
-          this.convertParsedNode(found.component.definition, parsedComponents, components),
-          components,
-          found.section,
-        );
+    try {
+      this.recursionDepth += 1;
+
+      if (this.recursionDepth > 20) {
+        //this._logger.info(parsedNode);
+        return {
+          type: parsedNode.type,
+        };
       }
-      return this.convertReference(parsedNode);
-    } else if (parsed.isPrimative(parsedNode)) {
-      return this.convertPrimative(parsedNode);
-    } else if (parsed.isParameter(parsedNode)) {
-      return this.convertParameter(parsedNode, parsedComponents, components);
-    } else if (parsed.isResponse(parsedNode)) {
-      return this.convertResponse(parsedNode, parsedComponents, components);
-    } else if (parsed.isResponseBody(parsedNode)) {
-      return this.convertResponseObject(parsedNode, parsedComponents, components, 0);
-    } else if (parsed.isHeader(parsedNode)) {
-      return this.convertHeader(parsedNode, parsedComponents, components);
-    } else if (parsed.isMediaType(parsedNode)) {
-      return this.convertMediaType(parsedNode, parsedComponents, components);
-    } else if (parsed.isObjectNode(parsedNode)) {
-      return this.convertObject(parsedNode, parsedComponents, components);
-    } else if (parsed.isArrayNode(parsedNode)) {
-      return this.convertArray(parsedNode, parsedComponents, components);
-    } else if (parsed.isUnion(parsedNode)) {
-      return this.convertUnion(parsedNode, parsedComponents, components);
-    } else if (parsed.isComposite(parsedNode)) {
-      return this.convertComposite(parsedNode, parsedComponents, components);
-    } else if (parsed.isExclusion(parsedNode)) {
-      return this.convertExclusion(parsedNode, parsedComponents, components);
-    } else if (parsed.isRequestBody(parsedNode)) {
-      return this.convertRequestBody(parsedNode, parsedComponents, components);
+      if (parsed.isReference(parsedNode)) {
+        const found = this.find(parsedComponents, parsedNode);
+        if (found) {
+          this.addComponent(
+            found.component.name,
+            this.convertParsedNode(found.component.definition, parsedComponents, components),
+            components,
+            found.section,
+          );
+        }
+        return this.convertReference(parsedNode);
+      } else if (parsed.isPrimative(parsedNode)) {
+        return this.convertPrimative(parsedNode);
+      } else if (parsed.isParameter(parsedNode)) {
+        return this.convertParameter(parsedNode, parsedComponents, components);
+      } else if (parsed.isResponse(parsedNode)) {
+        return this.convertResponse(parsedNode, parsedComponents, components);
+      } else if (parsed.isResponseBody(parsedNode)) {
+        return this.convertResponseObject(parsedNode, parsedComponents, components, 0);
+      } else if (parsed.isHeader(parsedNode)) {
+        return this.convertHeader(parsedNode, parsedComponents, components);
+      } else if (parsed.isMediaType(parsedNode)) {
+        return this.convertMediaType(parsedNode, parsedComponents, components);
+      } else if (parsed.isObjectNode(parsedNode)) {
+        return this.convertObject(parsedNode, parsedComponents, components);
+      } else if (parsed.isArrayNode(parsedNode)) {
+        return this.convertArray(parsedNode, parsedComponents, components);
+      } else if (parsed.isUnion(parsedNode)) {
+        return this.convertUnion(parsedNode, parsedComponents, components);
+      } else if (parsed.isComposite(parsedNode)) {
+        return this.convertComposite(parsedNode, parsedComponents, components);
+      } else if (parsed.isExclusion(parsedNode)) {
+        return this.convertExclusion(parsedNode, parsedComponents, components);
+      } else if (parsed.isRequestBody(parsedNode)) {
+        return this.convertRequestBody(parsedNode, parsedComponents, components);
+      }
+    } catch (e) {
+      this._logger.error('error', { parsedNode });
+    } finally {
+      this.recursionDepth -= 1;
     }
 
     return {
