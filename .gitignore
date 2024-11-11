@@ -67,9 +67,17 @@ typings/
 
 # Yarn Integrity file
 .yarn-integrity
+.yarn/*
+!.yarn/cache
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
 # dotenv environment variables file
 .env
+.env.local
 .env.test
 
 # parcel-bundler cache (https://parceljs.org/)
@@ -107,7 +115,7 @@ dist
 #.vscode
 
 # webstorm
-#.idea
+.idea
 
 /dist
 .DS_Store
@@ -115,3 +123,29 @@ dist
 
 cypress/videos
 cypress/screenshots
+
+/openapi/debug
+*.ast.json
+*.oasTree.json
+
+cloud-sql-proxy
+# Sentry Auth Token
+.sentryclirc
+
+# cloud sql proxy local logs
+nohup.out
+
+package-lock.json
+
+types/build
+
+.node-version
+
+.twisp/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+.next/
+.turbo/

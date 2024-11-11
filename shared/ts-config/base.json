@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2023",
+    "useDefineForClassFields": true,
+    "lib": ["ESNext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "experimentalDecorators": false,
+    "emitDecoratorMetadata": false,
+    "baseUrl": ".",
+    "outDir": "dist",
+    "paths": {
+      "@src/*": ["src/*"]
+    }
+  }
+}
