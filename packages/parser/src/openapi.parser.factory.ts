@@ -1,7 +1,7 @@
 import { OpenAPI, OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
-import { OpenApiParser3 } from './openapi.v3.parser.js';
-import { OpenApiParser3_1 } from './openapi.v3_1.parser.js';
-import { Logger } from '@flexbase/logger';
+import { OpenApiParser3 } from './parsers/openapi.v3.parser.js';
+import { OpenApiParser3_1 } from './parsers/openapi.v3_1.parser.js';
+import { Logger } from '@flexbase-eng/logger';
 
 export class OpenApiParserFactor {
   private static isOpenAPIV2(value: OpenAPI.Document): value is OpenAPIV2.Document {

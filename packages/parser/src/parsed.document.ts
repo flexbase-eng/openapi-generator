@@ -1,5 +1,5 @@
-import { Components, Path } from './parsed_nodes/index.js';
-import { Tag } from './parsed_nodes/tag.js';
+import { Components, Path } from './nodes/index.js';
+import { Tag } from './nodes/tag.js';
 
 export interface ParsedDocument {
   title: string;

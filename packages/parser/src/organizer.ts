@@ -1,6 +1,6 @@
 import { ParsedDocument } from './parsed.document.js';
-import * as parsed from '../parser/parsed_nodes/index.js';
-import { Logger } from '@flexbase/logger';
+import * as parsed from './nodes/index.js';
+import { Logger } from '@flexbase-eng/logger';
 
 export class Organizer {
   constructor(private readonly _logger: Logger) {}

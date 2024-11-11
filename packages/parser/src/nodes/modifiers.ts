@@ -1,5 +1,4 @@
 import { OpenAPIV3_1, OpenAPIV3 } from 'openapi-types';
-import { compareStringRecords } from '../../utilities/records.js';
 
 export type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
 export type ReferenceObject = OpenAPIV3.ReferenceObject | OpenAPIV3_1.ReferenceObject;
@@ -38,6 +37,10 @@ export interface Modifiers {
 function isReferenceObject(test: object): test is ReferenceObject {
   return '$ref' in test;
 }
+
+const compareStringRecords = (a: Record<string, string>, b: Record<string, string>): boolean => {
+  return Object.entries(a).every(x => x[1] === b[x[0]]);
+};
 
 export const compareModifiers = (a: Modifiers, b: Modifiers): boolean => {
   let same =

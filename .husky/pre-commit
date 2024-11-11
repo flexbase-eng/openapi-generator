@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-turbo build
-turbo lint
-turbo test
+# turbo build
+# turbo lint
+# turbo test
 

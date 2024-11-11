@@ -1,0 +1,29 @@
+{
+  "name": "parser",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "license": "MIT",
+  "files": [
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "lint": "eslint --max-warnings=0",
+    "format": "prettier --write '{src,tests}/**/*.{ts,json}'",
+    "test": "tsc --p tests --noemit && vitest run",
+    "test:ci": "vitest run --coverage ",
+    "clean": "rimraf ./dist",
+    "clean:all": "rimraf ./dist && rimraf ./node_modules"
+  },
+  "dependencies": {
+    "@flexbase-eng/logger": "^0.1.0",
+    "openapi-types": "^12.1.3"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/ts-config": "workspace:*"
+  }
+}

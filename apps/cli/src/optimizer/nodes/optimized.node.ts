@@ -1,4 +1,4 @@
-import { Modifiers } from '../../parser/parsed_nodes/modifiers.js';
+import { Modifiers } from 'parser';
 
 export interface OptimizedNode extends Modifiers {
   type: string;

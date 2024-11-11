@@ -19,3 +19,4 @@ export * from './callback.js';
 export * from './operation.js';
 export * from './components.js';
 export * from './path.js';
+export * from './tag.js';

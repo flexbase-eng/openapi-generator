@@ -1,5 +1,5 @@
 import { Logger } from '@flexbase/logger';
-import * as parsed from '../parser/parsed_nodes/index.js';
+import * as parsed from 'parser';
 import * as optimized from './nodes/index.js';
 import { murmurHash } from '../utilities/murmur.hash.js';
 export class Converter {

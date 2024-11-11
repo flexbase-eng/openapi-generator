@@ -1,6 +1,6 @@
 import { Logger } from '@flexbase/logger';
-import { ParsedDocument } from '../parser/parsed.document.js';
-import * as parsed from '../parser/parsed_nodes/index.js';
+import { ParsedDocument } from 'parser';
+import * as parsed from 'parser';
 import { OptimizedDocument } from './optimized.document.js';
 import * as optimized from './nodes/index.js';
 import { Converter } from './converter.js';

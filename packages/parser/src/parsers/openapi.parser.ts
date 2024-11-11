@@ -34,12 +34,13 @@ import {
   isReference,
   isObjectNode,
   isComposite,
+  Header,
+  NamedHeader,
   isRequestBody,
-} from './parsed_nodes/index.js';
-import { Header, NamedHeader } from './parsed_nodes/header.js';
-import { Logger } from '@flexbase/logger';
-import { ParsedDocument } from './parsed.document.js';
-import { Tag } from './parsed_nodes/tag.js';
+  Tag,
+} from '../nodes/index.js';
+import { Logger } from '@flexbase-eng/logger';
+import { ParsedDocument } from '../parsed.document.js';
 
 type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
 type ReferenceObject = OpenAPIV3.ReferenceObject | OpenAPIV3_1.ReferenceObject;
@@ -291,7 +292,7 @@ export abstract class OpenApiParser {
       return this.createReference(schema);
     }
 
-    schema.type ??= type ?? schema.enum ? 'string' : 'object';
+    schema.type ??= (type ?? schema.enum) ? 'string' : 'object';
     const modifiers = this.getModifiers(schema);
 
     if (this.isArraySchemaObject(schema)) {
