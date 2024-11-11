@@ -96,7 +96,7 @@ export class Converter {
       } else if (parsed.isRequestBody(parsedNode)) {
         return this.convertRequestBody(parsedNode, parsedComponents, components);
       }
-    } catch (e) {
+    } catch {
       this._logger.error('error', { parsedNode });
     } finally {
       this.recursionDepth -= 1;
