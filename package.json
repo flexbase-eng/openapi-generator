@@ -45,7 +45,7 @@
     "deploy": "changeset publish",
     "clean": "rimraf ./**/dist --glob",
     "clean:all": "rimraf ./**/node_modules ./**/.turbo ./**/dist --glob",
-    "start": "node --inspect --enable-source-maps ./dist/index.js",
+    "start": "node --inspect --enable-source-maps ./apps/cli/dist/index.js",
     "packr": "packr"
   },
   "devDependencies": {

@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "parser": "workspace:*",
-    "@flexbase/logger": "^3.0.1",
+    "@flexbase-eng/logger": "^0.1.0",
     "@readme/openapi-parser": "^2.6.0",
     "@stoplight/json-ref-resolver": "^3.1.6",
     "@stoplight/json-schema-ref-parser": "^10.0.0",
@@ -40,11 +40,16 @@
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/ts-config": "workspace:*",
-    "@repo/vite-config": "workspace:*",
     "@types/fs-extra": "^11.0.4",
     "@types/glob": "^8.1.0",
     "@types/node": "^22.9.0",
     "@types/prettier": "^3.0.0",
-    "@types/uuid": "^10.0.0"
+    "@types/uuid": "^10.0.0",
+    "@rollup/plugin-typescript": "^12.1.1",
+    "@vitest/coverage-v8": "^2.1.4",
+    "typescript": "^5.6.3",
+    "vite": "5.4.11",
+    "vite-plugin-dts": "^4.3.0",
+    "vitest": "^2.1.4"
   }
 }

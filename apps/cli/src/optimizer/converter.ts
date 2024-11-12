@@ -1,4 +1,4 @@
-import { Logger } from '@flexbase/logger';
+import { Logger } from '@flexbase-eng/logger';
 import * as parsed from 'parser';
 import * as optimized from './nodes/index.js';
 import { murmurHash } from '../utilities/murmur.hash.js';

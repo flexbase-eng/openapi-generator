@@ -1,4 +1,4 @@
-import { Logger } from '@flexbase/logger';
+import { Logger } from '@flexbase-eng/logger';
 import { program } from 'commander';
 import * as glob from 'glob';
 import Path from 'path';

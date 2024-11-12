@@ -2,7 +2,7 @@ import { createHandlebars } from './handlerbars.js';
 import { OpenApiGeneratorConfiguation, OpenApiGeneratorConfiguationGenerate } from './runtime.config.js';
 import Path from 'path';
 import fs from 'fs-extra';
-import { Logger } from '@flexbase/logger';
+import { Logger } from '@flexbase-eng/logger';
 import { runPrettier } from './run.prettier.js';
 import * as glob from 'glob';
 import { ParsedDocument, Organizer } from 'parser';

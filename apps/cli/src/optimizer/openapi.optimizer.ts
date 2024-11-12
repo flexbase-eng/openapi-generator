@@ -1,4 +1,4 @@
-import { Logger } from '@flexbase/logger';
+import { Logger } from '@flexbase-eng/logger';
 import { ParsedDocument } from 'parser';
 import * as parsed from 'parser';
 import { OptimizedDocument } from './optimized.document.js';

@@ -1,4 +1,4 @@
-import { ConsoleLogger } from '@flexbase/logger';
+import { ConsoleLogger } from '@flexbase-eng/logger';
 import chalk from 'chalk';
 
 export class ChalkLogger extends ConsoleLogger {

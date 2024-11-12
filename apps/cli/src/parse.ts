@@ -1,7 +1,7 @@
 import $RefParser, { FileInfo, ResolverOptions } from '@stoplight/json-schema-ref-parser';
 import { IsDocument } from './utilities/openapi.utilities.js';
 import Path from 'path';
-import { Logger } from '@flexbase/logger';
+import { Logger } from '@flexbase-eng/logger';
 import { OpenApiParserFactor } from 'parser';
 import { ParsedDocument } from 'parser';
 
