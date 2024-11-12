@@ -15,12 +15,11 @@
     "lint": "eslint --max-warnings=0",
     "format": "prettier --write '{src,tests}/**/*.{ts,json}'",
     "test": "tsc --p tests --noemit && vitest run",
-    "test:ci": "vitest run --coverage ",
-    "clean": "rimraf ./dist",
-    "clean:all": "rimraf ./dist && rimraf ./node_modules"
+    "test:ci": "vitest run --coverage "
   },
   "dependencies": {
     "parser": "workspace:*",
+    "optimizer": "workspace:*",
     "@flexbase-eng/logger": "^0.1.0",
     "@readme/openapi-parser": "^2.6.0",
     "@stoplight/json-ref-resolver": "^3.1.6",

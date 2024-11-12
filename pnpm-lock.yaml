@@ -74,6 +74,9 @@ importers:
       openapi-types:
         specifier: ^12.1.3
         version: 12.1.3
+      optimizer:
+        specifier: workspace:*
+        version: link:../../packages/optimizer
       parser:
         specifier: workspace:*
         version: link:../../packages/parser
@@ -129,6 +132,25 @@ importers:
       vitest:
         specifier: ^2.1.4
         version: 2.1.4(@types/node@22.9.0)
+
+  packages/optimizer:
+    dependencies:
+      '@flexbase-eng/logger':
+        specifier: ^0.1.0
+        version: 0.1.0
+      openapi-types:
+        specifier: ^12.1.3
+        version: 12.1.3
+      parser:
+        specifier: workspace:*
+        version: link:../parser
+    devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../shared/eslint-config
+      '@repo/ts-config':
+        specifier: workspace:*
+        version: link:../../shared/ts-config
 
   packages/parser:
     dependencies:

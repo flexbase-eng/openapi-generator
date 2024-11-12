@@ -6,8 +6,7 @@ import { Logger } from '@flexbase-eng/logger';
 import { runPrettier } from './run.prettier.js';
 import * as glob from 'glob';
 import { ParsedDocument, Organizer } from 'parser';
-import { OpenApiOptimizer } from './optimizer/openapi.optimizer.js';
-import { OptimizedDocument } from './optimizer/optimized.document.js';
+import { OpenApiOptimizer, OptimizedDocument } from 'optimizer';
 import $RefParser from '@stoplight/json-schema-ref-parser';
 import childProcess from 'child_process';
 
