@@ -18,7 +18,7 @@ jobs:
     secrets: inherit
     with:
       node_version: '20'
-      
+
   coverage:
     name: Compute test coverage
     needs: [unit-test]
@@ -30,7 +30,7 @@ jobs:
     needs: build
     uses: flexbase-eng/.github/.github/workflows/package.typescript.yml@main
     secrets:
-      version_token: ${{ secrets.GHA_PAT }}
+      version_token: ${{ secrets.GITHUB_TOKEN }}
     with:
       packr_command: 'packr'
       build_artifact_folder: 'output'
