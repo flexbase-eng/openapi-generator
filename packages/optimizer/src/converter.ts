@@ -213,16 +213,13 @@ export class Converter {
       definitionName = component?.name;
       definition = component?.definition;
     } else {
-      definitionName = parsedNode.definition.name;
+      definitionName = parsedNode.definition.name ?? parsedNode.name;
       definition = parsedNode.definition;
-      if (!definitionName) {
-        definitionName = `${parsedNode.name}${parsedNode.status}`;
-      }
     }
 
     if (definition) {
       const response = this.convertResponseObject(definition, parsedComponents, components, status);
-      const name = `${response.name ?? definitionName ?? '_' + String(murmurHash(JSON.stringify(response), 42))}`;
+      const name = `${response.name ?? definitionName ?? '_' + String(murmurHash(JSON.stringify(response), 42))}${status}`;
       const referenceName = `#/components/responseObjects/${name}`;
       this.addComponent(name, response, components, 'responseObjects');
       return <optimized.Reference>{ type: 'reference', $ref: referenceName };
