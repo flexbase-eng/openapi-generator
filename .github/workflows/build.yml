@@ -49,9 +49,6 @@ jobs:
     with:
       node_version: ${{ inputs.node_version }}
       build_cache_key: ${{ inputs.build_cache_key }}
-      gcp_sa_email: ${{ needs.initenv.outputs.gcp_sa_email }}
-      gcp_project_id: ${{ needs.initenv.outputs.gcp_project_id }}
-      flexbase_env: ${{ needs.initenv.outputs.flexbase_env }}
       coverage_artifact_folder: 'apps/cli/coverage/lcov.info'
 
   deploy:
