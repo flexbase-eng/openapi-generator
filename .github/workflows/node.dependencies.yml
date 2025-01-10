@@ -22,10 +22,6 @@ on:
         description: Node dependencies cache key
         value: ${{ jobs.dependencies.outputs.cache_key}}
 
-    secrets:
-      PACKAGE_TOKEN:
-        required: true
-
 jobs:
   dependencies:
     name: Node Development Dependencies
@@ -34,7 +30,6 @@ jobs:
       CLI_INSTALL: pnpm install --frozen-lockfile
       LOCK_FILE: pnpm-lock.yaml
       CACHE_KEY:
-      PACKAGE_TOKEN: ${{ secrets.PACKAGE_TOKEN }}
 
     outputs:
       cache_key: ${{ steps.compute-cache-key.outputs.cache_key }}
@@ -71,13 +66,6 @@ jobs:
         with:
           node-version: ${{ inputs.node_version }}
           cache: ${{ inputs.package_manager }}
-
-      - name: Configure github internal package access
-        if: steps.dependencies-cache.outputs.cache-hit != 'true'
-        run: |
-          echo "//npm.pkg.github.com/:_authToken=$PACKAGE_TOKEN" > .npmrc
-          echo "@flexbase-eng:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "always-auth=true" >> .npmrc
 
       - name: Install dependencies
         if: steps.dependencies-cache.outputs.cache-hit != 'true'

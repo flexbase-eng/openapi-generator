@@ -41,9 +41,9 @@ importers:
 
   apps/cli:
     dependencies:
-      '@flexbase-eng/logger':
-        specifier: ^0.1.0
-        version: 0.1.0
+      '@flexbase/logger':
+        specifier: ^3.0.1
+        version: 3.0.1
       '@readme/openapi-parser':
         specifier: ^2.6.0
         version: 2.6.0(openapi-types@12.1.3)
@@ -135,9 +135,9 @@ importers:
 
   packages/optimizer:
     dependencies:
-      '@flexbase-eng/logger':
-        specifier: ^0.1.0
-        version: 0.1.0
+      '@flexbase/logger':
+        specifier: ^3.0.1
+        version: 3.0.1
       openapi-types:
         specifier: ^12.1.3
         version: 12.1.3
@@ -154,9 +154,9 @@ importers:
 
   packages/parser:
     dependencies:
-      '@flexbase-eng/logger':
-        specifier: ^0.1.0
-        version: 0.1.0
+      '@flexbase/logger':
+        specifier: ^3.0.1
+        version: 3.0.1
       openapi-types:
         specifier: ^12.1.3
         version: 12.1.3
@@ -615,8 +615,8 @@ packages:
     resolution: {integrity: sha512-CXtq5nR4Su+2I47WPOlWud98Y5Lv8Kyxp2ukhgFx/eW6Blm18VXJO5WuQylPugRo8nbluoi6GvvxBLqHcvqUUw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@flexbase-eng/logger@0.1.0':
-    resolution: {integrity: sha512-A4F97XUBJSOlmSc3+wqsH/5167HubNaEuwPmEhDMAuVvsGbvUHkidM0Me3cOuXTj/lAsOAGCQQmKIUbvc/R4SA==, tarball: https://npm.pkg.github.com/download/@flexbase-eng/logger/0.1.0/3d1c8a63e89272ab40d7faee9936f3be7e514589}
+  '@flexbase/logger@3.0.1':
+    resolution: {integrity: sha512-BOBT4S0eLygYvP/2yPytU0R/884T7w5iUD+GIkZbht6PQVKC3b9L2GGQ+ac4Mr3gK7RTT7g7jLGWVUWD6Kg3XA==}
 
   '@flexbase/packr@1.2.0':
     resolution: {integrity: sha512-cN8E5PGK7Dw7oioPjbO5BEG4BHp/HVnqroQ9fxQKCa74SJvfyVE0uIAJEwpt8Cq1NlBTH/e77BJ80ObJArD2nA==}
@@ -3277,7 +3277,7 @@ snapshots:
     dependencies:
       levn: 0.4.1
 
-  '@flexbase-eng/logger@0.1.0': {}
+  '@flexbase/logger@3.0.1': {}
 
   '@flexbase/packr@1.2.0':
     dependencies:

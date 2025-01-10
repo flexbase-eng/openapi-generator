@@ -39,7 +39,7 @@ import {
   isRequestBody,
   Tag,
 } from '../nodes/index.js';
-import { Logger } from '@flexbase-eng/logger';
+import { Logger } from '@flexbase/logger';
 import { ParsedDocument } from '../parsed.document.js';
 
 type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;

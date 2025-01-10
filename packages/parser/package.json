@@ -17,7 +17,7 @@
     "test:ci": "vitest run --coverage "
   },
   "dependencies": {
-    "@flexbase-eng/logger": "^0.1.0",
+    "@flexbase/logger": "^3.0.1",
     "openapi-types": "^12.1.3"
   },
   "devDependencies": {
