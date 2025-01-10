@@ -8,15 +8,6 @@ on:
       build_cache_key:
         required: true
         type: string
-      gcp_project_id:
-        required: true
-        type: string
-      flexbase_env:
-        required: true
-        type: string
-      gcp_sa_email:
-        required: true
-        type: string
       coverage_artifact_folder:
         required: false
         type: string
@@ -25,9 +16,6 @@ on:
         required: false
         type: string
         default: 'code-coverage-report'
-    secrets:
-      gcp_workload_identity_provider:
-        required: true
 
 jobs:
   test:

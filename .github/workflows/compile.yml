@@ -24,10 +24,6 @@ on:
         type: string
         default: ./.turbo
 
-    secrets:
-      PACKAGE_TOKEN:
-        required: true
-
 jobs:
   Compile:
     runs-on: ubuntu-latest
@@ -68,12 +64,6 @@ jobs:
           path: ${{ inputs.turbo_cache_path }}
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: ${{ runner.os }}-turbo-
-
-      - name: Configure github internal package access
-        run: |
-          echo "//npm.pkg.github.com/:_authToken=$PACKAGE_TOKEN" > .npmrc
-          echo "@flexbase-eng:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "always-auth=true" >> .npmrc
 
       - name: Install dependencies
         env:
