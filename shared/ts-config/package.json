@@ -5,6 +5,6 @@
   "license": "MIT",
   "repository": "https://github.com/flexbase-eng/openapi-generator",
   "devDependencies": {
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.3"
   }
 }

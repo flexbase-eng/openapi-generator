@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 /** @type {import("eslint").Linter.Config[]} */
 export default [
   {
-    ignores: ['node_modules/*', 'dist/*', '.turbo/*', 'tests/*'],
+    ignores: ['node_modules/*', 'dist/*', '.turbo/*', 'tests/*', 'bin/*'],
   },
   {
     plugins: {
