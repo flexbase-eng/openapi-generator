@@ -1,0 +1,64 @@
+name: Deploy
+on:
+  workflow_call:
+    inputs:
+      node_version:
+        required: true
+        type: string
+      build_cache_key:
+        required: true
+        type: string
+      tag:
+        required: false
+        type: string
+        default: latest
+      registry_url:
+        required: false
+        type: string
+        default: 'https://registry.npmjs.org'
+        description: The package registry to use. Defaults to 'https://registry.npmjs.org'
+    secrets:
+      NODE_AUTH_TOKEN:
+        required: true
+env:
+  NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+  CLI_PUBLISH: pnpm run deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node ${{ inputs.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: pnpm
+          registry-url: ${{ inputs.registry_url }}
+          always-auth: true
+
+      - name: Retrieve build cache
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ./*
+          key: ${{ inputs.build_cache_key }}
+          fail-on-cache-miss: true
+
+        # reference: https://stackoverflow.com/questions/54310050/how-to-version-build-artifacts-using-github-actions
+      - name: beta - version value from package.json
+        if: inputs.tag != 'latest'
+        run: |
+          npm i -g json
+          json -I -f package.json -e "this.version=\"$(json -f package.json | json version)-${{ inputs.tag }}.${{ github.run_number }}\""
+
+      - name: Publish
+        run: ${{ env.CLI_PUBLISH }}

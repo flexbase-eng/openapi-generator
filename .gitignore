@@ -149,3 +149,4 @@ types/build
 
 .next/
 .turbo/
+bin/

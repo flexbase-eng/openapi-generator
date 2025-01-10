@@ -1,13 +1,13 @@
-# @repo/eslint-config
+# cli
 
-## 0.1.0
+## 3.1.0
 
 ### Minor Changes
 
 - refactoring to pnpm and workspace
 
-## 0.0.1
-
 ### Patch Changes
 
-- updating dependencies
+- Updated dependencies
+  - optimizer@0.1.0
+  - parser@0.1.0

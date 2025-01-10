@@ -14,6 +14,16 @@
     },
     "test:ci": {
       "dependsOn": ["build"]
+    },
+    "clean:bin": {
+      "dependsOn": ["^clean:bin"]
+    },
+    "build:ci": {
+      "dependsOn": ["clean:bin", "build"],
+      "outputs": ["bin/**"]
+    },
+    "packr": {
+      "dependsOn": ["^build:ci"]
     }
   }
 }

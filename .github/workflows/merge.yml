@@ -1,0 +1,25 @@
+name: Merge
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  prod:
+    name: Build Production
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      node_version: '20'
+      environment: 'production'
+      build_cache_key: build-cache-${{ github.sha }}
+
+  conclusion:
+    needs: [prod]
+    if: success() || failure()
+    uses: ./.github/workflows/conclusion.yml
+    secrets: inherit
+    with:
+      release_title: OpenApi Generator
+      is_success: ${{ !contains(needs.*.result, 'failure') }}

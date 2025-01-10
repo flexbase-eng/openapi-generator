@@ -1,7 +1,25 @@
 {
   "name": "cli",
-  "version": "0.0.0",
+  "version": "3.1.0",
   "description": "Open API code generator",
+  "author": {
+    "name": "Flexbase Technologies",
+    "email": "hello@flex.one",
+    "url": "https://flex.one"
+  },
+  "bugs": {
+    "url": "https://github.com/flexbase-eng/openapi-generator/issues"
+  },
+  "homepage": "https://github.com/flexbase-eng/openapi-generator#readme",
+  "keywords": [
+    "openapi",
+    "swagger",
+    "generator"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flexbase-eng/openapi-generator.git"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -12,10 +30,13 @@
   ],
   "scripts": {
     "build": "tsc && vite build",
+    "build:ci": "pnpm deploy --prod ./bin/ --filter=cli",
+    "clean:bin": "rimraf ./bin/** --glob",
     "lint": "eslint --max-warnings=0",
     "format": "prettier --write '{src,tests}/**/*.{ts,json}'",
     "test": "tsc --p tests --noemit && vitest run",
-    "test:ci": "vitest run --coverage "
+    "test:ci": "vitest run --coverage ",
+    "packr": "packr"
   },
   "dependencies": {
     "parser": "workspace:*",
@@ -50,5 +71,29 @@
     "vite": "5.4.11",
     "vite-plugin-dts": "^4.3.0",
     "vitest": "^2.1.4"
+  },
+  "packr": {
+    "output": "bin",
+    "properties": [
+      "name",
+      "version",
+      "description",
+      "main",
+      "module",
+      "types",
+      "homepage",
+      "repository",
+      "bugs",
+      "author",
+      "license",
+      "dependencies",
+      "type",
+      "bin",
+      "keywords"
+    ],
+    "include": [
+      "README.md",
+      "LICENSE"
+    ]
   }
 }

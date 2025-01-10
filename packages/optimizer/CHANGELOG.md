@@ -1,4 +1,4 @@
-# @repo/eslint-config
+# optimizer
 
 ## 0.1.0
 
@@ -6,8 +6,7 @@
 
 - refactoring to pnpm and workspace
 
-## 0.0.1
-
 ### Patch Changes
 
-- updating dependencies
+- Updated dependencies
+  - parser@0.1.0
