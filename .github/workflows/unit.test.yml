@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CLI_TEST: pnpm turbo test:ci
+      CLI_INSTALL: pnpm install --frozen-lockfile
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -56,6 +57,11 @@ jobs:
           path: ./.turbo
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: ${{ runner.os }}-turbo-
+
+      - name: Install dependencies
+        env:
+          NODE_ENV: development # ensure all the dev dependencies are installed
+        run: ${{ env.CLI_INSTALL }}
 
       - name: Run tests
         run: ${{ env.CLI_TEST }}
