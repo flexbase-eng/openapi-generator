@@ -22,7 +22,7 @@ on:
         required: true
 env:
   NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
-  CLI_PUBLISH: pnpm publish --tag ${{ inputs.tag }}
+  CLI_PUBLISH: pnpm publish --tag ${{ inputs.tag }} --no-git-checks
 
 jobs:
   deploy:
