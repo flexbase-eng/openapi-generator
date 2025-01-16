@@ -22,7 +22,7 @@ on:
         required: true
 env:
   NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
-  CLI_PUBLISH: pnpm run deploy
+  CLI_PUBLISH: pnpm publish --tag ${{ inputs.tag }}
 
 jobs:
   deploy:
@@ -54,11 +54,11 @@ jobs:
           fail-on-cache-miss: true
 
         # reference: https://stackoverflow.com/questions/54310050/how-to-version-build-artifacts-using-github-actions
-      - name: beta - version value from package.json
-        if: inputs.tag != 'latest'
-        run: |
-          npm i -g json
-          json -I -f package.json -e "this.version=\"$(json -f package.json | json version)-${{ inputs.tag }}.${{ github.run_number }}\""
+      # - name: beta - version value from package.json
+      #   if: inputs.tag != 'latest'
+      #   run: |
+      #     npm i -g json
+      #     json -I -f package.json -e "this.version=\"$(json -f package.json | json version)-${{ inputs.tag }}.${{ github.run_number }}\""
 
       - name: Publish
         run: ${{ env.CLI_PUBLISH }}

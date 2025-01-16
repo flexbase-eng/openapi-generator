@@ -43,7 +43,6 @@
     "test:ci": "turbo run test:ci",
     "format": "turbo run format",
     "changeset": "changeset && changeset version",
-    "deploy": "changeset publish",
     "clean": "rimraf ./**/dist --glob",
     "clean:bin": "turbo run clean:bin",
     "clean:all": "rimraf ./**/node_modules ./**/.turbo ./**/dist --glob",
