@@ -1,0 +1,25 @@
+import { defineConfig } from 'vite';
+import path from 'path';
+import typescript from '@rollup/plugin-typescript';
+import pkg from './package.json' assert { type: 'json' };
+import dts from 'vite-plugin-dts';
+
+const resolvePath = (str: string) => path.resolve(__dirname, str);
+
+export default defineConfig({
+  build: {
+    sourcemap: true,
+    outDir: 'dist',
+    lib: {
+      entry: resolvePath('./src/index.ts'),
+      name: pkg.name,
+      fileName: () => `index.js`,
+      formats: ['es'],
+    },
+    rollupOptions: {
+      plugins: [typescript()],
+      external: [...Object.keys(pkg.dependencies || {})],
+    },
+  },
+  plugins: [dts({ insertTypesEntry: true })],
+});

@@ -1,4 +1,4 @@
-import { Modifiers } from './modifiers.js';
+import type { Modifiers } from './modifiers.js';
 
 export interface ParsedNode extends Modifiers {
   type: string;

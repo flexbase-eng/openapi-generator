@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 /** @type {import("eslint").Linter.Config[]} */
 export default [
   {
-    ignores: ['node_modules/*', 'dist/*', '.turbo/*', 'tests/*', 'bin/*'],
+    ignores: ['node_modules/*', 'dist/*', '.turbo/*', 'tests/*', 'bin/*', 'coverage/*'],
   },
   {
     plugins: {
@@ -19,7 +19,7 @@ export default [
         project: ['./tsconfig.json'],
       },
     },
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['src/**/*.ts'],
     linterOptions: {
       reportUnusedDisableDirectives: false,
     },

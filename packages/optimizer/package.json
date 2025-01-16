@@ -9,12 +9,12 @@
   "files": [
     "dist/**"
   ],
+  "private": true,
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts",
+    "build": "tsc && vite build",
+    "build_": "tsup src/index.ts --format esm --dts --sourcemap",
     "lint": "eslint --max-warnings=0",
-    "format": "prettier --write '{src,tests}/**/*.{ts,json}'",
-    "test": "tsc --p tests --noemit && vitest run",
-    "test:ci": "vitest run --coverage "
+    "format": "prettier --write '{src,tests}/**/*.{ts,json}'"
   },
   "dependencies": {
     "@flexbase/logger": "^3.0.1",

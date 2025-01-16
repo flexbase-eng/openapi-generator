@@ -1,4 +1,4 @@
-export * from './parsed.node.js';
+export type * from './parsed.node.js';
 export * from './reference.js';
 export * from './modifiers.js';
 export * from './media.js';

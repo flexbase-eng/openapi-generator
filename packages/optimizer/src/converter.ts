@@ -1,7 +1,8 @@
 import { Logger } from '@flexbase/logger';
-import * as parsed from 'parser';
 import * as optimized from './nodes/index.js';
 import { murmurHash } from './murmur.hash.js';
+import * as parsed from 'parser';
+
 export class Converter {
   private recursionDepth: number = 0;
 

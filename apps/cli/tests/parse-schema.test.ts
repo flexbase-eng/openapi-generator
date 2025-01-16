@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
 import { noopLogger } from '@flexbase/logger';
 import { parseSpec } from '../src/parse.js';
-import { OpenApiOptimizer } from '../src/optimizer/openapi.optimizer.js';
-import { Organizer } from '../src/parser/organizer.js';
+import { Organizer } from 'parser';
+import { OpenApiOptimizer } from 'optimizer';
 
 test('petstore schemas', async () => {
   const organizer = new Organizer(noopLogger);
