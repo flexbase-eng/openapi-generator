@@ -22,8 +22,6 @@
       "dependsOn": ["clean:bin", "build"],
       "outputs": ["bin/**"]
     },
-    "packr": {
-      "dependsOn": ["^build:ci"]
-    }
+    "packr": {}
   }
 }

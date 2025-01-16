@@ -33,7 +33,6 @@
     "openapi-generator": "dist/index.js"
   },
   "type": "module",
-  "private": true,
   "packageManager": "pnpm@9.5.0",
   "scripts": {
     "build": "turbo run build",

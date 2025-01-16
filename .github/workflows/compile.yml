@@ -28,7 +28,7 @@ jobs:
   Compile:
     runs-on: ubuntu-latest
     env:
-      CLI_BUILD: pnpm turbo packr
+      CLI_BUILD: pnpm turbo build:ci
       CLI_INSTALL: pnpm install --frozen-lockfile
       CLI_LINT: pnpm turbo lint
       PACKAGE_TOKEN: ${{ secrets.PACKAGE_TOKEN }}

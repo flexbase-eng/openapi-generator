@@ -22,7 +22,8 @@ on:
         required: true
 env:
   NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
-  CLI_PUBLISH: pnpm publish --tag ${{ inputs.tag }} --no-git-checks
+  CLI_DEPLOY: pnpm deploy --prod ./apps/cli/bin/ --filter=cli
+  CLI_PUBLISH: pnpm publish ./apps/cli/bin --tag ${{ inputs.tag }} --no-git-checks
 
 jobs:
   deploy:
@@ -59,6 +60,13 @@ jobs:
       #   run: |
       #     npm i -g json
       #     json -I -f package.json -e "this.version=\"$(json -f package.json | json version)-${{ inputs.tag }}.${{ github.run_number }}\""
+
+      - name: Prep
+        run: |
+          ${{ env.CLI_DEPLOY }}
+          pnpm turbo packr 
+          npm i -g json
+          json -I -f ./apps/cli/bin/package.json -e "this.name=@flexbase/openapi-generator"
 
       - name: Publish
         run: ${{ env.CLI_PUBLISH }}
