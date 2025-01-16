@@ -22,7 +22,7 @@ on:
         required: true
 env:
   NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
-  CLI_DEPLOY: pnpm deploy --prod ./apps/cli/bin/ --filter=cli
+  CLI_DEPLOY: pnpm deploy --prod ./apps/cli/bin --filter=cli
   CLI_PUBLISH: pnpm publish ./apps/cli/bin --tag ${{ inputs.tag }} --no-git-checks
 
 jobs:
