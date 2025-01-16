@@ -1,5 +1,3 @@
-/// <reference types="vitest" />
-
 import { defineConfig } from 'vite';
 import path from 'path';
 import typescript from '@rollup/plugin-typescript';
@@ -23,17 +21,8 @@ export default defineConfig({
       output: {
         banner: '#!/usr/bin/env node',
       },
-
       plugins: [typescript()],
       external: [...Object.keys(pkg.dependencies || {})],
-    },
-  },
-  test: {
-    globals: true,
-    environment: 'node',
-    setupFiles: './tests/setup.ts',
-    coverage: {
-      provider: 'v8',
     },
   },
   plugins: [dts({ insertTypesEntry: true })],
