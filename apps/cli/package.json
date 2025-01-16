@@ -28,6 +28,9 @@
   "files": [
     "dist/**"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc && vite build",
     "build:ci": "pnpm deploy --prod ./bin/ --filter=cli",
