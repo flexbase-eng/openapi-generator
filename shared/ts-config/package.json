@@ -1,0 +1,10 @@
+{
+  "name": "@repo/ts-config",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "repository": "https://github.com/flexbase-eng/openapi-generator",
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

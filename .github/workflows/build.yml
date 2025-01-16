@@ -1,0 +1,62 @@
+name: Build
+on:
+  workflow_call:
+    inputs:
+      node_version:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      tag:
+        required: false
+        type: string
+        default: latest
+      build_cache_key:
+        required: false
+        type: string
+        default: build-cache-${{ github.sha }}
+
+jobs:
+  initenv:
+    uses: ./.github/workflows/initialize.environment.yml
+    with:
+      environment: ${{ inputs.environment }}
+      build_cache_key: ${{ inputs.build_cache_key }}
+      node_version: ${{ inputs.node_version }}
+
+  dependencies:
+    needs: [initenv]
+    uses: ./.github/workflows/node.dependencies.yml
+    secrets: inherit
+    with:
+      node_version: ${{ needs.initenv.outputs.node_version }}
+      environment: ${{ needs.initenv.outputs.environment }}
+
+  compile:
+    needs: [initenv, dependencies]
+    uses: ./.github/workflows/compile.yml
+    secrets: inherit
+    with:
+      node_version: ${{ inputs.node_version }}
+      build_cache_key: ${{ inputs.build_cache_key }}
+      dependencies_cache_key: ${{ needs.dependencies.outputs.cache_key }}
+
+  unittest:
+    needs: [initenv, dependencies, compile]
+    uses: ./.github/workflows/unit.test.yml
+    secrets: inherit
+    with:
+      node_version: ${{ inputs.node_version }}
+      build_cache_key: ${{ inputs.build_cache_key }}
+      coverage_artifact_folder: 'apps/cli/coverage/lcov.info'
+
+  deploy:
+    name: Deploy
+    uses: ./.github/workflows/deploy.yml
+    needs: [unittest]
+    secrets: inherit
+    with:
+      node_version: ${{ inputs.node_version }}
+      build_cache_key: ${{ inputs.build_cache_key }}
+      tag: ${{ inputs.tag }}
