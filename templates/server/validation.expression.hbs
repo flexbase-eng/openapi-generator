@@ -17,7 +17,7 @@
             }
         {{else compare format "===" "duration"}}
             if(Number.isNaN(Number({{safeName}}))) {
-                const {{safeName}}dtTest = Duration.fromISO({{safeName}}, {zone: 'utc'});
+                const {{safeName}}dtTest = Duration.fromISO({{safeName}});
                 if(!{{safeName}}dtTest.isValid) {
                     utilities.addOrSet({{errorsName}}, '{{name}}', `is not valid: ${ {{safeName}}dtTest.invalidExplanation }`);
                 }
