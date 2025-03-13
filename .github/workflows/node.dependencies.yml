@@ -1,0 +1,81 @@
+name: Node Dependencies
+on:
+  workflow_call:
+    inputs:
+      node_version:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      package_manager:
+        required: false
+        type: string
+        default: pnpm
+      node_modules_path:
+        required: false
+        type: string
+        default: ./node_modules
+
+    outputs:
+      cache_key:
+        description: Node dependencies cache key
+        value: ${{ jobs.dependencies.outputs.cache_key}}
+
+jobs:
+  dependencies:
+    name: Node Development Dependencies
+    runs-on: ubuntu-latest
+    env:
+      CLI_INSTALL: pnpm install --frozen-lockfile
+      LOCK_FILE: pnpm-lock.yaml
+      CACHE_KEY:
+
+    outputs:
+      cache_key: ${{ steps.compute-cache-key.outputs.cache_key }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pnpm
+        if: ${{ inputs.package_manager == 'pnpm' }}
+        uses: pnpm/action-setup@v4
+
+      - name: Compute cache key
+        id: compute-cache-key
+        env:
+          CACHE_KEY: node-modules-${{ runner.os }}-${{ inputs.environment }}-${{ hashFiles(env.LOCK_FILE) }}
+        run: |
+          echo "cache_key=$CACHE_KEY" >> $GITHUB_OUTPUT
+          echo "CACHE_KEY=$CACHE_KEY" >> $GITHUB_ENV
+
+      - name: Lookup dependencies cache
+        id: dependencies-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ inputs.node_modules_path }}
+          key: ${{ env.CACHE_KEY }}
+          lookup-only: true
+
+      - name: Setup Node ${{ inputs.node_version }}
+        if: steps.dependencies-cache.outputs.cache-hit != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: ${{ inputs.package_manager }}
+
+      - name: Install dependencies
+        if: steps.dependencies-cache.outputs.cache-hit != 'true'
+        env:
+          NODE_ENV: development # ensure all the dev dependencies are installed
+        run: ${{ env.CLI_INSTALL }}
+
+      - name: Update dependencies cache
+        if: steps.dependencies-cache.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.node_modules_path }}
+          key: ${{ env.CACHE_KEY }}

@@ -1,0 +1,97 @@
+{
+  "name": "cli",
+  "version": "3.1.0",
+  "description": "Open API code generator",
+  "author": {
+    "name": "Flexbase Technologies",
+    "email": "hello@flex.one",
+    "url": "https://flex.one"
+  },
+  "bugs": {
+    "url": "https://github.com/flexbase-eng/openapi-generator/issues"
+  },
+  "homepage": "https://github.com/flexbase-eng/openapi-generator#readme",
+  "keywords": [
+    "openapi",
+    "swagger",
+    "generator"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flexbase-eng/openapi-generator.git"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "license": "MIT",
+  "files": [
+    "dist/**"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc && vite build",
+    "build:ci": "pnpm deploy --prod ./bin/ --filter=cli",
+    "clean:bin": "rimraf ./bin/** --glob",
+    "lint": "eslint --max-warnings=0",
+    "format": "prettier --write '{src,tests}/**/*.{ts,json}'",
+    "test": "tsc --p tests --noemit && vitest run",
+    "test:ci": "vitest run --coverage ",
+    "packr": "packr"
+  },
+  "dependencies": {
+    "@flexbase/logger": "^3.0.1",
+    "@readme/openapi-parser": "^2.6.0",
+    "@stoplight/json-ref-resolver": "^3.1.6",
+    "@stoplight/json-schema-ref-parser": "^10.0.0",
+    "chalk": "^5.4.1",
+    "commander": "^13.0.0",
+    "fs-extra": "^11.3.0",
+    "glob": "^11.0.1",
+    "handlebars": "^4.7.8",
+    "highlight.js": "^11.11.1",
+    "openapi-types": "^12.1.3",
+    "optimizer": "workspace:*",
+    "parser": "workspace:*",
+    "path": "^0.12.7",
+    "prettier": "^3.4.2",
+    "useful-handlebars-helpers": "^0.12.0",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/ts-config": "workspace:*",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/fs-extra": "^11.0.4",
+    "@types/glob": "^8.1.0",
+    "@types/node": "^22.10.7",
+    "@types/prettier": "^3.0.0",
+    "@types/uuid": "^10.0.0"
+  },
+  "packr": {
+    "output": "bin",
+    "properties": [
+      "name",
+      "version",
+      "description",
+      "main",
+      "module",
+      "types",
+      "homepage",
+      "repository",
+      "bugs",
+      "author",
+      "license",
+      "dependencies",
+      "type",
+      "bin",
+      "keywords"
+    ],
+    "include": [
+      "README.md",
+      "LICENSE"
+    ]
+  }
+}

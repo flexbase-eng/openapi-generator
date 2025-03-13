@@ -33,64 +33,36 @@
     "openapi-generator": "dist/index.js"
   },
   "type": "module",
-  "private": true,
+  "packageManager": "pnpm@9.5.0",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "prepare": "is-ci || husky install",
-    "lint": "eslint src/** --max-warnings=0",
-    "lint:fix": "yarn lint --fix",
-    "format": "prettier --write 'src/**/*.{ts,tsx,css,md,json}'",
-    "test": "vitest run --coverage",
-    "test:ci": "vitest run --coverage --config vitest.ci.config.ts",
-    "start": "node --inspect --enable-source-maps ./dist/index.js",
-    "packr": "packr"
-  },
-  "dependencies": {
-    "@flexbase/logger": "^3.0.1",
-    "@readme/openapi-parser": "^2.6.0",
-    "@stoplight/json-ref-resolver": "^3.1.6",
-    "@stoplight/json-schema-ref-parser": "^10.0.0",
-    "chalk": "^5.3.0",
-    "commander": "^13.0.0",
-    "fs-extra": "^11.2.0",
-    "glob": "^11.0.0",
-    "handlebars": "^4.7.8",
-    "highlight.js": "^11.10.0",
-    "openapi-types": "^12.1.3",
-    "path": "^0.12.7",
-    "prettier": "^3.3.3",
-    "useful-handlebars-helpers": "^0.12.0",
-    "uuid": "^11.0.3"
+    "build": "turbo run build",
+    "build:ci": "turbo run build:ci",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:ci": "turbo run test:ci",
+    "format": "turbo run format",
+    "changeset": "changeset && changeset version",
+    "clean": "rimraf ./**/dist --glob",
+    "clean:bin": "turbo run clean:bin",
+    "clean:all": "rimraf ./**/node_modules ./**/.turbo ./**/dist --glob",
+    "start": "node --inspect --enable-source-maps ./apps/cli/dist/index.js",
+    "packr": "turbo run packr"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.11",
     "@flexbase/packr": "^1.2.0",
-    "@rollup/plugin-typescript": "^12.1.1",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
-    "@types/fs-extra": "^11.0.4",
-    "@types/glob": "^8.1.0",
-    "@types/node": "^22.9.0",
-    "@types/prettier": "^3.0.0",
-    "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.13.0",
-    "@typescript-eslint/parser": "^8.13.0",
-    "@vitest/coverage-v8": "^2.1.4",
-    "eslint": "9.17.0",
-    "husky": "^9.1.6",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "husky": "^9.1.7",
     "is-ci": "^4.1.0",
-    "lint-staged": "^15.2.10",
-    "semantic-release": "^24.2.0",
-    "typescript": "^5.6.3",
-    "typescript-eslint": "^8.13.0",
+    "prettier": "^3.4.2",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.3.5",
+    "turbo": "^2.3.3",
+    "@vitest/coverage-v8": "^2.1.8",
+    "typescript": "^5.7.3",
     "vite": "6.0.7",
-    "vite-plugin-dts": "^4.3.0",
-    "vitest": "^2.1.4"
-  },
-  "lint-staged": {
-    "src/**/*.{ts,tsx,json}": "eslint --cache --fix --max-warnings=0",
-    "src/**/*.{ts,tsx,css,json}": "prettier --write --ignore-unknown"
+    "vite-plugin-dts": "^4.5.0",
+    "vitest": "^2.1.8"
   },
   "prettier": {
     "semi": true,
@@ -109,72 +81,6 @@
           "parser": "glimmer"
         }
       }
-    ]
-  },
-  "release": {
-    "branches": [
-      "main",
-      {
-        "name": "*",
-        "prerelease": true
-      }
-    ],
-    "plugins": [
-      [
-        "@semantic-release/commit-analyzer",
-        {
-          "preset": "angular",
-          "releaseRules": [
-            {
-              "breaking": true,
-              "release": "major"
-            },
-            {
-              "message": "major*",
-              "release": "major"
-            },
-            {
-              "message": "feat*",
-              "release": "minor"
-            },
-            {
-              "message": "*",
-              "release": "patch"
-            }
-          ]
-        }
-      ],
-      "@semantic-release/release-notes-generator",
-      "@semantic-release/npm",
-      "@semantic-release/git",
-      "@semantic-release/github"
-    ]
-  },
-  "packr": {
-    "output": "output",
-    "properties": [
-      "name",
-      "version",
-      "description",
-      "main",
-      "module",
-      "types",
-      "homepage",
-      "repository",
-      "bugs",
-      "author",
-      "license",
-      "dependencies",
-      "type",
-      "bin",
-      "keywords"
-    ],
-    "include": [
-      "dist",
-      "templates",
-      "README.md",
-      "LICENSE",
-      "yarn.lock"
     ]
   }
 }

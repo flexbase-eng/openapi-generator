@@ -1,0 +1,55 @@
+name: Build and Test
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      build_cache_key:
+        required: true
+        type: string
+      node_version:
+        required: true
+        type: string
+    outputs:
+      node_version:
+        value: ${{ jobs.setenv.outputs.node_version }}
+      build_cache_key:
+        value: ${{ jobs.setenv.outputs.build_cache_key }}
+      gcp_workload_identity_provider:
+        value: ${{ jobs.setenv.outputs.gcp_workload_identity_provider }}
+      gcp_sa_email:
+        value: ${{ jobs.setenv.outputs.gcp_sa_email }}
+      gcp_project_id:
+        value: ${{ jobs.setenv.outputs.gcp_project_id }}
+      flexbase_env:
+        value: ${{ jobs.setenv.outputs.flexbase_env }}
+      node_env:
+        value: ${{ jobs.setenv.outputs.node_env }}
+      node_port:
+        value: ${{ jobs.setenv.outputs.node_port }}
+      gcp_docker_repository:
+        value: ${{ jobs.setenv.outputs.gcp_docker_repository }}
+      gcp_zone_id:
+        value: ${{ jobs.setenv.outputs.gcp_zone_id }}
+      environment:
+        value: ${{ inputs.environment }}
+
+jobs:
+  setenv:
+    name: Initialize environment variables
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    outputs:
+      node_version: ${{ inputs.node_version }}
+      build_cache_key: ${{ inputs.build_cache_key }}
+      gcp_workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      gcp_sa_email: ${{ vars.GCP_PLATFORM_SA_EMAIL }}
+      gcp_project_id: ${{ vars.GCP_PROJECT_ID }}
+      flexbase_env: ${{ vars.FLEXBASE_ENV }}
+      node_env: ${{ vars.NODE_ENV }}
+      node_port: ${{ vars.NODE_PORT }}
+      gcp_docker_repository: ${{ vars.GCP_DOCKER_REPOSITORY }}
+      gcp_zone_id: ${{ vars.ZONE_ID }}
+    steps:
+      - run: echo "Initialize environment variables"

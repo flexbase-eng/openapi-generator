@@ -1,0 +1,25 @@
+name: Conclusion
+on:
+  workflow_call:
+    inputs:
+      is_success:
+        required: true
+        type: boolean
+      release_title:
+        required: true
+        type: string
+
+jobs:
+  github-release:
+    if: github.ref == 'refs/heads/main' && inputs.is_success
+    name: Update github release
+    uses: flexbase-eng/.github/.github/workflows/notify.github.release.yml@main
+    secrets: inherit
+
+  notify-slack:
+    name: Slack notification
+    uses: flexbase-eng/.github/.github/workflows/notify.slack.yml@main
+    secrets: inherit
+    with:
+      release_title: ${{ inputs.release_title }}
+      is_success: ${{ inputs.is_success }}

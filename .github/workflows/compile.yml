@@ -1,0 +1,89 @@
+name: Compile
+on:
+  workflow_call:
+    inputs:
+      node_version:
+        required: true
+        type: string
+      build_cache_key:
+        required: true
+        type: string
+      dependencies_cache_key:
+        required: true
+        type: string
+      package_manager:
+        required: false
+        type: string
+        default: pnpm
+      node_modules_path:
+        required: false
+        type: string
+        default: ./node_modules
+      turbo_cache_path:
+        required: false
+        type: string
+        default: ./.turbo
+
+jobs:
+  Compile:
+    runs-on: ubuntu-latest
+    env:
+      CLI_BUILD: pnpm turbo build:ci
+      CLI_INSTALL: pnpm install --frozen-lockfile
+      CLI_LINT: pnpm turbo lint
+      PACKAGE_TOKEN: ${{ secrets.PACKAGE_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pnpm
+        if: ${{ inputs.package_manager == 'pnpm' }}
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node ${{ inputs.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: ${{ inputs.package_manager }}
+
+      - name: Retrieve dependencies cache
+        id: dependencies-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ inputs.node_modules_path }}
+          key: ${{ inputs.dependencies_cache_key }}
+          fail-on-cache-miss: true
+
+      - name: Retrieve turbo cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ inputs.turbo_cache_path }}
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-
+
+      - name: Install dependencies
+        env:
+          NODE_ENV: development # ensure all the dev dependencies are installed
+        run: ${{ env.CLI_INSTALL }}
+
+      - name: Build
+        run: ${{ env.CLI_BUILD }}
+
+      - name: Lint
+        run: ${{ env.CLI_LINT }}
+
+      - name: Upload turbo cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.turbo_cache_path }}
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+
+      - name: Upload build cache
+        uses: actions/cache@v4
+        with:
+          path: ./*
+          key: ${{ inputs.build_cache_key }}
