@@ -194,6 +194,7 @@ export abstract class OpenApiParser {
       const name = record[0];
       const schema = record[1];
       const definition = schema ? this.parsePathItemObject(schema, components) : undefined;
+
       nodes.push({
         type: 'pathItem',
         name,
@@ -291,7 +292,7 @@ export abstract class OpenApiParser {
       return this.createReference(schema);
     }
 
-    schema.type ??= type ?? schema.enum ? 'string' : 'object';
+    schema.type ??= (type ?? schema.enum) ? 'string' : 'object';
     const modifiers = this.getModifiers(schema);
 
     if (this.isArraySchemaObject(schema)) {
