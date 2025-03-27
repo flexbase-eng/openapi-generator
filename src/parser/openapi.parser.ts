@@ -82,7 +82,7 @@ export abstract class OpenApiParser {
 
     const components = document.components ? this.parseComponents(document.components) : {};
 
-    const paths = (document.paths ? this.parsePaths(document.paths, components) : []).sort((a, b) => a.name.localeCompare(b.name));
+    const paths = document.paths ? this.parsePaths(document.paths, components) : [];
 
     return { title, apiName, description, version, components, paths, tags };
   }
@@ -201,7 +201,29 @@ export abstract class OpenApiParser {
         definition,
       });
     }
-    return nodes;
+
+    // Sort paths to ensure more specific routes (without path parameters) come before routes with path parameters
+    // This prevents path parameter routes from capturing requests meant for more specific routes
+    return nodes.sort((a, b) => {
+      // Count parameters in each path
+      const paramsInA = (a.name.match(/{[^}]+}/g) || []).length;
+      const paramsInB = (b.name.match(/{[^}]+}/g) || []).length;
+
+      // If one has parameters and the other doesn't, the one without parameters comes first
+      if (paramsInA === 0 && paramsInB > 0) return -1;
+      if (paramsInA > 0 && paramsInB === 0) return 1;
+
+      // If both have parameters or neither has parameters, sort by parameter count (fewer first)
+      if (paramsInA !== paramsInB) return paramsInA - paramsInB;
+
+      // If parameter count is the same, sort by path segments (more segments first for more specificity)
+      const segmentsA = a.name.split('/').filter(Boolean).length;
+      const segmentsB = b.name.split('/').filter(Boolean).length;
+      if (segmentsA !== segmentsB) return segmentsB - segmentsA;
+
+      // If all else is equal, sort alphabetically
+      return a.name.localeCompare(b.name);
+    });
   }
 
   private isReferenceObject(test: object): test is ReferenceObject {
