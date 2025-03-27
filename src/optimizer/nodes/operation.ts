@@ -17,6 +17,7 @@ export interface Operation extends OptimizedNode {
   callbacks?: Reference;
   security?: Record<string, string[]>[];
   extensions?: Record<string, string>;
+  pathRegex?: Record<string, string>;
 }
 
 export const isOperation = (value: OptimizedNode): value is Operation => {

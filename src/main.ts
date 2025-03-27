@@ -3,7 +3,7 @@ import { program } from 'commander';
 import * as glob from 'glob';
 import Path from 'path';
 import fs from 'fs-extra';
-import pkg from '../package.json' assert { type: 'json' };
+import pkg from '../package.json' with { type: 'json' };
 import { OpenApiGeneratorConfiguation } from './runtime.config.js';
 import { build } from './build.js';
 import { parseSpec } from './parse.js';

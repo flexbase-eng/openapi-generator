@@ -17,6 +17,8 @@ export class OpenApiOptimizer {
 
     this.optimizeComponents(optimizedDocument.components);
 
+    this.buildPathRegex(optimizedDocument);
+
     return optimizedDocument;
   }
 
@@ -31,6 +33,15 @@ export class OpenApiOptimizer {
       return undefined;
     }
     return found as parsed.Component<T>;
+  }
+
+  private lookupComponent(node: optimized.Reference, components: optimized.Components, type: keyof optimized.Components) {
+    const name = node.$ref.substring(node.$ref.lastIndexOf('/') + 1);
+    const found = Object.entries(components[type] ?? {}).find(x => x[0] === name);
+    if (!found) {
+      return undefined;
+    }
+    return found[1];
   }
 
   private createParameterObject(
@@ -136,10 +147,11 @@ export class OpenApiOptimizer {
       }
     }
 
-    let pathParameter;
-    let headerParameter;
-    let queryParameter;
-    let cookieParameter;
+    let pathParameter: optimized.Reference | undefined;
+    let headerParameter: optimized.Reference | undefined;
+    let queryParameter: optimized.Reference | undefined;
+    let cookieParameter: optimized.Reference | undefined;
+    let pathRegex: Record<string, string> | undefined;
 
     const name = `${operation.operationId}`;
 
@@ -156,7 +168,7 @@ export class OpenApiOptimizer {
       cookieParameter = this.optimizeParameters(document, components, cookieParams, name, 'cookieParameters');
     }
 
-    return { pathParameter, headerParameter, queryParameter, cookieParameter };
+    return { pathParameter, headerParameter, queryParameter, cookieParameter, pathRegex };
   }
 
   private optimizeOperationResponses(document: ParsedDocument, components: optimized.Components, operation: parsed.Operation) {
@@ -212,7 +224,11 @@ export class OpenApiOptimizer {
 
     const request = this.optimizeOperationRequest(document, components, operation);
 
-    const { pathParameter, headerParameter, queryParameter, cookieParameter } = this.optimizeOperationParameters(document, components, operation);
+    const { pathParameter, headerParameter, queryParameter, cookieParameter, pathRegex } = this.optimizeOperationParameters(
+      document,
+      components,
+      operation,
+    );
 
     return {
       type: 'operation',
@@ -231,6 +247,7 @@ export class OpenApiOptimizer {
       headerParameter,
       queryParameter,
       cookieParameter,
+      pathRegex,
     };
   }
 
@@ -250,7 +267,8 @@ export class OpenApiOptimizer {
         if (parsed.isReference(path.definition)) {
           this._logger.warn('Path references not supported');
         } else {
-          paths.push({ type: 'path', name: path.name, operations: this.optimizePathItem(document, components, path.definition) });
+          const operations = this.optimizePathItem(document, components, path.definition);
+          paths.push({ type: 'path', name: path.name, operations });
         }
       }
     });
@@ -308,5 +326,46 @@ export class OpenApiOptimizer {
     if (components.headerParameters) components.headerParameters = this.optimizeComponentRecord(components.headerParameters);
     if (components.queryParameters) components.queryParameters = this.optimizeComponentRecord(components.queryParameters);
     if (components.cookieParameters) components.cookieParameters = this.optimizeComponentRecord(components.cookieParameters);
+  }
+
+  private getPathParamRegex(pathParameter: optimized.Reference, components: optimized.Components) {
+    let pathRegex: Record<string, string> | undefined;
+
+    const found = this.lookupComponent(pathParameter, components, 'pathParameters') ?? this.lookupComponent(pathParameter, components, 'parameters');
+
+    if (found) {
+      if (optimized.isObjectNode(found) || optimized.isParameterObject(found)) {
+        found.properties.forEach(p => {
+          if (optimized.isParameter(p)) {
+            const name = p.name;
+            const definition = p.definition;
+
+            pathRegex = { ...pathRegex, [name]: definition.format ?? definition.type };
+          }
+        });
+      } else if (optimized.isComposite(found) || optimized.isUnion(found)) {
+        // todo need to recursively check the definitions
+
+        found.definitions?.forEach(d => {
+          if (optimized.isReference(d)) {
+            pathRegex = { ...pathRegex, ...this.getPathParamRegex(d, components) };
+          }
+        });
+      }
+    } else {
+      this._logger.warn(`Unable to find path parameter: (${pathParameter.$ref})`);
+    }
+
+    return pathRegex;
+  }
+
+  private buildPathRegex(document: OptimizedDocument) {
+    document.paths.forEach(path => {
+      path.operations.forEach(operation => {
+        if (operation.pathParameter) {
+          operation.pathRegex = this.getPathParamRegex(operation.pathParameter, document.components);
+        }
+      });
+    });
   }
 }

@@ -194,6 +194,7 @@ export abstract class OpenApiParser {
       const name = record[0];
       const schema = record[1];
       const definition = schema ? this.parsePathItemObject(schema, components) : undefined;
+
       nodes.push({
         type: 'pathItem',
         name,

@@ -3,7 +3,7 @@
 import { defineConfig } from 'vite';
 import path from 'path';
 import typescript from '@rollup/plugin-typescript';
-import pkg from './package.json' assert { type: 'json' };
+import pkg from './package.json' with { type: 'json' };
 import dts from 'vite-plugin-dts';
 
 const resolvePath = (str: string) => path.resolve(__dirname, str);
