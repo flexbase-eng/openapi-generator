@@ -909,7 +909,7 @@ export abstract class OpenApiParser {
     const definitions = oneOf.map(x => this.parseSchema(x, schema.type));
 
     return {
-      type: 'union',
+      type: 'xor',
       ...modifiers,
       definitions,
     };
