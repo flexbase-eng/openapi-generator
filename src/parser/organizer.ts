@@ -207,6 +207,10 @@ export class Organizer {
       node.definitions.forEach(x => {
         this.traverseReferences(originalDocument, components, x);
       });
+    } else if (parsed.isXor(node)) {
+      node.definitions.forEach(x => {
+        this.traverseReferences(originalDocument, components, x);
+      });
     }
   }
 

@@ -343,7 +343,7 @@ export class OpenApiOptimizer {
             pathRegex = { ...pathRegex, [name]: definition.format ?? definition.type };
           }
         });
-      } else if (optimized.isComposite(found) || optimized.isUnion(found)) {
+      } else if (optimized.isComposite(found) || optimized.isUnion(found) || optimized.isXor(found)) {
         // todo need to recursively check the definitions
 
         found.definitions?.forEach(d => {

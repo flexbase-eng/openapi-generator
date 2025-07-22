@@ -11,6 +11,7 @@ export * from './header.js';
 export * from './array.js';
 export * from './union.js';
 export * from './composite.js';
+export * from './xor.js';
 export * from './exclusion.js';
 export * from './request.js';
 export * from './tag.js';

@@ -89,6 +89,8 @@ export class Converter {
         return this.convertArray(parsedNode, parsedComponents, components);
       } else if (parsed.isUnion(parsedNode)) {
         return this.convertUnion(parsedNode, parsedComponents, components);
+      } else if (parsed.isXor(parsedNode)) {
+        return this.convertXor(parsedNode, parsedComponents, components);
       } else if (parsed.isComposite(parsedNode)) {
         return this.convertComposite(parsedNode, parsedComponents, components);
       } else if (parsed.isExclusion(parsedNode)) {
@@ -143,6 +145,10 @@ export class Converter {
   }
 
   private convertUnion(parsedNode: parsed.Union, parsedComponents: parsed.Components, components: optimized.Components) {
+    return this.compress(parsedNode, parsedComponents, components);
+  }
+
+  private convertXor(parsedNode: parsed.Xor, parsedComponents: parsed.Components, components: optimized.Components) {
     return this.compress(parsedNode, parsedComponents, components);
   }
 
