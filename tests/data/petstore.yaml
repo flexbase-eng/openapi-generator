@@ -630,7 +630,7 @@ paths:
         - user
       summary: Multiple bodies
       description: ''
-      operationId: multipleBodies
+      operationId: multipleBodiesWithDiscriminator
       requestBody:
         content:
           application/json:

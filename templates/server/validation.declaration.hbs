@@ -1,6 +1,5 @@
-export const {{& replace (replace name (toRegex "(-|\.| )+" "g") "_") (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{& suffix}}:utilities.ValidatorFn = ({{inputName}}: any): utilities.ValidatorResponse => {
-    let {{errorsName}} = new Map<string, string | string[]>();
-    const allowedProperties: string[] = [];
-    {{>validation.expression . inputName=./inputName errorsName=./errorsName}}
-    return { {{errorsName}}, allowedProperties};
-}
+{{#if (compare type "===" "xor")}}
+  {{>validation.declaration.xor suffix=suffix inputName=inputName errorsName=errorsName}}
+{{else}}
+  {{>validation.declaration.single suffix=suffix inputName=inputName errorsName=errorsName}}
+{{/if}}

@@ -33,7 +33,7 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
     return frame;
   };
 
-  [array, code, collection, comparison, date, html, i18n, inflection, markdown, math, misc, number, object, path, regex, string, url].forEach(
+  [array, code, collection, comparison, date, html, i18n, inflection, object, markdown, math, misc, number, object, path, regex, string, url].forEach(
     helper => {
       handlebars.registerHelper(helper);
     },
@@ -221,7 +221,7 @@ export const createHandlebars = (jsonSchema: $Refs): typeof Handlebars => {
 
   handlebars.log = (level, ...messages) => {
     const levels = ['debug', 'info', 'warn', 'error'];
-    const actualLevel = typeof level === 'string' ? (levels.includes(level) ? level : 'info') : levels.at(level) ?? 'info';
+    const actualLevel = typeof level === 'string' ? (levels.includes(level) ? level : 'info') : (levels.at(level) ?? 'info');
     (handlebars.logger as any)['actualLogger'][actualLevel](...messages);
   };
 
