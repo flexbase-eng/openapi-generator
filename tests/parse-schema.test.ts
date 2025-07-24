@@ -10,7 +10,7 @@ test('petstore schemas', async () => {
 
   const parsedDocument = await parseSpec('./tests/data/petstore.yaml', noopLogger);
 
-  expect(parsedDocument.paths).toHaveLength(15);
+  expect(parsedDocument.paths).toHaveLength(16);
 
   const documents = organizer.organizeByTags(parsedDocument);
 

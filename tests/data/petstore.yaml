@@ -604,6 +604,26 @@ paths:
           description: Invalid username supplied
         '404':
           description: User not found
+  '/multiple-bodies-any-of':
+    post:
+      tags:
+        - user
+      summary: Multiple bodies
+      description: ''
+      operationId: multipleBodies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/BaseComponent'
+                - $ref: '#/components/schemas/InheritedComponent'
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema: {}
   '/multiple-bodies':
     post:
       tags:

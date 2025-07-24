@@ -160,7 +160,7 @@ if({{safeName}} !== undefined) {
     {{/compare}}
     {{>format}}
 
-{{else or (compare type "===" "composite") (compare type "===" "union") (compare type "===" "xor")}}
+{{else or (compare type "===" "composite") }}
     {{#each definitions}}{{>validation.expression . inputName=../inputName errorsName=../errorsName}}{{/each}}
 {{/if~}}
 

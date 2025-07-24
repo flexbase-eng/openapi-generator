@@ -1,5 +1,7 @@
-{{#if (compare type "===" "xor")}}
-  {{>validation.declaration.xor suffix=suffix inputName=inputName errorsName=errorsName}}
+{{#if (and (compare type "===" "xor") discriminatorMapping)}}
+  {{>validation.declaration.xor.discriminator suffix=suffix inputName=inputName errorsName=errorsName}}
+{{else or (compare type "===" "union") (compare type "===" "xor")}}
+  {{>validation.declaration.union suffix=suffix inputName=inputName errorsName=errorsName}}
 {{else}}
   {{>validation.declaration.single suffix=suffix inputName=inputName errorsName=errorsName}}
 {{/if}}

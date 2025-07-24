@@ -1,0 +1,55 @@
+
+export const {{& replace (replace name (toRegex "(-|\.| )+" "g") "_") (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{& suffix}}:utilities.ValidatorFn = ({{inputName}}: any): utilities.ValidatorResponse => {
+  const validatorArray = new Array<utilities.ValidatorFn>();
+  const validatorErrorArray = new Array<Map<string, string | string[]>>();
+  const allowedPropertiesArray = new Array<string[]>();
+  
+	{{#each definitions}}
+
+	validatorArray.push(({{../inputName}}) => {
+    let {{../errorsName}} = new Map<string, string | string[]>();
+	  let allowedProperties = new Array<string>();
+    {{>validation.expression this inputName=../inputName errorsName=../errorsName}}
+   
+	  validatorErrorArray.push(validationErrors);
+	  allowedPropertiesArray.push(allowedProperties);
+  });
+
+	{{/each}}
+	for (let i = 0; i < validatorArray.length; ++i) {
+    const validatorResponse = validatorArray[i]({{inputName}});
+    if (validatorResponse.validationErrors.size === 0) {
+      return validatorResponse;
+    }
+  }
+  // merge all errors and allowedProperties
+  const mergedValidationErrors = new Map<string, string | string[]>();
+  const mergedAllowedProperties: string[] = [];
+
+  for (let i = 0; i < validatorArray.length; ++i) {
+    const validatorResponse = validatorArray[i]({{inputName}});
+    // Early return if any validator has no errors
+    if (validatorResponse.validationErrors.size === 0) {
+      return {validationErrors: validatorResponse.validationErrors, allowedProperties: validatorResponse.allowedProperties};
+    }
+
+    for (const [key, value] of validatorResponse.validationErrors.entries()) {
+      if (mergedValidationErrors.has(key)) {
+        // Merge error messages for the same key
+        const existing = mergedValidationErrors.get(key);
+        if (Array.isArray(existing)) {
+          mergedValidationErrors.set(key, existing.concat(value));
+        } else if (existing !== undefined) {
+          mergedValidationErrors.set(key, [existing, value].flat());
+        }
+      } else {
+        mergedValidationErrors.set(key, value);
+      }
+    }
+    mergedAllowedProperties.push(...validatorResponse.allowedProperties);
+  }
+  return {
+    validationErrors: mergedValidationErrors,
+    allowedProperties: mergedAllowedProperties
+  }
+};
