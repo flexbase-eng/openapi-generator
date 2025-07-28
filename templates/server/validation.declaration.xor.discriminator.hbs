@@ -1,0 +1,27 @@
+
+type {{& replace (replace name (toRegex "(-|\.| )+" "g") "_") (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{& suffix}}PropertyName = "base" | "inherited";
+
+export const {{& replace (replace name (toRegex "(-|\.| )+" "g") "_") (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{& suffix}}:utilities.ValidatorFn = ({{inputName}}: any): utilities.ValidatorResponse => {
+  const validatorMap = new Map<string, utilities.ValidatorFn>();
+  const validatorErrorMap = new Map<{{& replace (replace name (toRegex "(-|\.| )+" "g") "_") (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{& suffix}}PropertyName, Map<string, string | string[]>>();
+  const allowedPropertiesMap = new Map<{{& replace (replace name (toRegex "(-|\.| )+" "g") "_") (toRegex "[_-]([a-z])" "gi") (function "(_, x)=>x.toUpperCase()") }}{{& suffix}}PropertyName, string[]>();
+  
+  const discriminatorPropertyName = "{{ discriminatorPropertyName}}";
+	{{#each discriminatorMapping}}
+	validatorMap.set('{{@key}}', ({{../inputName}}) => {
+    let {{../errorsName}} = new Map<string, string | string[]>();
+	  let allowedProperties = new Array<string>();
+    {{>validation.expression this inputName=../inputName errorsName=../errorsName}}
+   
+	  validatorErrorMap.set('{{@key}}', new Map<string, string | string[]>(validatorResponse.validationErrors));
+	  allowedPropertiesMap.set('{{@key}}', validatorResponse.allowedProperties);
+  });
+
+	{{/each}}
+	const discriminatorValue = {{./inputName}}[discriminatorPropertyName];
+  const validatorResponse = validatorMap.get(discriminatorValue)({{./inputName}});
+  return {
+    validationErrors: validatorResponse.validationErrors,
+    allowedProperties: validatorResponse.allowedProperties
+  }
+};

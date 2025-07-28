@@ -7,6 +7,7 @@ export * from './primative.js';
 export * from './object.js';
 export * from './composite.js';
 export * from './union.js';
+export * from './xor.js';
 export * from './exclusion.js';
 export * from './array.js';
 export * from './link.js';

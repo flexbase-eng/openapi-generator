@@ -13,6 +13,7 @@
 {{~#compare type "===" "reference"}}{{& prefix}}{{>lookupReference name=$ref type='models'}}{{& suffix}}{{/compare}}
 {{~#compare type "===" "composite"}}{{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}&{{/unless}}{{/forEach}}{{/if}}{{/compare}}
 {{~#compare type "===" "union"}}{{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}{{/compare}}
+{{~#compare type "===" "xor"}}{{#if definitions}}{{#forEach definitions}}{{>model.expression .}}{{#unless isLast}}|{{/unless}}{{/forEach}}{{/if}}{{/compare}}
 {{~#compare type "===" "responseObject"}}
 {
     $status: {{status}}; 

@@ -908,11 +908,38 @@ export abstract class OpenApiParser {
 
     const definitions = oneOf.map(x => this.parseSchema(x, schema.type));
 
+    let discriminatorPropertyName: string | undefined;
+    let discriminatorMapping: Record<string, ParsedNode> | undefined;
+
+    if (schema.discriminator) {
+      discriminatorPropertyName = schema.discriminator.propertyName;
+
+      if (schema.discriminator.mapping) {
+        discriminatorMapping = {};
+        for (const [key, value] of Object.entries(schema.discriminator.mapping)) {
+          // Parse the reference string into a ParsedNode
+          const parsedValue = this.parseDiscriminatorReference(value);
+          discriminatorMapping[key] = parsedValue;
+        }
+      }
+    }
+
     return {
-      type: 'union',
+      type: 'xor',
       ...modifiers,
       definitions,
+      discriminatorPropertyName,
+      discriminatorMapping,
     };
+  }
+
+  private parseDiscriminatorReference(referenceString: string): ParsedNode {
+    // Create a reference object
+    const referenceObject: ReferenceObject = {
+      $ref: referenceString,
+    };
+
+    return this.createReference(referenceObject);
   }
 
   private parseNotObject(schema: ReferenceObject | SchemaObject, modifiers: Modifiers): Exclusion {

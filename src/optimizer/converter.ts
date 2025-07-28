@@ -89,6 +89,8 @@ export class Converter {
         return this.convertArray(parsedNode, parsedComponents, components);
       } else if (parsed.isUnion(parsedNode)) {
         return this.convertUnion(parsedNode, parsedComponents, components);
+      } else if (parsed.isXor(parsedNode)) {
+        return this.convertXor(parsedNode, parsedComponents, components);
       } else if (parsed.isComposite(parsedNode)) {
         return this.convertComposite(parsedNode, parsedComponents, components);
       } else if (parsed.isExclusion(parsedNode)) {
@@ -136,13 +138,34 @@ export class Converter {
     if (parsedNode.definitions.length === 1) {
       return this.convertParsedNode(parsedNode.definitions[0], parsedComponents, components);
     }
+
+    let discriminatorPropertyName: string | undefined;
+    let discriminatorMapping: Record<string, optimized.OptimizedNode> | undefined;
+
+    if ('discriminatorPropertyName' in parsedNode && parsedNode.discriminatorPropertyName) {
+      discriminatorPropertyName = parsedNode.discriminatorPropertyName;
+
+      if (parsedNode.discriminatorMapping) {
+        discriminatorMapping = {};
+        for (const [key, value] of Object.entries(parsedNode.discriminatorMapping)) {
+          discriminatorMapping[key] = this.convertParsedNode(value, parsedComponents, components);
+        }
+      }
+    }
+
     return {
       ...parsedNode,
       definitions: parsedNode.definitions.map(p => this.convertParsedNode(p, parsedComponents, components)),
+      discriminatorPropertyName,
+      discriminatorMapping,
     };
   }
 
   private convertUnion(parsedNode: parsed.Union, parsedComponents: parsed.Components, components: optimized.Components) {
+    return this.compress(parsedNode, parsedComponents, components);
+  }
+
+  private convertXor(parsedNode: parsed.Xor, parsedComponents: parsed.Components, components: optimized.Components) {
     return this.compress(parsedNode, parsedComponents, components);
   }
 

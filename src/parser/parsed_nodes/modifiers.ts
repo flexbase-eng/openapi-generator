@@ -62,7 +62,7 @@ export const compareModifiers = (a: Modifiers, b: Modifiers): boolean => {
     //a.required === b.required &&
     //a.enum === b.enum &&
     a.nullable === b.nullable &&
-    //a.discriminator === b.discriminator &&
+    a.discriminator === b.discriminator &&
     a.readOnly === b.readOnly &&
     a.writeOnly === b.writeOnly &&
     a.example === b.example &&

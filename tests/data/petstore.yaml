@@ -604,11 +604,91 @@ paths:
           description: Invalid username supplied
         '404':
           description: User not found
+  '/multiple-bodies-any-of':
+    post:
+      tags:
+        - user
+      summary: Multiple bodies
+      description: ''
+      operationId: multipleBodies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/BaseComponent'
+                - $ref: '#/components/schemas/InheritedComponent'
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema: {}
+  '/multiple-bodies':
+    post:
+      tags:
+        - user
+      summary: Multiple bodies
+      description: ''
+      operationId: multipleBodies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/BaseComponent'
+                - $ref: '#/components/schemas/InheritedComponent'
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema: {}
+  '/multiple-bodies-with-discriminator':
+    post:
+      tags:
+        - user
+      summary: Multiple bodies
+      description: ''
+      operationId: multipleBodiesWithDiscriminator
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/BaseComponent'
+                - $ref: '#/components/schemas/InheritedComponent'
+              discriminator:
+                propertyName: type
+                mapping:
+                  base: '#/components/schemas/BaseComponent'
+                  inherited: '#/components/schemas/InheritedComponent'
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema: {}
 externalDocs:
   description: Find out more about Swagger
   url: 'http://swagger.io'
 components:
   schemas:
+    BaseComponent:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - base
+            - inherited
+    InheritedComponent:
+      allOf:
+        - $ref: '#/components/schemas/BaseComponent'
+        - type: object
+          properties:
+            name:
+              type: string
     Order:
       x-swagger-router-model: io.swagger.petstore.model.Order
       properties:
