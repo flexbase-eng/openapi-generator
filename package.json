@@ -1,6 +1,6 @@
 {
   "name": "@flexbase/openapi-generator",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "description": "Open API code generator",
   "author": {
     "name": "Flexbase Technologies",
@@ -55,7 +55,7 @@
     "chalk": "^5.3.0",
     "commander": "^13.1.0",
     "fs-extra": "^11.3.0",
-    "glob": "^11.0.1",
+    "glob": "^11.0.3",
     "handlebars": "^4.7.8",
     "highlight.js": "^11.10.0",
     "openapi-types": "^12.1.3",
