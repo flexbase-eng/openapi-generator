@@ -462,7 +462,7 @@ export abstract class OpenApiParser {
         if (property.definition[omitType] !== true) {
           if (isReference(property.definition)) {
             const found = this.lookupReference(property.definition, components, 'models');
-            if (found) {
+            if (found && found.definition[omitType] !== true) {
               const node = this.createOmitDefinition(found.definition, omitType, components);
               if (node) {
                 if (!isObjectNode(node) || node.properties.length > 0) {
