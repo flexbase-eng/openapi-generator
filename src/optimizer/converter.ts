@@ -5,6 +5,11 @@ import { murmurHash } from '../utilities/murmur.hash.js';
 export class Converter {
   private recursionDepth: number = 0;
 
+  // Referenced components that have already been converted (or are being converted) into a given
+  // components record. A component only needs to be converted once per document, and tracking the
+  // in-progress ones is what breaks reference cycles.
+  private readonly convertedComponents = new WeakMap<optimized.Components, Set<string>>();
+
   constructor(private readonly _logger: Logger) {}
 
   private findInSection<T extends parsed.ParsedNode = parsed.ParsedNode>(
@@ -63,12 +68,7 @@ export class Converter {
       if (parsed.isReference(parsedNode)) {
         const found = this.find(parsedComponents, parsedNode);
         if (found) {
-          this.addComponent(
-            found.component.name,
-            this.convertParsedNode(found.component.definition, parsedComponents, components),
-            components,
-            found.section,
-          );
+          this.convertComponent(found.component, found.section, parsedComponents, components);
         }
         return this.convertReference(parsedNode);
       } else if (parsed.isPrimative(parsedNode)) {
@@ -107,6 +107,35 @@ export class Converter {
     return {
       type: parsedNode.type,
     };
+  }
+
+  private convertComponent(
+    component: parsed.Component,
+    section: keyof parsed.Components,
+    parsedComponents: parsed.Components,
+    components: optimized.Components,
+  ) {
+    let converted = this.convertedComponents.get(components);
+    if (!converted) {
+      converted = new Set<string>();
+      this.convertedComponents.set(components, converted);
+    }
+
+    const key = `${section}/${component.name}`;
+    if (converted.has(key)) {
+      return;
+    }
+    converted.add(key);
+
+    // A component is converted on its own, so the depth of the reference that led here must not count
+    // towards the recursion limit. Otherwise long reference chains get truncated to empty stubs.
+    const depth = this.recursionDepth;
+    this.recursionDepth = 0;
+    try {
+      this.addComponent(component.name, this.convertParsedNode(component.definition, parsedComponents, components), components, section);
+    } finally {
+      this.recursionDepth = depth;
+    }
   }
 
   private convertReference(parsedNode: parsed.Reference): optimized.Reference {
