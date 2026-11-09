@@ -454,7 +454,12 @@ export abstract class OpenApiParser {
     };
   }
 
-  private omitProperties(parsedNode: ParsedNode, omitType: 'readOnly' | 'writeOnly', components: Components): Property[] {
+  private omitProperties(
+    parsedNode: ParsedNode,
+    omitType: 'readOnly' | 'writeOnly',
+    components: Components,
+    visiting: Set<ParsedNode> = new Set(),
+  ): Property[] {
     const properties: Property[] = [];
 
     if (isObjectNode(parsedNode)) {
@@ -463,7 +468,7 @@ export abstract class OpenApiParser {
           if (isReference(property.definition)) {
             const found = this.lookupReference(property.definition, components, 'models');
             if (found && found.definition[omitType] !== true) {
-              const node = this.createOmitDefinition(found.definition, omitType, components);
+              const node = this.createOmitDefinition(found.definition, omitType, components, visiting);
               if (node) {
                 if (!isObjectNode(node) || node.properties.length > 0) {
                   properties.push(<Property>{
@@ -485,14 +490,38 @@ export abstract class OpenApiParser {
     return properties;
   }
 
-  private createOmitDefinition(parsedNode: ParsedNode, omitType: 'readOnly' | 'writeOnly', components: Components): ParsedNode | undefined {
+  private createOmitDefinition(
+    parsedNode: ParsedNode,
+    omitType: 'readOnly' | 'writeOnly',
+    components: Components,
+    visiting: Set<ParsedNode> = new Set(),
+  ): ParsedNode | undefined {
+    // Self-referencing models (A.next -> B, B.next -> A) would otherwise recurse forever. A model that is
+    // already being processed further up the chain is left as a plain reference.
+    if (visiting.has(parsedNode)) {
+      return undefined;
+    }
+    visiting.add(parsedNode);
+    try {
+      return this.createOmitDefinitionUnguarded(parsedNode, omitType, components, visiting);
+    } finally {
+      visiting.delete(parsedNode);
+    }
+  }
+
+  private createOmitDefinitionUnguarded(
+    parsedNode: ParsedNode,
+    omitType: 'readOnly' | 'writeOnly',
+    components: Components,
+    visiting: Set<ParsedNode>,
+  ): ParsedNode | undefined {
     if (isReference(parsedNode)) {
       const found = this.lookupReference(parsedNode, components, 'models');
       if (found) {
-        return this.createOmitDefinition(found.definition, omitType, components);
+        return this.createOmitDefinition(found.definition, omitType, components, visiting);
       }
     } else if (isObjectNode(parsedNode)) {
-      const properties = this.omitProperties(parsedNode, omitType, components);
+      const properties = this.omitProperties(parsedNode, omitType, components, visiting);
       if (properties.length !== parsedNode.properties.length) {
         return <ObjectNode>{
           ...parsedNode,
@@ -503,7 +532,7 @@ export abstract class OpenApiParser {
       const definitions: ParsedNode[] = [...parsedNode.definitions];
       let hasOmit = false;
       for (let i = 0; i < definitions.length; ++i) {
-        const omitDef = this.createOmitDefinition(definitions[i], omitType, components);
+        const omitDef = this.createOmitDefinition(definitions[i], omitType, components, visiting);
         if (omitDef) {
           hasOmit = true;
           definitions[i] = omitDef;
